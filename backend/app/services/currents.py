@@ -27,7 +27,11 @@ class LiveNewsProvider(NewsProvider):
     async def fetch_latest_news(self, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
             try:
-                params = {"apiKey": self.api_key, "language": language}
+                params = {
+                    "apiKey": self.api_key, 
+                    "language": language, 
+                    "limit": 5
+                }
                 if category:
                     params["category"] = category
                     
@@ -45,7 +49,12 @@ class LiveNewsProvider(NewsProvider):
     async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
             try:
-                params = {"apiKey": self.api_key, "language": language, "keywords": keywords}
+                params = {
+                    "apiKey": self.api_key, 
+                    "language": language, 
+                    "keywords": keywords,
+                    "limit": 5
+                }
                 if category:
                     params["category"] = category
                     
@@ -85,7 +94,7 @@ class TestNewsProvider(NewsProvider):
         all_news = await self._load_mock_data()
         if category:
             all_news = [n for n in all_news if category.lower() in [c.lower() for c in n.get("category", [])]]
-        return all_news
+        return all_news[:5] # Apply limit
         
     async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
         print(f"Searching news in TEST mode from {self.file_path}")
@@ -97,7 +106,7 @@ class TestNewsProvider(NewsProvider):
         ]
         if category:
             filtered = [n for n in filtered if category.lower() in [c.lower() for c in n.get("category", [])]]
-        return filtered
+        return filtered[:5] # Apply limit
 
 class CurrentsService:
     def __init__(self):

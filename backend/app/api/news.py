@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("/feed", response_model=List[NewsSchema])
 async def get_news_feed(
     db: AsyncSession = Depends(deps.get_db),
-    limit: int = 20,
+    limit: int = 5,
     offset: int = 0,
     category: Optional[str] = None,
     sentiment: Optional[str] = None,
@@ -104,26 +104,4 @@ async def get_news_feed(
 
     return articles
 
-@router.post("/refresh")
-async def refresh_news(
-    background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(deps.get_db),
-) -> Any:
-    """
-    Trigger background news fetch (Stateless: No-op essentially, frontend should just call feed)
-    """
-    # for stateless content, refresh just means "call likely from frontend again".
-    # We can return success.
-    return {"message": "Feed refreshed"}
 
-@router.get("/{id}", response_model=NewsSchema)
-async def get_article(
-    id: str,
-    db: AsyncSession = Depends(deps.get_db)
-) -> Any:
-    """
-    Get specific article. 
-    WARNING: In stateless mode, we cannot fetch by ID easily if not persisted.
-    For now, return 404 or try to fetch (unreliable).
-    """
-    raise HTTPException(status_code=404, detail="Article storage is disabled. Please access via Feed.")
