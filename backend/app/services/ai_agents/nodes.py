@@ -9,10 +9,11 @@ from app.services.ai_agents.state import AgentState
 
 # Initialize LLM
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash-lite",
+    model="gemini-2.0-flash-lite",
     google_api_key=settings.GOOGLE_API_KEY,
-    temperature=0.1,
-    convert_system_message_to_human=True
+    temperature=0, # Reduced for consistency and speed
+    convert_system_message_to_human=True,
+    request_timeout=10 # Global timeout
 )
 
 async def collector_node(state: AgentState) -> Dict[str, Any]:
@@ -30,10 +31,15 @@ async def collector_node(state: AgentState) -> Dict[str, Any]:
     )
     chain = prompt | llm | JsonOutputParser()
     try:
-        result = await chain.ainvoke({"title": state["title"], "content": state["content"]})
+        # 5 second timeout for collector
+        result = await chain.ainvoke(
+            {"title": state["title"], "content": state["content"]},
+            config={"timeout": 5}
+        )
         return {"quality_score": result.get("quality_score", 0.5)}
     except Exception as e:
-        return {"quality_score": 0.5, "error": str(e)}
+        print(f"Collector Error: {e}")
+        return {"quality_score": 0.5}
 
 async def classifier_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -53,13 +59,17 @@ async def classifier_node(state: AgentState) -> Dict[str, Any]:
     )
     chain = prompt | llm | JsonOutputParser()
     try:
-        result = await chain.ainvoke({"title": state["title"], "content": state["content"]})
+        result = await chain.ainvoke(
+            {"title": state["title"], "content": state["content"]},
+            config={"timeout": 8}
+        )
         return {
-            "category": result.get("category"),
-            "sentiment": result.get("sentiment"),
+            "category": result.get("category", "General"),
+            "sentiment": result.get("sentiment", "Neutral"),
             "tags": result.get("tags", [])
         }
-    except Exception:
+    except Exception as e:
+        print(f"Classifier Error: {e}")
         return {"category": "General", "sentiment": "Neutral", "tags": []}
 
 async def summarizer_node(state: AgentState) -> Dict[str, Any]:
@@ -79,13 +89,19 @@ async def summarizer_node(state: AgentState) -> Dict[str, Any]:
     )
     chain = prompt | llm | JsonOutputParser()
     try:
-        result = await chain.ainvoke({"title": state["title"], "content": state["content"]})
+        result = await chain.ainvoke(
+            {"title": state["title"], "content": state["content"]},
+            config={"timeout": 15}
+        )
         return {
-            "summary_short": result.get("summary_short"),
-            "summary_detail": result.get("summary_detail")
+            "summary_short": result.get("summary_short", "Summary unavailable."),
+            "summary_detail": result.get("summary_detail", state.get("content", "")[:500] + "...")
         }
-    except Exception:
-        return {"summary_short": "Summary failed", "summary_detail": "Summary failed"}
+    except Exception as e:
+        print(f"Summarizer Error: {e}")
+        # Fallback to description or truncated content
+        fallback = state.get("content", "")[:200] + "..."
+        return {"summary_short": "Summary unavailable due to high load.", "summary_detail": fallback}
 
 async def bias_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -107,10 +123,14 @@ async def bias_node(state: AgentState) -> Dict[str, Any]:
     )
     chain = prompt | llm | JsonOutputParser()
     try:
-        result = await chain.ainvoke({"title": state["title"], "content": state["content"]})
+        result = await chain.ainvoke(
+            {"title": state["title"], "content": state["content"]},
+            config={"timeout": 10}
+        )
         return {
-            "bias_score": result.get("bias_score"),
-            "bias_explanation": result.get("bias_explanation")
+            "bias_score": result.get("bias_score", 0.0),
+            "bias_explanation": result.get("bias_explanation", "Neutral consideration.")
         }
-    except Exception:
-        return {"bias_score": 0.0, "bias_explanation": "Analysis failed"}
+    except Exception as e:
+        print(f"Bias Node Error: {e}")
+        return {"bias_score": 0.0, "bias_explanation": "Analysis unavailable at this moment."}

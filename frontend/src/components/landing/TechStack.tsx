@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 
 const technologies = [
-  { name: "OpenAI", logo: "🤖" },
-  { name: "LangChain", logo: "🔗" },
-  { name: "Pinecone", logo: "🌲" },
-  { name: "Vercel", logo: "▲" },
-  { name: "Supabase", logo: "⚡" },
-  { name: "Stripe", logo: "💳" },
+  { name: "React", logo: "⚛️" },
+  { name: "TypeScript", logo: "📘" },
+  { name: "Tailwind CSS", logo: "🎨" },
+  { name: "Python", logo: "🐍" },
+  { name: "FastAPI", logo: "⚡" },
+  { name: "LangGraph", logo: "🦜" },
+  { name: "Gemini AI", logo: "✨" },
 ];
 
 export function TechStack() {

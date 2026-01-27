@@ -13,6 +13,7 @@ export function Navbar() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/about", label: "About" },
     // Show Dashboard only if logged in
     ...(user ? [{ href: "/dashboard", label: "Dashboard" }] : []),
   ];

@@ -9,10 +9,8 @@ const footerLinks = {
     { label: "API", href: "/" },
   ],
   Company: [
-    { label: "About", href: "/" },
-    { label: "Blog", href: "/" },
-    { label: "Careers", href: "/" },
-    { label: "Contact", href: "/" },
+    { label: "About Me", href: "/about" },
+    { label: "Portfolio", href: "https://atharva-naik-portfolio.vercel.app/" },
   ],
   Legal: [
     { label: "Privacy", href: "/" },
@@ -38,13 +36,13 @@ export function Footer() {
               AI-powered news intelligence for the modern reader. Understand more, miss less.
             </p>
             <div className="flex gap-3">
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="https://x.com/Atharva_0506" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="https://github.com/Atharva0506" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
                 <Github className="h-5 w-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="https://www.linkedin.com/in/atharva0506/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
                 <Linkedin className="h-5 w-5" />
               </a>
             </div>
@@ -57,12 +55,18 @@ export function Footer() {
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      to={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
+                    {link.href.startsWith("http") ? (
+                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

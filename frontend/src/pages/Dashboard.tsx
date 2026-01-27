@@ -217,7 +217,7 @@ export default function Dashboard() {
   const handleProcessArticle = async (articleId: string) => {
     if (!user?.is_premium) return;
     setIsAiLoading(true);
-    setAiProcessStatus({ status: 'starting', message: 'Starting AI Agents...' });
+    setAiProcessStatus({ status: 'starting', message: 'Running deep analysis...' });
 
     try {
       // Use fetch directly to handle streaming
@@ -272,7 +272,14 @@ export default function Dashboard() {
                 // But since we are stateless, we just show it in chat or panel?
                 // The current UI might expect it in `selectedArticle`.
                 // We can update selectedArticle state.
-                setSelectedArticle(prev => ({ ...prev, ...data.article }));
+                // We can update selectedArticle state.
+                setSelectedArticle(prev => ({
+                  ...prev,
+                  ...data.article,
+                  // Ensure defaults if missing (though backend handles this)
+                  summary_short: data.article.summary_short || prev.summary_short,
+                  sentiment: data.article.sentiment || "Neutral"
+                }));
 
               } else if (data.status === 'error') {
                 toast.error(data.message);
