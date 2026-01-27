@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Loader2, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
+import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const plans = [
   {
     name: "Free",
+    id: "free",
     description: "Perfect for trying out NewsAI",
     monthlyPrice: 0,
     yearlyPrice: 0,
+    displayPrice: "0 SOL",
     features: [
       "10 AI summaries per day",
       "Basic bias detection",
@@ -23,9 +29,11 @@ const plans = [
   },
   {
     name: "Pro",
+    id: "pro",
     description: "For individuals who want more",
-    monthlyPrice: 19,
-    yearlyPrice: 15,
+    monthlyPrice: 0.5,
+    yearlyPrice: 5,
+    displayPrice: "0.5 SOL",
     features: [
       "Unlimited AI summaries",
       "Advanced bias detection",
@@ -35,14 +43,16 @@ const plans = [
       "Multi-agent analysis",
       "Priority support",
     ],
-    cta: "Start Free Trial",
+    cta: "Pay with Solana",
     popular: true,
   },
   {
     name: "Team",
+    id: "team",
     description: "For teams and organizations",
-    monthlyPrice: 49,
-    yearlyPrice: 39,
+    monthlyPrice: 1.5,
+    yearlyPrice: 15,
+    displayPrice: "1.5 SOL",
     features: [
       "Everything in Pro",
       "Up to 10 team members",
@@ -59,11 +69,58 @@ const plans = [
 
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
+  const { user, refreshProfile } = useAuth();
+  const [isProcessing, setIsProcessing] = useState<string | null>(null); // Plan Name
+  const navigate = useNavigate();
+
+  const handleSubscribe = async (plan: typeof plans[0]) => {
+    if (!user) {
+      toast.error("Please login first");
+      navigate("/login");
+      return;
+    }
+    if (plan.monthlyPrice === 0) {
+      toast.info("You are already on the Free Plan");
+      return;
+    }
+
+    setIsProcessing(plan.name);
+    try {
+      // 1. Create Intent
+      // For simulation, we create a payment intent (returns address & reference)
+      const amount = plan.monthlyPrice;
+      const intent = await api.payments.createIntent(amount);
+
+      // 2. Simulate Wallet Interaction (TEST MODE)
+      if (intent.mode === "TEST") {
+        toast.info("Test Mode: Simulating Wallet Signature...");
+        await new Promise(r => setTimeout(r, 2000)); // Fake delay
+
+        const signature = intent.reference; // In test mode, ref is valid sig
+
+        // 3. Verify
+        toast.info("Verifying Transaction...");
+        await api.payments.verify({ transaction_signature: signature, amount });
+
+        // 4. Refresh & Success
+        await refreshProfile();
+        toast.success(`Successfully subscribed to ${plan.name}!`);
+        navigate("/dashboard");
+      } else {
+        toast.warning("Real Solana Mode not fully accessible without Wallet Adapter. Switch Backend to TEST mode.");
+      }
+
+    } catch (error: any) {
+      toast.error(error.message || "Payment failed");
+    } finally {
+      setIsProcessing(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <section className="pt-32 pb-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -117,11 +174,10 @@ export default function Pricing() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                className={`relative p-6 rounded-2xl border ${
-                  plan.popular
-                    ? 'border-accent bg-gradient-card shadow-glow'
-                    : 'border-border bg-card shadow-soft'
-                }`}
+                className={`relative p-6 rounded-2xl border ${plan.popular
+                  ? 'border-accent bg-gradient-card shadow-glow'
+                  : 'border-border bg-card shadow-soft'
+                  }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -138,20 +194,28 @@ export default function Pricing() {
 
                 <div className="mb-6">
                   <span className="text-4xl font-bold">
-                    ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                    {plan.displayPrice}
                   </span>
-                  <span className="text-muted-foreground">/month</span>
+                  <span className="text-muted-foreground ml-2">/month</span>
                 </div>
 
                 <Button
-                  className={`w-full mb-6 ${
-                    plan.popular
-                      ? 'bg-accent hover:bg-accent/90 text-accent-foreground'
-                      : ''
-                  }`}
+                  className={`w-full mb-6 ${plan.popular
+                    ? 'bg-accent hover:bg-accent/90 text-accent-foreground'
+                    : ''
+                    }`}
                   variant={plan.popular ? "default" : "outline"}
+                  onClick={() => handleSubscribe(plan)}
+                  disabled={isProcessing === plan.name}
                 >
-                  {plan.cta}
+                  {isProcessing === plan.name ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    plan.cta
+                  )}
                 </Button>
 
                 <ul className="space-y-3">

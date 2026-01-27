@@ -1,18 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X, Sparkles, User, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/dashboard", label: "Dashboard" },
-];
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/pricing", label: "Pricing" },
+    // Show Dashboard only if logged in
+    ...(user ? [{ href: "/dashboard", label: "Dashboard" }] : []),
+  ];
 
   return (
     <motion.header
@@ -47,16 +50,28 @@ export function Navbar() {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                Get Started
-              </Button>
-            </Link>
+
+            {user ? (
+              <Link to="/dashboard">
+                <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Go to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -95,14 +110,24 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="pt-2 flex gap-2">
-                <Link to="/login" className="flex-1">
-                  <Button variant="outline" className="w-full">Sign In</Button>
-                </Link>
-                <Link to="/signup" className="flex-1">
-                  <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                    Get Started
-                  </Button>
-                </Link>
+                {user ? (
+                  <Link to="/dashboard" className="w-full">
+                    <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/login" className="flex-1">
+                      <Button variant="outline" className="w-full">Sign In</Button>
+                    </Link>
+                    <Link to="/signup" className="flex-1">
+                      <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                        Get Started
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

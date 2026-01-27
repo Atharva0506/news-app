@@ -1,34 +1,35 @@
-from datetime import datetime, timedelta, timezone
-from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from typing import Optional, Union, Any
 from jose import jwt
-from pydantic import BaseModel
+from passlib.context import CryptContext
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class TokenPair(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
+ALGORITHM = "HS256"
 
-def hash_password(password: str) -> str:
+def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    to_encode = {"exp": expire, "sub": str(subject)}
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def create_refresh_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    
+    to_encode = {"exp": expire, "sub": str(subject), "refresh": True}
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
-
-def verify_password(password: str, password_hash: str) -> bool:
-    return pwd_context.verify(password, password_hash)
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-def create_access_token(subject: str) -> str:
-    exp = _now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MIN)
-    payload = {"sub": subject, "type": "access", "exp": exp}
-    return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALG)
-
-def create_refresh_token(subject: str, token_family: str) -> str:
-    exp = _now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    payload = {"sub": subject, "type": "refresh", "fam": token_family, "exp": exp}
-    return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALG)
-
-def decode_token(token: str) -> dict:
-    return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])

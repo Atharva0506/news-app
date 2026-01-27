@@ -6,28 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoggingIn } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate login - replace with actual auth
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
-      navigate("/dashboard");
-    }, 1500);
+    if (!email || !password) return;
+
+    try {
+      await login(email, password);
+    } catch (error) {
+      // Handled by context
+    }
   };
 
   return (
@@ -150,9 +146,9 @@ export default function Login() {
             <Button
               type="submit"
               className="w-full h-11 bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={isLoading}
+              disabled={isLoggingIn}
             >
-              {isLoading ? (
+              {isLoggingIn ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing in...

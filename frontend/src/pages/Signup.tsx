@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -14,7 +15,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { register, isLoggingIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,17 +29,12 @@ export default function Signup() {
       });
       return;
     }
-    setIsLoading(true);
-    
-    // Simulate signup - replace with actual auth
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Account created!",
-        description: "Welcome to NewsAI. Let's get started.",
-      });
-      navigate("/dashboard");
-    }, 1500);
+
+    try {
+      await register(email, password, name);
+    } catch (error) {
+      // Handled context
+    }
   };
 
   return (
@@ -192,9 +188,9 @@ export default function Signup() {
             <Button
               type="submit"
               className="w-full h-11 bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={isLoading}
+              disabled={isLoggingIn}
             >
-              {isLoading ? (
+              {isLoggingIn ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating account...

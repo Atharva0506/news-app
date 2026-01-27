@@ -1,32 +1,50 @@
-from typing import TypedDict, Any, Optional
-from langgraph.graph import StateGraph, END  # LangGraph StateGraph workflow building. [web:10]
-from .collector import collector_node
-from .classifier import classifier_node
-from .summarizer import summarizer_node
-from .bias import bias_node
-from .explainer import explainer_node
+from langgraph.graph import StateGraph, END
+from app.services.ai_agents.state import AgentState
+from app.services.ai_agents.nodes import (
+    collector_node,
+    classifier_node,
+    summarizer_node,
+    bias_node
+)
 
-class ArticleState(TypedDict, total=False):
-    article: dict
-    cleaned: dict
-    classification: dict
-    summary: dict
-    bias: dict
-    explanation: dict
-    errors: list[str]
+def create_news_processing_graph():
+    workflow = StateGraph(AgentState)
+    
+    # Add nodes
+    workflow.add_node("collector", collector_node)
+    workflow.add_node("classifier", classifier_node)
+    workflow.add_node("summarizer", summarizer_node)
+    workflow.add_node("bias", bias_node)
+    
+    # helper for conditional edge
+    def check_quality(state: AgentState):
+        if state["quality_score"] < 0.3:
+            return END
+        return "classifier"
 
-def build_graph():
-    g = StateGraph(ArticleState)
-    g.add_node("collector", collector_node)
-    g.add_node("classifier", classifier_node)
-    g.add_node("summarizer", summarizer_node)
-    g.add_node("bias", bias_node)
-    g.add_node("explainer", explainer_node)
+    # Define edges
+    # Start -> Collector
+    workflow.set_entry_point("collector")
+    
+    # Collector -> Check Quality -> Classifier (or END)
+    workflow.add_conditional_edges(
+        "collector",
+        check_quality,
+        {
+            END: END,
+            "classifier": "classifier"
+        }
+    )
+    
+    # Classifier -> Summarizer
+    workflow.add_edge("classifier", "summarizer")
+    
+    # Summarizer -> Bias
+    workflow.add_edge("summarizer", "bias")
+    
+    # Bias -> End
+    workflow.add_edge("bias", END)
+    
+    return workflow.compile()
 
-    g.set_entry_point("collector")
-    g.add_edge("collector", "classifier")
-    g.add_edge("classifier", "summarizer")
-    g.add_edge("summarizer", "bias")
-    g.add_edge("bias", "explainer")
-    g.add_edge("explainer", END)
-    return g.compile()
+news_graph = create_news_processing_graph()

@@ -1,0 +1,70 @@
+{
+    "status": "ok",
+    "news": [
+        {
+            "id": "1a2b3c4d",
+            "title": "AI Breakthrough in Healthcare Diagnostics",
+            "description": "New AI model predicts diseases with 99% accuracy.",
+            "url": "https://example.com/ai-health",
+            "author": "TechCrunch",
+            "image": "https://example.com/images/ai-health.jpg",
+            "language": "en",
+            "category": [
+                "technology"
+            ],
+            "published": "2024-01-27 10:00:00 +0000"
+        },
+        {
+            "id": "5e6f7g8h",
+            "title": "Global Markets Rally on Tech Earnings",
+            "description": "Stock markets hit record highs as tech giants report strong earnings.",
+            "url": "https://example.com/markets-rally",
+            "author": "Bloomberg",
+            "image": "https://example.com/images/markets.jpg",
+            "language": "en",
+            "category": [
+                "finance"
+            ],
+            "published": "2024-01-27 11:30:00 +0000"
+        },
+        {
+            "id": "9i0j1k2l",
+            "title": "New Solar Tech promises cheaper energy",
+            "description": "Breakthrough in solar panel efficiency could lower costs significantly.",
+            "url": "https://example.com/solar-tech",
+            "author": "ScienceDaily",
+            "image": "https://example.com/images/solar.jpg",
+            "language": "en",
+            "category": [
+                "science"
+            ],
+            "published": "2024-01-26 14:15:00 +0000"
+        },
+        {
+            "id": "dup1",
+            "title": "Duplicate Article Test",
+            "description": "This is a duplicate article to test deduplication.",
+            "url": "https://example.com/duplicate",
+            "author": "TestBot",
+            "image": "https://example.com/images/dup.jpg",
+            "language": "en",
+            "category": [
+                "technology"
+            ],
+            "published": "2024-01-26 09:00:00 +0000"
+        },
+        {
+            "id": "dup2",
+            "title": "Duplicate Article Test",
+            "description": "This is a duplicate article to test deduplication.",
+            "url": "https://example.com/duplicate",
+            "author": "TestBot",
+            "image": "https://example.com/images/dup.jpg",
+            "language": "en",
+            "category": [
+                "technology"
+            ],
+            "published": "2024-01-26 09:00:00 +0000"
+        }
+    ]
+}

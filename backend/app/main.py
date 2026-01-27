@@ -1,48 +1,31 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse
+
 from app.core.config import settings
-from app.core.logging import setup_logging
-from app.core.middleware import logging_middleware
-from app.api.auth import router as auth_router
-from app.api.news import router as news_router
-from app.api.ai import router as ai_router
-from app.api.user import router as user_router
-from app.services.scheduler import ingestion_loop
-import asyncio
-from contextlib import asynccontextmanager
-
-setup_logging()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    task = asyncio.create_task(ingestion_loop())
-    yield
-    task.cancel()
+from app.api import auth, news, payments, ai
 
 app = FastAPI(
-    title=settings.APP_NAME,
-    default_response_class=ORJSONResponse,
-    lifespan=lifespan,
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-app.middleware("http")(logging_middleware)
-
+# Set all CORS enabled origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list(),
+    allow_origins=["*"], # In production, set to frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
+app.include_router(payments.router, prefix=f"{settings.API_V1_STR}/payments", tags=["payments"])
+app.include_router(news.router, prefix=f"{settings.API_V1_STR}/news", tags=["news"])
+app.include_router(ai.router, prefix=f"{settings.API_V1_STR}/ai", tags=["ai"])
 
-app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
-app.include_router(news_router, prefix=settings.API_V1_PREFIX)
-app.include_router(ai_router, prefix=settings.API_V1_PREFIX)
-app.include_router(user_router, prefix=settings.API_V1_PREFIX)
+from app.api import preferences
+app.include_router(preferences.router, prefix=f"{settings.API_V1_STR}/preferences", tags=["preferences"])
 
-@app.get("/health")
-async def health():
-    return {"ok": True, "env": settings.ENV}
+@app.get("/")
+async def root():
+    return {"message": "AI News Backend API"}
