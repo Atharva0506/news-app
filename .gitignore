@@ -55,3 +55,8 @@ lerna-debug.log*
 # Build artifacts
 *.tgz
 .pnp.*
+
+__pycache__/
+*.pyc
+*.pyo
+
