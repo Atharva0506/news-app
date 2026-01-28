@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Home, Newspaper, Settings as SettingsIcon, User, Sparkles, Search,
-  Menu, ChevronLeft, ChevronRight, Send
+  Menu, ChevronLeft, ChevronRight, Send, History
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { UsageStats } from "@/components/dashboard/UsageStats";
 import { NewsFeed } from "@/components/dashboard/NewsFeed";
 import Settings from "@/pages/Settings";
+import BillingHistoryPage from "@/pages/BillingHistoryPage";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,6 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const navItems = [
   { icon: Home, label: "Home", href: "/dashboard" },
   { icon: Newspaper, label: "My Feed", href: "/dashboard/feed" },
+  { icon: History, label: "Billing History", href: "/dashboard/billing" },
   { icon: SettingsIcon, label: "Settings", href: "/dashboard/settings" },
 ];
 
@@ -364,6 +366,8 @@ export default function Dashboard() {
         <main className="flex-1 overflow-auto p-4 md:p-6">
           {isSettingsPage ? (
             <Settings />
+          ) : location.pathname.includes("/billing") ? (
+            <BillingHistoryPage />
           ) : (
             <>
               {user && (

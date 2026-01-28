@@ -46,6 +46,7 @@ class SolanaService:
             response = await self.rpc_client.get_transaction(sig, max_supported_transaction_version=0)
             
             if not response.value:
+                # Retry once after a short delay might be good, but for now just fail
                 return {"success": False, "message": "Transaction not found on chain"}
             
             tx_info = response.value
@@ -55,20 +56,29 @@ class SolanaService:
                 return {"success": False, "message": "Transaction failed on chain"}
                 
             # Verify recipient and amount
-            # This logic needs to parse the instruction data or balance changes.
-            # Simpler approach: check pre/post balances of the merchant wallet.
-            
             if not self.merchant_wallet:
                 return {"success": False, "message": "Merchant wallet not configured"}
 
             merchant_pubkey = Pubkey.from_string(self.merchant_wallet)
+            
+            # Check pre/post balances to confirm transfer to merchant
+            # We need to find the account index for the merchant wallet
             account_keys = tx_info.transaction.message.account_keys
             
-            # Find index of merchant wallet
-            try:
-                merchant_index = account_keys.index(merchant_pubkey)
-            except ValueError:
-                return {"success": False, "message": "Merchant wallet not involved in transaction"}
+            # In newer transaction versions, account_keys might be different (lookup tables etc), 
+            # but for standard transfers it usually works directly. 
+            # However, solders MessageV0 vs MessageLegacy differences exist.
+            # A more robust way using meta.post_balances/pre_balances mapping:
+
+            # We iterate through account keys to find our merchant wallet
+            merchant_index = -1
+            for idx, key in enumerate(account_keys):
+                if key == merchant_pubkey:
+                    merchant_index = idx
+                    break
+            
+            if merchant_index == -1:
+                 return {"success": False, "message": "Merchant wallet not involved in transaction"}
 
             pre_balance = tx_info.meta.pre_balances[merchant_index]
             post_balance = tx_info.meta.post_balances[merchant_index]
@@ -76,13 +86,15 @@ class SolanaService:
             received_lamports = post_balance - pre_balance
             received_sol = received_lamports / 1_000_000_000
             
-            # Allow small float difference
-            if received_sol >= amount_sol - 0.0001:
+            # Check if received amount is sufficient (allow small dust difference for float precision if needed, though lamports are exact)
+            # floating point comparison
+            if received_sol >= amount_sol - 0.000005: 
                 return {"success": True, "message": "Transaction verified"}
             else:
                 return {"success": False, "message": f"Insufficient amount. Received {received_sol} SOL, expected {amount_sol} SOL"}
                 
         except Exception as e:
+            print(f"Solana Verification Error: {e}")
             return {"success": False, "message": f"Verification error: {str(e)}"}
 
     async def generate_payment_intent(self, user_id: uuid.UUID, amount_sol: float) -> Dict[str, str]:

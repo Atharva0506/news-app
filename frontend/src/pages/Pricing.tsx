@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { motion } from "framer-motion";
 import { Check, Sparkles, Loader2, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,6 +76,10 @@ export default function Pricing() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null); // Plan Name
   const navigate = useNavigate();
 
+  // Wallet Adapter Hooks
+  const { connection } = useConnection();
+  const { publicKey, sendTransaction } = useWallet();
+
   const handleSubscribe = async (plan: typeof plans[0]) => {
     if (!user) {
       toast.error("Please login first");
@@ -86,28 +93,60 @@ export default function Pricing() {
 
     setIsProcessing(plan.name);
     try {
-      // 1. Create Intent
-      // For simulation, we create a payment intent (returns address & reference)
       const amount = plan.monthlyPrice;
       const intent = await api.payments.createIntent(amount);
 
-      // 2. Simulate Wallet Interaction (TEST MODE)
       if (intent.mode === "TEST") {
-        toast.info("Test Mode: Simulating Wallet Signature...");
-        await new Promise(r => setTimeout(r, 2000)); // Fake delay
+        toast.info("Test Mode: Simulating Signature...");
+        await new Promise(r => setTimeout(r, 2000));
+        const signature = intent.reference;
 
-        const signature = intent.reference; // In test mode, ref is valid sig
+        toast.info("Verifying...");
+        await api.payments.verify({ transaction_signature: signature, amount, sender_address: "TEST_WALLET" });
 
-        // 3. Verify
-        toast.info("Verifying Transaction...");
-        await api.payments.verify({ transaction_signature: signature, amount });
-
-        // 4. Refresh & Success
         await refreshProfile();
-        toast.success(`Successfully subscribed to ${plan.name}!`);
+        toast.success(`Subscribed to ${plan.name} (Test Mode)!`);
         navigate("/dashboard");
       } else {
-        toast.warning("Real Solana Mode not fully accessible without Wallet Adapter. Switch Backend to TEST mode.");
+        // REAL / DEVNET MODE
+        if (!publicKey) {
+          toast.error("Please connect your wallet first!");
+          return;
+        }
+
+        try {
+          const transaction = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: new PublicKey(intent.address),
+              lamports: amount * LAMPORTS_PER_SOL
+            })
+          );
+
+          const { blockhash } = await connection.getLatestBlockhash();
+          transaction.recentBlockhash = blockhash;
+          transaction.feePayer = publicKey;
+
+          const signature = await sendTransaction(transaction, connection);
+
+          toast.info("Transaction sent. Confirming...");
+          await connection.confirmTransaction(signature, "confirmed");
+
+          toast.info("Verifying with backend...");
+          await api.payments.verify({
+            transaction_signature: signature,
+            amount,
+            sender_address: publicKey.toString()
+          });
+
+          await refreshProfile();
+          toast.success(`Subscribed to ${plan.name}!`);
+          navigate("/dashboard");
+
+        } catch (err: any) {
+          console.error("Solana Error:", err);
+          toast.error("Transaction failed: " + err.message);
+        }
       }
 
     } catch (error: any) {
@@ -137,9 +176,12 @@ export default function Pricing() {
             <h1 className="text-4xl sm:text-5xl font-bold mb-4">
               Choose your plan
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-6">
               Start free and scale as you grow. No hidden fees, cancel anytime.
             </p>
+            <div className="flex justify-center">
+              <WalletMultiButton />
+            </div>
           </motion.div>
 
           {/* Billing Toggle */}

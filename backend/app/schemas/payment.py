@@ -15,12 +15,14 @@ class PaymentIntentResponse(BaseModel):
 class PaymentVerify(BaseModel):
     transaction_signature: str
     amount: float
+    sender_address: Optional[str] = None
 
 class PaymentTransaction(BaseModel):
     id: UUID
     amount: float
     currency: str
     transaction_signature: str
+    sender_address: Optional[str] = None
     status: TransactionStatus
     created_at: datetime
     

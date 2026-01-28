@@ -24,6 +24,9 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        toast.error("AI limit reached. Please try again later.");
+      }
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
         response.status,
@@ -128,6 +131,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data)
     }),
-    history: () => fetchWithAuth("/payments/history"), // Endpoint might need to be created in backend if not exists, user demanded it in plan.
+    history: () => fetchWithAuth("/payments/history"),
   }
 };

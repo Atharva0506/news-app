@@ -36,6 +36,7 @@ class PaymentTransaction(Base):
     
     # Validation info
     transaction_signature: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    sender_address: Mapped[str] = mapped_column(String, nullable=True)
     status: Mapped[TransactionStatus] = mapped_column(SqEnum(TransactionStatus), default=TransactionStatus.PENDING)
     
     # Test mode specific

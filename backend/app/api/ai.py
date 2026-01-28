@@ -104,8 +104,9 @@ async def process_article(
             yield f"data: {json.dumps({'status': 'complete', 'article': final_data})}\n\n"
             
         except Exception as e:
-            error_msg = handle_ai_error(e)
-            yield f"data: {json.dumps({'status': 'error', 'message': error_msg})}\n\n"
+            status_code, detail = handle_ai_error(e)
+            # For streaming, we yield the error structure
+            yield f"data: {json.dumps({'status': 'error', 'error_code': detail.get('error_code'), 'message': detail.get('message')})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -135,7 +136,8 @@ async def explain_article(
     try:
         explanation = await chain.ainvoke({"content": content})
     except Exception as e:
-        raise HTTPException(status_code=503, detail=handle_ai_error(e))
+        status_code, detail = handle_ai_error(e)
+        raise HTTPException(status_code=status_code, detail=detail)
     
     log = AIUsageLog(
         user_id=current_user.id,
@@ -168,7 +170,8 @@ async def ask_ai(
     try:
         answer = await chain.ainvoke({"context": combined_context, "question": question})
     except Exception as e:
-        raise HTTPException(status_code=503, detail=handle_ai_error(e))
+        status_code, detail = handle_ai_error(e)
+        raise HTTPException(status_code=status_code, detail=detail)
     
     log = AIUsageLog(
         user_id=current_user.id,
@@ -195,7 +198,7 @@ async def check_ai_limit(db: AsyncSession, user_id: Any):
     
     LIMIT = 5 
     if count >= LIMIT:
-        raise HTTPException(status_code=429, detail=f"Daily AI limit reached ({LIMIT}/{LIMIT}). Upgrade to Premium for unlimited access.")
+        raise HTTPException(status_code=429, detail={"error_code": "AI_RATE_LIMIT", "message": f"Daily AI limit reached ({LIMIT}/{LIMIT}). Upgrade to Premium for unlimited access."})
 
 @router.post("/compare")
 async def compare_articles(
@@ -220,7 +223,8 @@ async def compare_articles(
     try:
         comparison = await chain.ainvoke({"text": combined_text})
     except Exception as e:
-         raise HTTPException(status_code=503, detail=handle_ai_error(e))
+         status_code, detail = handle_ai_error(e)
+         raise HTTPException(status_code=status_code, detail=detail)
     
     log = AIUsageLog(
         user_id=current_user.id,
@@ -230,6 +234,8 @@ async def compare_articles(
     db.add(log)
     await db.commit()
     
+    return {"comparison": comparison}
+
     return {"comparison": comparison}
 
 @router.post("/feed/summary")
@@ -271,14 +277,22 @@ async def summarize_feed(
         return {"summary": summary}
         
     except Exception as e:
-        raise HTTPException(status_code=503, detail=handle_ai_error(e))
+        status_code, detail = handle_ai_error(e)
+        raise HTTPException(status_code=status_code, detail=detail)
             
-def handle_ai_error(e: Exception) -> str:
+def handle_ai_error(e: Exception) -> tuple[int, dict]:
     msg = str(e)
-    if "quota" in msg.lower() or "429" in msg:
-        return "AI Service Quota Exceeded. Please try again later."
+    if "quota" in msg.lower() or "429" in msg or "resourceexhausted" in msg.lower():
+        return 429, {
+            "error_code": "AI_RATE_LIMIT",
+            "message": "AI limit reached. Please try again later."
+        }
     if "recitation" in msg.lower() or "safety" in msg.lower():
-         return "Content flagged by safety filters."
-    return f"AI Error: {msg}"
-# Update other endpoints to use try/except block
-    # ... (I need to update them individually or via decorator? I will do it inline for simplicity)
+         return 400, {
+            "error_code": "AI_SAFETY_FILTER",
+            "message": "Content flagged by safety filters."
+         }
+    return 503, {
+        "error_code": "AI_SERVICE_ERROR",
+        "message": f"AI Error: {msg}"
+    }

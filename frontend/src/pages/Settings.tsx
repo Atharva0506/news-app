@@ -15,6 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+// BillingHistory moved to dedicated page in Dashboard
 
 export default function Settings() {
     const { user } = useAuth();
@@ -210,6 +211,9 @@ export default function Settings() {
 
                     </CardContent>
                 </Card>
+
+                {/* Billing History */}
+                {/* Billing History moved to /dashboard/billing */}
             </div>
         </div>
     );

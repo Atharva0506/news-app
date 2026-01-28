@@ -49,6 +49,7 @@ async def verify_payment(
         user_id=current_user.id,
         amount=payload.amount,
         transaction_signature=payload.transaction_signature,
+        sender_address=payload.sender_address,
         status=TransactionStatus.COMPLETED
     )
     db.add(tx)
@@ -97,3 +98,23 @@ async def check_transaction_status(
          raise HTTPException(status_code=403, detail="Not authorized")
          
     return tx
+
+@router.get("/history", response_model=list[TransactionSchema])
+async def get_payment_history(
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user)
+) -> Any:
+    """
+    Get payment history for the current user
+    """
+    result = await db.execute(
+        select(PaymentTransaction)
+        .where(PaymentTransaction.user_id == current_user.id)
+        .order_by(PaymentTransaction.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    transactions = result.scalars().all()
+    return transactions
