@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, AlertCircle, Clock, TrendingUp, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 interface Article {
     id: string;
@@ -35,8 +36,14 @@ export function NewsFeed({
 }) {
     const [articles, setArticles] = useState<Article[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const { refreshProfile } = useAuth();
 
     useEffect(() => {
+        // Try to load from cache first for immediate display if available, 
+        // but still fetch fresh to ensure up-to-date if allowed.
+        // actually, we should just fetch, and if it fails, fallback.
+        // But for better UX, maybe we can show cached first? 
+        // Let's stick to "fallback on error" to ensure we try to get fresh news if possible.
         fetchNews();
     }, [filters.category, filters.sentiment, filters.search]);
 
@@ -45,8 +52,24 @@ export function NewsFeed({
         try {
             const data = await api.news.getFeed(filters);
             setArticles(data);
-        } catch (error) {
-            toast.error("Failed to load news feed");
+            // Cache the successful feed
+            localStorage.setItem("cached_feed", JSON.stringify(data));
+            await refreshProfile();
+        } catch (error: any) {
+            console.error(error);
+            // Fallback to cache
+            const cached = localStorage.getItem("cached_feed");
+            if (cached) {
+                setArticles(JSON.parse(cached));
+                // Only show "Limit reached" toast if that was the actual error
+                if (error.status === 403 || error.message.includes("limit")) {
+                    toast.info("Daily limit reached. Showing cached feed.");
+                } else {
+                    toast.warning("Could not fetch fresh news. Showing cached feed.");
+                }
+            } else {
+                toast.error(error.message || "Failed to load news feed");
+            }
         } finally {
             setIsLoading(false);
         }

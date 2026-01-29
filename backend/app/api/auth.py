@@ -1,6 +1,6 @@
 from datetime import timedelta
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -125,7 +125,7 @@ async def read_user_usage(
     """
     from sqlalchemy import func
     from app.models.payment import AIUsageLog
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
 
     # Total tokens
     result = await db.execute(
@@ -148,9 +148,36 @@ async def read_user_usage(
     )
     request_count = result_count.scalar() or 0
 
+    today = datetime.now(timezone.utc).date()
+    
+    news_available = False
+    summary_available = False
+    
+    if current_user.is_premium:
+        news_available = current_user.refresh_tokens > 0
+        summary_available = current_user.refresh_tokens > 0
+    else:
+        news_available = not current_user.last_news_refresh_date or current_user.last_news_refresh_date.date() < today
+        summary_available = not current_user.last_summary_refresh_date or current_user.last_summary_refresh_date.date() < today
+
     return {
         "total_tokens": total_tokens,
         "daily_tokens": daily_tokens,
         "request_count": request_count,
-        "limit_daily": 10000 if current_user.is_premium else 1000 # Example limits
+        "limit_daily": 10000 if current_user.is_premium else 1000,
+        "refresh_tokens": current_user.refresh_tokens,
+        "news_refresh_available": news_available,
+        "summary_refresh_available": summary_available
     }
+
+@router.delete("/me", status_code=204, response_class=Response)
+async def delete_user_me(
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+):
+    """
+    Delete own user account and all associated data.
+    """
+    await db.delete(current_user)
+    await db.commit()
+    return Response(status_code=204)

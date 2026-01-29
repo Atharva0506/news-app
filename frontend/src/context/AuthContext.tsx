@@ -9,6 +9,9 @@ interface User {
     full_name?: string;
     is_premium: boolean;
     premium_expiry?: string;
+    refresh_tokens: number;
+    last_news_refresh_date?: string;
+    last_summary_refresh_date?: string;
 }
 
 interface AuthContextType {

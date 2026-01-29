@@ -14,6 +14,7 @@ export function Navbar() {
     { href: "/", label: "Home" },
     { href: "/pricing", label: "Pricing" },
     { href: "/about", label: "About" },
+    { href: "/faq", label: "FAQ" },
     // Show Dashboard only if logged in
     ...(user ? [{ href: "/dashboard", label: "Dashboard" }] : []),
   ];

@@ -6,6 +6,7 @@ from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 
 from app.core.config import settings
 from app.services.ai_agents.state import AgentState
+from fastapi import HTTPException
 
 import os
 import asyncio
@@ -26,7 +27,7 @@ if not api_keys:
 
 llm_instances = [
     ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",
+        model="gemini-2.5-pro",
         google_api_key=key,
         temperature=0,
         convert_system_message_to_human=True,
@@ -75,7 +76,11 @@ async def call_llm_with_rotation(prompt, parser, input_data, config=None):
                 # Non-retriable error (e.g. invalid prompt)
                 raise e
     
-    raise Exception("Max retries reached for Gemini API rotation")
+    # Check if the last error was quota related
+    raise HTTPException(
+        status_code=429,
+        detail="AI Usage Limit Reached. Please try again later."
+    )
 
 async def collector_node(state: AgentState) -> Dict[str, Any]:
     """

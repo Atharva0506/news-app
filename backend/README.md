@@ -3,7 +3,7 @@
 A production-ready FastAPI backend for an AI-powered News Application.
 
 ## Features
-- **Authentication**: JWT & OAuth (GitHub/Google)
+- **Authentication**: JWT (Email/Password)
 - **AI Agents**: Multi-agent system (Collector, Classifier, Summarizer) using LangGraph
 - **Payments**: Solana subscription system (Test & Real modes)
 - **News Ingestion**: Dual-mode ingestion (Live API or Local Mock)
@@ -17,7 +17,7 @@ A production-ready FastAPI backend for an AI-powered News Application.
 ### 2. Setup
 ```bash
 # Start Databases
-docker compose up -d db redis
+docker compose up -d db
 
 # Install Dependencies
 python3 -m venv venv

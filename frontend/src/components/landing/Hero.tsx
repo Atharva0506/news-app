@@ -43,7 +43,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            AI-powered summaries, bias detection, and smart personalization. 
+            AI-powered summaries, bias detection, and smart personalization.
             Get the complete picture in seconds, not hours.
           </motion.p>
 
@@ -74,8 +74,8 @@ export function Hero() {
             className="grid grid-cols-3 gap-8 mt-16 max-w-lg mx-auto"
           >
             {[
-              { value: "50K+", label: "Active Users" },
-              { value: "1M+", label: "Articles Analyzed" },
+              { value: "100+", label: "Active Users" },
+              { value: "1000+", label: "Articles Analyzed" },
               { value: "99%", label: "Accuracy Rate" },
             ].map((stat, i) => (
               <div key={i} className="text-center">

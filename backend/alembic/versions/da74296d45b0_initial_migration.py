@@ -70,20 +70,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_news_articles_url'), 'news_articles', ['url'], unique=True)
-    op.create_table('oauth_accounts',
-    sa.Column('id', sa.Uuid(), nullable=False),
-    sa.Column('user_id', sa.Uuid(), nullable=False),
-    sa.Column('oauth_name', sa.String(), nullable=False),
-    sa.Column('access_token', sa.String(), nullable=False),
-    sa.Column('expires_at', sa.Integer(), nullable=True),
-    sa.Column('refresh_token', sa.String(), nullable=True),
-    sa.Column('account_id', sa.String(), nullable=False),
-    sa.Column('account_email', sa.String(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_oauth_accounts_account_id'), 'oauth_accounts', ['account_id'], unique=False)
-    op.create_index(op.f('ix_oauth_accounts_oauth_name'), 'oauth_accounts', ['oauth_name'], unique=False)
+
     op.create_table('payment_transactions',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('user_id', sa.Uuid(), nullable=False),
@@ -127,9 +114,7 @@ def downgrade() -> None:
     op.drop_table('user_preferences')
     op.drop_index(op.f('ix_payment_transactions_transaction_signature'), table_name='payment_transactions')
     op.drop_table('payment_transactions')
-    op.drop_index(op.f('ix_oauth_accounts_oauth_name'), table_name='oauth_accounts')
-    op.drop_index(op.f('ix_oauth_accounts_account_id'), table_name='oauth_accounts')
-    op.drop_table('oauth_accounts')
+
     op.drop_index(op.f('ix_news_articles_url'), table_name='news_articles')
     op.drop_table('news_articles')
     op.drop_table('ai_usage_logs')

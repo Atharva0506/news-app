@@ -69,6 +69,12 @@ export default function Pricing() {
       return;
     }
 
+    // 1. Check Wallet Connection
+    if (!publicKey || !connection) {
+      toast.error("Please connect your wallet to continue.");
+      return;
+    }
+
     setIsProcessing(plan.name);
     try {
       // 1. Create Payment Intent
@@ -242,7 +248,7 @@ export default function Pricing() {
                     }`}
                   variant={plan.popular ? "default" : "outline"}
                   onClick={() => handleSubscribe(plan)}
-                  disabled={isProcessing === plan.name}
+                  disabled={isProcessing === plan.name || (plan.monthlyPrice > 0 && !publicKey)}
                 >
                   {isProcessing === plan.name ? (
                     <>

@@ -254,6 +254,22 @@ async def summarize_feed(
     """
     Generate a summary of the user's current feed (Stateless Fetching).
     """
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).date()
+
+    if current_user.is_premium:
+        # Pro: Unlimited Refresh
+        pass
+    else:
+        # Free: Check Daily Limit
+        last_refresh = current_user.last_summary_refresh_date
+        if last_refresh and last_refresh.date() == today:
+             raise HTTPException(status_code=403, detail="Daily refresh limit reached. Upgrade to Pro for more refresh tokens.")
+        
+        current_user.last_summary_refresh_date = datetime.now(timezone.utc)
+        db.add(current_user)
+        await db.commit()
+
     if settings.NEWS_MODE == "TEST":
         await asyncio.sleep(2) # Simulate delay
         return {

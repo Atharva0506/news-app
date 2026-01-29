@@ -22,6 +22,11 @@ class UserInDBBase(UserBase):
     premium_expiry: Optional[datetime] = None
     created_at: datetime
     
+    # Usage Limits
+    refresh_tokens: int = 0
+    last_news_refresh_date: Optional[datetime] = None
+    last_summary_refresh_date: Optional[datetime] = None
+    
     model_config = ConfigDict(from_attributes=True)
 
 class User(UserInDBBase):

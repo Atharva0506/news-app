@@ -21,25 +21,18 @@ class User(Base):
     # Premium features
     is_premium: Mapped[bool] = mapped_column(Boolean, default=False)
     premium_expiry: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Usage Limits
+    refresh_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    last_news_refresh_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_summary_refresh_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    oauth_accounts: Mapped[List["OAuthAccount"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
     preferences: Mapped[Optional["UserPreference"]] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
-    ai_logs: Mapped[List["AIUsageLog"]] = relationship(back_populates="user")
-    transactions: Mapped[List["PaymentTransaction"]] = relationship(back_populates="user")
-    subscriptions: Mapped[List["Subscription"]] = relationship(back_populates="user")
+    ai_logs: Mapped[List["AIUsageLog"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    transactions: Mapped[List["PaymentTransaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    subscriptions: Mapped[List["Subscription"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
-class OAuthAccount(Base):
-    __tablename__ = "oauth_accounts"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    oauth_name: Mapped[str] = mapped_column(String, index=True, nullable=False) # google, github
-    access_token: Mapped[str] = mapped_column(String, nullable=False)
-    expires_at: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    refresh_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    account_id: Mapped[str] = mapped_column(String, index=True, nullable=False)
-    account_email: Mapped[str] = mapped_column(String, nullable=False)
-
-    user: Mapped["User"] = relationship(back_populates="oauth_accounts")

@@ -60,7 +60,7 @@ class Subscription(Base):
     end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     
-    transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("payment_transactions.id"), nullable=True)
+    transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("payment_transactions.id", ondelete="SET NULL"), nullable=True)
     
     user: Mapped["User"] = relationship(back_populates="subscriptions")
 

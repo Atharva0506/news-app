@@ -32,10 +32,25 @@ async def get_news_feed(
     import uuid
 
     # 1. Determine Fetch Parameters
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).date()
+
+    # Limit Logic
+    if current_user.is_premium:
+        # Pro: Unlimited Refresh
+        pass
+    else:
+        # Free: Check Daily Limit
+        last_refresh = current_user.last_news_refresh_date
+        if last_refresh and last_refresh.date() == today:
+             raise HTTPException(status_code=403, detail="Daily refresh limit reached. Upgrade to Pro for more refresh tokens.")
+        
+        current_user.last_news_refresh_date = datetime.now(timezone.utc)
+        db.add(current_user)
+        await db.commit()
+
     fetch_category = category
     fetch_keywords = search
-
-    # 3. Fetch Data Logic
     try:
         if fetch_keywords:
             # Check limits for keywords? Assuming 1 search for now based on first keyword or query

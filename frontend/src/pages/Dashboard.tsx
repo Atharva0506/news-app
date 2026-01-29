@@ -19,6 +19,22 @@ import BillingHistoryPage from "@/pages/BillingHistoryPage";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+
+const isSameDay = (d1?: string) => {
+  if (!d1) return false;
+  const date1 = new Date(d1);
+  const date2 = new Date();
+  return date1.getDate() === date2.getDate() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear();
+}
 
 const navItems = [
   { icon: Home, label: "Home", href: "/dashboard" },
@@ -30,6 +46,7 @@ const navItems = [
 import { RefreshCw } from "lucide-react";
 
 const FeedSummary = () => {
+  const { user, refreshProfile } = useAuth();
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -52,8 +69,17 @@ const FeedSummary = () => {
       .then(data => {
         setSummary(data.summary);
         localStorage.setItem(CACHE_KEY, data.summary);
+        refreshProfile();
       })
-      .catch(() => setSummary(null))
+      .catch((err) => {
+        if (err.status === 403 || err.message?.includes("limit")) {
+          toast.info("Daily limit reached. Showing existing summary.");
+          // Do not clear summary if it exists
+        } else {
+          setSummary(null);
+          toast.error("Failed to generate summary");
+        }
+      })
       .finally(() => setLoading(false));
   };
 
@@ -67,16 +93,32 @@ const FeedSummary = () => {
           <Sparkles className="h-4 w-4 text-accent" />
           Daily Briefing
         </h3>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={generateSummary}
-          disabled={loading}
-          title="Refresh Briefing"
-        >
-          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0}> {/* Span needed for disabled button tooltip trigger */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                  onClick={generateSummary}
+                  disabled={loading || (user && !user.is_premium && isSameDay(user.last_summary_refresh_date))}
+                >
+                  <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {user?.is_premium
+                  ? "Unlimited Refresh (Premium)"
+                  : user && !user.is_premium && isSameDay(user.last_summary_refresh_date)
+                    ? "Upgrade to Pro to refresh multiple times."
+                    : "Refresh Briefing"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       <p className="text-sm leading-relaxed text-muted-foreground">
         {loading ? "Refreshing..." : summary}
@@ -360,13 +402,36 @@ ${data.article.summary_detail || "N/A"}
           </div>
 
           <div className="flex items-center gap-3">
+            {!user?.is_premium && (
+              <Badge variant="outline" className="hidden md:flex text-xs border-accent/20 text-muted-foreground">
+                Free plan: 1x per day
+              </Badge>
+            )}
             <ThemeToggle />
-            <Button
-              variant="outline" size="sm" onClick={handleRefreshFeed} className="gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0}>
+                    <Button
+                      variant="outline" size="sm" onClick={handleRefreshFeed} className="gap-2 disabled:opacity-50"
+                      disabled={(user && !user.is_premium && isSameDay(user.last_news_refresh_date))}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      <span className="hidden sm:inline">Refresh</span>
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {user?.is_premium
+                      ? "Unlimited Refresh (Premium)"
+                      : user && !user.is_premium && isSameDay(user.last_news_refresh_date)
+                        ? "Upgrade to Pro to refresh multiple times."
+                        : "Refresh Feed"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button
               variant="outline" size="sm" onClick={() => setAiPanelOpen(true)} className="gap-2"
             >

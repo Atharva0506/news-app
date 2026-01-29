@@ -25,13 +25,34 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 
     if (!response.ok) {
       if (response.status === 429) {
-        toast.error("AI limit reached. Please try again later.");
+        // Try to parse retry delay from header or body if possible, but user asked for specific message structure.
+        // Google's 429 might have details in body.
+        let retryMsg = "";
+        try {
+          const errJson = await response.clone().json();
+          // If retryDelay is in the error details (from previous logs it was parsed in backend but here we get the backend's HTTPException detail or the raw error if we didn't catch it?)
+          // We changed backend to raise HTTPException(429, detail="AI Usage Limit Reached...")
+          // But if we want to show "Try again in X seconds", we need to pass that info.
+          // For now, let's just use the generic message requested.
+          // "You’ve hit today’s free AI usage limit. Please try again later or upgrade to Pro."
+        } catch (e) { }
+
+        toast.error("You’ve hit today’s free AI usage limit. Please try again later or upgrade to Pro.", {
+          description: "AI Limit Reached"
+        });
+        // We can throw here or let it fall through to the error throw below?
+        // Throwing keeps control flow consistent.
+        throw new ApiError(429, "AI Usage Limit Reached");
       }
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
         response.status,
         errorData.detail || "An unexpected error occurred"
       );
+    }
+
+    if (response.status === 204) {
+      return {};
     }
 
     return response.json();
@@ -101,6 +122,7 @@ export const api = {
     me: () => fetchWithAuth("/auth/me"),
     usage: () => fetchWithAuth("/auth/me/usage"),
     refresh: (token: string) => fetchWithAuth(`/auth/refresh?refresh_token=${token}`, { method: "POST" }),
+    deleteAccount: () => fetchWithAuth("/auth/me", { method: "DELETE" }),
   },
   news: {
     getFeed: (filters?: { category?: string; sentiment?: string; search?: string }) => {
