@@ -35,32 +35,76 @@ async def get_news_feed(
     fetch_category = category
     fetch_keywords = search
 
-    # 2. Apply User Preferences as Default 
-    if not category and not search:
-        prefs_result = await db.execute(select(UserPreference).where(UserPreference.user_id == current_user.id))
-        prefs = prefs_result.scalars().first()
-        
-        if prefs and prefs.favorite_categories:
-            # Use the first category as primary filter for simplicity with Currents API (filtering by 1 supported)
-            # Or iterate? Currents API supports comma separated? It seems to support one 'category' param usually or multiple?
-            # Safe bet: use the first one.
-            fetch_category = prefs.favorite_categories[0]
-            
-    # 3. Fetch Data
+    # 3. Fetch Data Logic
     try:
         if fetch_keywords:
+            # Check limits for keywords? Assuming 1 search for now based on first keyword or query
             raw_news = await currents_service.fetch_search_news(keywords=fetch_keywords, category=fetch_category)
+        
+        elif category:
+            # Explicit category request overrides prefs
+            raw_news = await currents_service.fetch_latest_news(category=category)
+            
         else:
-            raw_news = await currents_service.fetch_latest_news(category=fetch_category)
+            # Use Preferences
+            prefs_result = await db.execute(select(UserPreference).where(UserPreference.user_id == current_user.id))
+            prefs = prefs_result.scalars().first()
+            
+            preferred_categories = prefs.favorite_categories if (prefs and prefs.favorite_categories) else []
+            
+            # Limit enforcement (redundant check but safe)
+            max_cats = 5 if current_user.is_premium else 1
+            preferred_categories = preferred_categories[:max_cats]
+            
+            if not preferred_categories:
+                # No prefs, fetch general
+                raw_news = await currents_service.fetch_latest_news()
+            else:
+                # Fetch all categories
+                # Note: This does sequential fetching for simplicity. Parallel gather could be better for perf.
+                all_articles = []
+                # Use a set to avoid duplicates if API returns overlapping content (unlikely with different cats but possible)
+                seen_ids = set()
+                
+                # Simple optimization: If only 1 category, just fetch it
+                if len(preferred_categories) == 1:
+                     raw_news = await currents_service.fetch_latest_news(category=preferred_categories[0])
+                else:
+                    # Parallel fetch is better here
+                    import asyncio
+                    tasks = [currents_service.fetch_latest_news(category=cat) for cat in preferred_categories]
+                    results = await asyncio.gather(*tasks, return_exceptions=True)
+                    
+                    raw_news = []
+                    for res in results:
+                        if isinstance(res, list):
+                            raw_news.extend(res)
+                        else:
+                            print(f"Error fetching category: {res}")
+                            
+           # Deduplicate based on 'id' if available or 'url'
     except Exception as e:
         print(f"Feed fetch error: {e}")
         raw_news = []
 
-    # 4. Filter by Sentiment (Client side filtering essentially, since API might not support it perfectly or we use local NLP)
-    # Since we are stateless, we can't easily filter by sentiment without analyzing first. 
-    # Current implementation of `fetch` returns raw dicts. 
-    # If user asks for sentiment, we might have to skip it or return all.
-    # We'll skip complex sentiment filtering here to keep it fast/stateless as requested.
+    # Deduplicate mechanism
+    unique_news = []
+    seen = set()
+    for item in raw_news:
+        uid = item.get("id") or item.get("url")
+        if uid and uid not in seen:
+            seen.add(uid)
+            unique_news.append(item)
+    
+    # Sort by published date descending (Mock data might not have dates, so handle safely)
+    def parse_date(x):
+        try:
+             return datetime.strptime(x.get("published"), "%Y-%m-%d %H:%M:%S %z")
+        except:
+             return datetime.min.replace(tzinfo=None) # Fallback
+
+    unique_news.sort(key=parse_date, reverse=True)
+    raw_news = unique_news
 
     # 5. Transform to Schema
     articles = []

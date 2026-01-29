@@ -56,7 +56,19 @@ export default function Settings() {
 
     const toggleCategory = (cat: string) => {
         const current = preferences.favorite_categories;
-        const updated = current.includes(cat)
+        const isSelected = current.includes(cat);
+        const maxCategories = user?.is_premium ? 5 : 1;
+
+        if (!isSelected && current.length >= maxCategories) {
+            toast.error(
+                user?.is_premium
+                    ? "Pro users can select up to 5 categories."
+                    : "Free users can select only 1 category. Upgrade to Pro for more!"
+            );
+            return;
+        }
+
+        const updated = isSelected
             ? current.filter(c => c !== cat)
             : [...current, cat];
         savePreferences({ ...preferences, favorite_categories: updated });
@@ -152,7 +164,12 @@ export default function Settings() {
 
                         {/* Categories */}
                         <div>
-                            <h3 className="text-sm font-medium mb-3">Favorite Categories</h3>
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="text-sm font-medium">Favorite Categories</h3>
+                                <span className="text-xs text-muted-foreground">
+                                    Selected: {preferences.favorite_categories.length}/{user?.is_premium ? 5 : 1}
+                                </span>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                                 {categories.map(cat => (
                                     <Badge

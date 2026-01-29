@@ -41,53 +41,116 @@ class SolanaService:
             # Convert string signature to Signature object
             sig = Signature.from_string(signature)
             
-            # Fetch transaction details
-            # We use get_transaction with max_supported_transaction_version=0
-            response = await self.rpc_client.get_transaction(sig, max_supported_transaction_version=0)
+            # Fetch transaction details with retry
+            import asyncio
+            import json
+            max_retries = 10
+            response = None
             
-            if not response.value:
-                # Retry once after a short delay might be good, but for now just fail
-                return {"success": False, "message": "Transaction not found on chain"}
+            for attempt in range(max_retries):
+                try:
+                     response = await self.rpc_client.get_transaction(sig, max_supported_transaction_version=0)
+                     if response.value:
+                         break
+                except Exception as e:
+                    print(f"Retry {attempt} failed: {e}")
+                    pass
+                
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2) # Wait 2 seconds before retry
+            
+            if not response or not response.value:
+                return {"success": False, "message": "Transaction not found on chain after retries"}
             
             tx_info = response.value
             
-            # Basic checks: error check
-            if tx_info.meta.err:
-                return {"success": False, "message": "Transaction failed on chain"}
+            # DEBUG: Print structure to logs
+            try:
+                print(f"DEBUG TX INFO TYPE: {type(tx_info)}")
+                print(f"DEBUG TX INFO DIR: {dir(tx_info)}")
+            except:
+                pass
+
+            # Robustly access meta and transaction
+            # In some solders versions, it might be via .meta or ["meta"] if it's a dict (unlikely for object)
+            # Or json parsing
+            
+            meta = None
+            transaction = None
+            
+            if hasattr(tx_info, "meta"):
+                meta = tx_info.meta
+            elif hasattr(tx_info, "result") and hasattr(tx_info.result, "meta"): # Sometimes wrapped
+                meta = tx_info.result.meta
                 
+            if hasattr(tx_info, "transaction"):
+                transaction = tx_info.transaction
+            
+            # Convert to JSON/Dict if direct access fails or for easier parsing
+            if meta is None:
+                # Try converting to json string then dict as fallback
+                try:
+                    tx_json = json.loads(tx_info.to_json())
+                    meta = tx_json.get("meta")
+                    transaction = tx_json.get("transaction")
+                except:
+                    pass
+
+            if not meta:
+                return {"success": False, "message": "Transaction metadata missing"}
+            
+            # Check for error
+            # If meta is a dict now (from json)
+            if isinstance(meta, dict):
+                if meta.get("err"):
+                     return {"success": False, "message": "Transaction failed on chain"}
+                pre_balances = meta.get("preBalances", [])
+                post_balances = meta.get("postBalances", [])
+            else:
+                # Object access
+                if meta.err:
+                    return {"success": False, "message": "Transaction failed on chain"}
+                pre_balances = meta.pre_balances
+                post_balances = meta.post_balances
+
             # Verify recipient and amount
             if not self.merchant_wallet:
                 return {"success": False, "message": "Merchant wallet not configured"}
 
-            merchant_pubkey = Pubkey.from_string(self.merchant_wallet)
+            merchant_pubkey_str = self.merchant_wallet
             
-            # Check pre/post balances to confirm transfer to merchant
-            # We need to find the account index for the merchant wallet
-            account_keys = tx_info.transaction.message.account_keys
-            
-            # In newer transaction versions, account_keys might be different (lookup tables etc), 
-            # but for standard transfers it usually works directly. 
-            # However, solders MessageV0 vs MessageLegacy differences exist.
-            # A more robust way using meta.post_balances/pre_balances mapping:
+            # Find account index
+            # If transaction is dict
+            account_keys = []
+            if isinstance(transaction, dict):
+                 message = transaction.get("message", {})
+                 account_keys = message.get("accountKeys", [])
+                 # Account keys in JSON might be strings or objects
+                 account_keys = [k if isinstance(k, str) else k.get("pubkey") for k in account_keys]
+            else:
+                 # Object access
+                 # solders.message.Message or MessageV0
+                 msg = transaction.message
+                 account_keys = [str(k) for k in msg.account_keys]
 
-            # We iterate through account keys to find our merchant wallet
             merchant_index = -1
             for idx, key in enumerate(account_keys):
-                if key == merchant_pubkey:
+                if key == merchant_pubkey_str:
                     merchant_index = idx
                     break
             
             if merchant_index == -1:
                  return {"success": False, "message": "Merchant wallet not involved in transaction"}
 
-            pre_balance = tx_info.meta.pre_balances[merchant_index]
-            post_balance = tx_info.meta.post_balances[merchant_index]
+            if merchant_index >= len(pre_balances) or merchant_index >= len(post_balances):
+                 return {"success": False, "message": "Balance information missing for merchant"}
+
+            pre_balance = pre_balances[merchant_index]
+            post_balance = post_balances[merchant_index]
             
             received_lamports = post_balance - pre_balance
             received_sol = received_lamports / 1_000_000_000
             
-            # Check if received amount is sufficient (allow small dust difference for float precision if needed, though lamports are exact)
-            # floating point comparison
             if received_sol >= amount_sol - 0.000005: 
                 return {"success": True, "message": "Transaction verified"}
             else:
@@ -95,6 +158,8 @@ class SolanaService:
                 
         except Exception as e:
             print(f"Solana Verification Error: {e}")
+            import traceback
+            traceback.print_exc()
             return {"success": False, "message": f"Verification error: {str(e)}"}
 
     async def generate_payment_intent(self, user_id: uuid.UUID, amount_sol: float) -> Dict[str, str]:

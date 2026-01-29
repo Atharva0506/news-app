@@ -12,6 +12,7 @@ class TransactionStatus(str, enum.Enum):
     PENDING = "pending"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 class AIUsageLog(Base):
     __tablename__ = "ai_usage_logs"
@@ -35,9 +36,11 @@ class PaymentTransaction(Base):
     currency: Mapped[str] = mapped_column(String, default="SOL")
     
     # Validation info
-    transaction_signature: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    # Signature is nullable initially (created at intent stage), populated after signing
+    transaction_signature: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True, nullable=True)
     sender_address: Mapped[str] = mapped_column(String, nullable=True)
     status: Mapped[TransactionStatus] = mapped_column(SqEnum(TransactionStatus), default=TransactionStatus.PENDING)
+    plan: Mapped[str] = mapped_column(String, default="pro", nullable=True)
     
     # Test mode specific
     is_test: Mapped[bool] = mapped_column(Boolean, default=False)

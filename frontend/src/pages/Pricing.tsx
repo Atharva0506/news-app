@@ -19,7 +19,6 @@ const plans = [
     id: "free",
     description: "Perfect for trying out NewsAI",
     monthlyPrice: 0,
-    yearlyPrice: 0,
     displayPrice: "0 SOL",
     features: [
       "10 AI summaries per day",
@@ -35,12 +34,11 @@ const plans = [
     id: "pro",
     description: "For individuals who want more",
     monthlyPrice: 0.5,
-    yearlyPrice: 5,
     displayPrice: "0.5 SOL",
     features: [
       "Unlimited AI summaries",
       "Advanced bias detection",
-      "All news categories",
+      "Up to 5 news categories",
       "Real-time notifications",
       "AI Q&A assistant",
       "Multi-agent analysis",
@@ -49,29 +47,9 @@ const plans = [
     cta: "Pay with Solana",
     popular: true,
   },
-  {
-    name: "Team",
-    id: "team",
-    description: "For teams and organizations",
-    monthlyPrice: 1.5,
-    yearlyPrice: 15,
-    displayPrice: "1.5 SOL",
-    features: [
-      "Everything in Pro",
-      "Up to 10 team members",
-      "Team dashboards",
-      "API access",
-      "Custom integrations",
-      "Dedicated account manager",
-      "SSO & advanced security",
-    ],
-    cta: "Contact Sales",
-    popular: false,
-  },
 ];
 
 export default function Pricing() {
-  const [isYearly, setIsYearly] = useState(false);
   const { user, refreshProfile } = useAuth();
   const [isProcessing, setIsProcessing] = useState<string | null>(null); // Plan Name
   const navigate = useNavigate();
@@ -93,8 +71,10 @@ export default function Pricing() {
 
     setIsProcessing(plan.name);
     try {
+      // 1. Create Payment Intent
       const amount = plan.monthlyPrice;
-      const intent = await api.payments.createIntent(amount);
+      // Pass the plan ID to the backend
+      const intent = await api.payments.createIntent(amount, plan.id);
 
       if (intent.mode === "TEST") {
         toast.info("Test Mode: Simulating Signature...");
@@ -102,15 +82,21 @@ export default function Pricing() {
         const signature = intent.reference;
 
         toast.info("Verifying...");
-        await api.payments.verify({ transaction_signature: signature, amount, sender_address: "TEST_WALLET" });
+        await api.payments.verify({
+          transaction_signature: signature,
+          amount,
+          sender_address: "TEST_WALLET",
+          payment_id: intent.payment_id // Pass payment ID for verification
+        });
 
         await refreshProfile();
         toast.success(`Subscribed to ${plan.name} (Test Mode)!`);
         navigate("/dashboard");
       } else {
         // REAL / DEVNET MODE
-        if (!publicKey) {
-          toast.error("Please connect your wallet first!");
+        if (!publicKey || !connection) {
+          // Double check connection state
+          toast.error("Wallet not connected. Please select a wallet.");
           return;
         }
 
@@ -127,16 +113,40 @@ export default function Pricing() {
           transaction.recentBlockhash = blockhash;
           transaction.feePayer = publicKey;
 
-          const signature = await sendTransaction(transaction, connection);
+          // Catch Wallet Signing Errors specifically
+          let signature;
+          try {
+            signature = await sendTransaction(transaction, connection);
+          } catch (walletErr: any) {
+            if (walletErr.message?.includes("User rejected") || walletErr.name === "WalletSignTransactionError") {
+              console.log("User rejected signature");
+              toast.warning("Transaction cancelled by user");
+              // Optional: Call backend to cancel the intent?
+              await api.payments.cancel(intent.payment_id);
+              return;
+            }
+            if (walletErr.message?.includes("Plugin Closed")) {
+              toast.error("Wallet popup closed. Please try again.");
+              return;
+            }
+            throw walletErr; // Re-throw other errors
+          }
 
-          toast.info("Transaction sent. Confirming...");
-          await connection.confirmTransaction(signature, "confirmed");
+          toast.info("Transaction sent. Waiting for confirmation...");
+
+          // Use a custom confirming toast or state
+          const confirmation = await connection.confirmTransaction(signature, "confirmed");
+
+          if (confirmation.value.err) {
+            throw new Error("Transaction failed on chain: " + JSON.stringify(confirmation.value.err));
+          }
 
           toast.info("Verifying with backend...");
           await api.payments.verify({
             transaction_signature: signature,
             amount,
-            sender_address: publicKey.toString()
+            sender_address: publicKey.toString(),
+            payment_id: intent.payment_id
           });
 
           await refreshProfile();
@@ -145,12 +155,14 @@ export default function Pricing() {
 
         } catch (err: any) {
           console.error("Solana Error:", err);
-          toast.error("Transaction failed: " + err.message);
+          toast.error("Transaction failed: " + (err.message || "Unknown error"));
+          // Try to record failure if we have a payment_id? (Maybe not needed if we didn't get a signature)
         }
       }
 
     } catch (error: any) {
-      toast.error(error.message || "Payment failed");
+      console.error("Payment Flow Error:", error);
+      toast.error(error.message || "Payment initialization failed");
     } finally {
       setIsProcessing(null);
     }
@@ -179,44 +191,26 @@ export default function Pricing() {
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-6">
               Start free and scale as you grow. No hidden fees, cancel anytime.
             </p>
+
+            {/* Solana Network Notice */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm font-medium mb-6">
+              <span>⚠️ Payments are currently on Solana Devnet (testing network). Do not use real SOL.</span>
+            </div>
+
             <div className="flex justify-center">
               <WalletMultiButton />
             </div>
           </motion.div>
 
-          {/* Billing Toggle */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex items-center justify-center gap-4 mb-12"
-          >
-            <span className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Monthly
-            </span>
-            <Switch
-              checked={isYearly}
-              onCheckedChange={setIsYearly}
-            />
-            <span className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Yearly
-            </span>
-            {isYearly && (
-              <span className="ml-2 px-2 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">
-                Save 20%
-              </span>
-            )}
-          </motion.div>
-
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {plans.map((plan, index) => (
               <motion.div
                 key={plan.name}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                className={`relative p-6 rounded-2xl border ${plan.popular
+                className={`relative p-8 rounded-3xl border ${plan.popular
                   ? 'border-accent bg-gradient-card shadow-glow'
                   : 'border-border bg-card shadow-soft'
                   }`}
@@ -230,21 +224,21 @@ export default function Pricing() {
                 )}
 
                 <div className="mb-6">
-                  <h3 className="text-xl font-semibold mb-1">{plan.name}</h3>
+                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                   <p className="text-sm text-muted-foreground">{plan.description}</p>
                 </div>
 
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">
+                <div className="mb-8">
+                  <span className="text-5xl font-bold">
                     {plan.displayPrice}
                   </span>
                   <span className="text-muted-foreground ml-2">/month</span>
                 </div>
 
                 <Button
-                  className={`w-full mb-6 ${plan.popular
+                  className={`w-full mb-8 h-12 text-base ${plan.popular
                     ? 'bg-accent hover:bg-accent/90 text-accent-foreground'
-                    : ''
+                    : 'h-12'
                     }`}
                   variant={plan.popular ? "default" : "outline"}
                   onClick={() => handleSubscribe(plan)}
@@ -252,7 +246,7 @@ export default function Pricing() {
                 >
                   {isProcessing === plan.name ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Processing...
                     </>
                   ) : (
@@ -281,7 +275,7 @@ export default function Pricing() {
           >
             <p className="text-muted-foreground">
               Have questions?{" "}
-              <a href="#" className="text-accent hover:underline">
+              <a href="/faq" className="text-accent hover:underline">
                 Check our FAQ
               </a>{" "}
               or{" "}

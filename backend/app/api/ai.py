@@ -11,11 +11,12 @@ from app.models.user import User
 from app.models.news import UserPreference, NewsCategory # Kept for prefs
 from app.models.payment import AIUsageLog
 from app.services.ai_agents.graph import news_graph
-from app.services.ai_agents.nodes import llm
+from app.services.ai_agents.nodes import call_llm_with_rotation
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from sqlalchemy import func
 import json
+import asyncio
 
 router = APIRouter()
 
@@ -131,10 +132,13 @@ async def explain_article(
         template = "Explain the following article like I am 5 years old (ELI5). Content: {content}"
         
     prompt = ChatPromptTemplate.from_template(template)
-    chain = prompt | llm | StrOutputParser()
     
     try:
-        explanation = await chain.ainvoke({"content": content})
+        explanation = await call_llm_with_rotation(
+            prompt, 
+            StrOutputParser(), 
+            {"content": content}
+        )
     except Exception as e:
         status_code, detail = handle_ai_error(e)
         raise HTTPException(status_code=status_code, detail=detail)
@@ -165,10 +169,13 @@ async def ask_ai(
     prompt = ChatPromptTemplate.from_template(
         "Answer the user's question based on the provided context.\n\nContext:\n{context}\n\nQuestion: {question}"
     )
-    chain = prompt | llm | StrOutputParser()
     
     try:
-        answer = await chain.ainvoke({"context": combined_context, "question": question})
+        answer = await call_llm_with_rotation(
+            prompt,
+            StrOutputParser(),
+            {"context": combined_context, "question": question}
+        )
     except Exception as e:
         status_code, detail = handle_ai_error(e)
         raise HTTPException(status_code=status_code, detail=detail)
@@ -218,10 +225,13 @@ async def compare_articles(
     prompt = ChatPromptTemplate.from_template(
         "Compare and contrast the following articles. Highlight key differences and similarities.\n\n{text}"
     )
-    chain = prompt | llm | StrOutputParser()
     
     try:
-        comparison = await chain.ainvoke({"text": combined_text})
+        comparison = await call_llm_with_rotation(
+            prompt,
+            StrOutputParser(),
+            {"text": combined_text}
+        )
     except Exception as e:
          status_code, detail = handle_ai_error(e)
          raise HTTPException(status_code=status_code, detail=detail)
@@ -236,8 +246,6 @@ async def compare_articles(
     
     return {"comparison": comparison}
 
-    return {"comparison": comparison}
-
 @router.post("/feed/summary")
 async def summarize_feed(
     db: AsyncSession = Depends(deps.get_db),
@@ -246,6 +254,12 @@ async def summarize_feed(
     """
     Generate a summary of the user's current feed (Stateless Fetching).
     """
+    if settings.NEWS_MODE == "TEST":
+        await asyncio.sleep(2) # Simulate delay
+        return {
+            "summary": "This is a mock daily briefing summary generated in TEST mode. The AI agents have analyzed the latest test headlines and identified key trends in technology and finance. The market is showing positive momentum, and new AI tools are being released rapidly. (Mock Data)"
+        }
+
     from app.services.currents import currents_service
     
     # Prefs
@@ -271,9 +285,12 @@ async def summarize_feed(
         prompt = ChatPromptTemplate.from_template(
             "Summarize the following latest news highlights into a single cohesive daily briefing paragraph.\n\nNews:\n{news}"
         )
-        chain = prompt | llm | StrOutputParser()
         
-        summary = await chain.ainvoke({"news": combined_content})
+        summary = await call_llm_with_rotation(
+            prompt,
+            StrOutputParser(),
+            {"news": combined_content}
+        )
         return {"summary": summary}
         
     except Exception as e:

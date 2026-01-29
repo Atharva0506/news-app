@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     @property
     def REDIS_URL(self) -> str:
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+        
+    @property
+    def GOOGLE_API_KEYS(self) -> List[str]:
+        return [key.strip() for key in self.GOOGLE_API_KEY.split(",") if key.strip()]
+
+    @property
+    def CURRENTS_API_KEYS(self) -> List[str]:
+        return [key.strip() for key in self.CURRENTS_API_KEY.split(",") if key.strip()]
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 

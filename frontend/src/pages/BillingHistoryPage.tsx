@@ -17,6 +17,7 @@ interface Transaction {
     created_at: string;
     is_test: boolean;
     sender_address?: string;
+    plan?: string;
 }
 
 export default function BillingHistoryPage() {
@@ -86,6 +87,7 @@ export default function BillingHistoryPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
+                                    <TableHead>Plan</TableHead>
                                     <TableHead>Amount</TableHead>
                                     <TableHead>Network</TableHead>
                                     <TableHead>Wallet</TableHead>
@@ -101,6 +103,9 @@ export default function BillingHistoryPage() {
                                                 <span className="font-medium">{format(new Date(tx.created_at), "MMM d, yyyy")}</span>
                                                 <span className="text-xs text-muted-foreground">{format(new Date(tx.created_at), "h:mm a")}</span>
                                             </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="font-medium capitalize">{tx.plan || "Pro"}</span>
                                         </TableCell>
                                         <TableCell>
                                             <span className="font-medium">{tx.amount} SOL</span>

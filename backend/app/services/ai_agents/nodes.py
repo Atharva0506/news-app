@@ -7,60 +7,75 @@ from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from app.core.config import settings
 from app.services.ai_agents.state import AgentState
 
-# Initialize LLM
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=0, # Reduced for consistency and speed
-    convert_system_message_to_human=True,
-    request_timeout=10 # Global timeout
-)
-
-async def collector_node(state: AgentState) -> Dict[str, Any]:
-    """
-    Filters low quality content.
-    """
-    prompt = ChatPromptTemplate.from_template(
-        """
-        Analyze the following news article content for quality and relevance.
-        Return a JSON with "quality_score" (0.0 to 1.0) and "reason".
-        
-        Title: {title}
-        Content: {content}
-        """
-    )
-# Helper for retry logic
+import os
 import asyncio
 import random
+from typing import Dict, Any, List
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 
-async def invoke_with_retry(chain, input_data, config=None, max_retries=3):
+from app.core.config import settings
+from app.services.ai_agents.state import AgentState
+
+# Initialize LLMs (one per key)
+api_keys = settings.GOOGLE_API_KEYS
+if not api_keys:
+    # Fallback to single key if list is empty (though config should handle this)
+    api_keys = [settings.GOOGLE_API_KEY]
+
+llm_instances = [
+    ChatGoogleGenerativeAI(
+        model="gemini-3-flash-preview",
+        google_api_key=key,
+        temperature=0,
+        convert_system_message_to_human=True,
+        request_timeout=10
+    ) for key in api_keys
+]
+
+current_llm_index = 0
+
+def get_current_llm():
+    global current_llm_index
+    return llm_instances[current_llm_index]
+
+def rotate_llm():
+    global current_llm_index
+    current_llm_index = (current_llm_index + 1) % len(llm_instances)
+    print(f"Rotating Gemini API Key to index {current_llm_index}")
+
+async def call_llm_with_rotation(prompt, parser, input_data, config=None):
     """
-    Invokes chain with exponential backoff on 429/Quota errors.
+    Invokes chain with rotation on 429/Quota errors.
     """
-    retries = 0
-    while True:
+    global current_llm_index
+    
+    # Try getting result, rotating if necessary
+    # We try at most len(api_keys) * 2 times to be robust
+    max_attempts = len(llm_instances) * 2
+    
+    for attempt in range(max_attempts):
         try:
+            # Build chain with current LLM
+            current_llm = get_current_llm()
+            chain = prompt | current_llm | parser
+            
             return await chain.ainvoke(input_data, config=config)
+            
         except Exception as e:
             msg = str(e)
-            # Check for 429 or ResourceExhausted
             if "429" in msg or "ResourceExhausted" in msg or "quota" in msg.lower():
-                if retries >= max_retries:
-                    print(f"Max retries reached for AI call: {msg}")
-                    # Re-raise to let the API handle the error response
-                    raise e
-                
-                delay = (2 ** retries) + random.uniform(0, 1)
-                print(f"AI Rate Limit (Attempt {retries+1}). Retrying in {delay:.2f}s...")
-                await asyncio.sleep(delay)
-                retries += 1
+                print(f"Gemini 429/Quota error (Key Index {current_llm_index}): {msg}")
+                rotate_llm()
+                # Optional: Add small backoff even when rotating to be safe?
+                await asyncio.sleep(0.5) 
+                continue
             else:
-                # Other errors can be swallowed or re-raised depending on node strategy
-                # For now, we re-raise to be safe, or we can fallback.
-                # The original code returned defaults, so for non-429 we should arguably try fallback?
-                # But to comply with "Clean Error Response", maybe simple fallback is better for other errors.
-                # However, the user specifically asked to handle 429.
+                # Non-retriable error (e.g. invalid prompt)
                 raise e
+    
+    raise Exception("Max retries reached for Gemini API rotation")
 
 async def collector_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -75,18 +90,15 @@ async def collector_node(state: AgentState) -> Dict[str, Any]:
         Content: {content}
         """
     )
-    chain = prompt | llm | JsonOutputParser()
     try:
-        # 5 second timeout for collector
-        result = await invoke_with_retry(
-            chain, 
+        result = await call_llm_with_rotation(
+            prompt, 
+            JsonOutputParser(),
             {"title": state["title"], "content": state["content"]},
-            config={"timeout": 10} # Increased timeout a bit for retries
+            config={"timeout": 10}
         )
         return {"quality_score": result.get("quality_score", 0.5)}
     except Exception as e:
-        if "429" in str(e) or "ResourceExhausted" in str(e) or "quota" in str(e).lower():
-             raise e # Propagate 429
         print(f"Collector Error: {e}")
         return {"quality_score": 0.5}
 
@@ -106,10 +118,10 @@ async def classifier_node(state: AgentState) -> Dict[str, Any]:
         Content: {content}
         """
     )
-    chain = prompt | llm | JsonOutputParser()
     try:
-        result = await invoke_with_retry(
-            chain,
+        result = await call_llm_with_rotation(
+            prompt,
+            JsonOutputParser(),
             {"title": state["title"], "content": state["content"]},
             config={"timeout": 15}
         )
@@ -119,8 +131,6 @@ async def classifier_node(state: AgentState) -> Dict[str, Any]:
             "tags": result.get("tags", [])
         }
     except Exception as e:
-        if "429" in str(e) or "ResourceExhausted" in str(e) or "quota" in str(e).lower():
-             raise e
         print(f"Classifier Error: {e}")
         return {"category": "General", "sentiment": "Neutral", "tags": []}
 
@@ -139,10 +149,10 @@ async def summarizer_node(state: AgentState) -> Dict[str, Any]:
         Content: {content}
         """
     )
-    chain = prompt | llm | JsonOutputParser()
     try:
-        result = await invoke_with_retry(
-            chain,
+        result = await call_llm_with_rotation(
+            prompt,
+            JsonOutputParser(),
             {"title": state["title"], "content": state["content"]},
             config={"timeout": 25}
         )
@@ -151,12 +161,9 @@ async def summarizer_node(state: AgentState) -> Dict[str, Any]:
             "summary_detail": result.get("summary_detail", state.get("content", "")[:500] + "...")
         }
     except Exception as e:
-        if "429" in str(e) or "ResourceExhausted" in str(e) or "quota" in str(e).lower():
-             raise e
         print(f"Summarizer Error: {e}")
-        # Fallback to description or truncated content
         fallback = state.get("content", "")[:200] + "..."
-        return {"summary_short": "Summary unavailable due to high load.", "summary_detail": fallback}
+        return {"summary_short": "Summary unavailable.", "summary_detail": fallback}
 
 async def bias_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -176,10 +183,10 @@ async def bias_node(state: AgentState) -> Dict[str, Any]:
         Content: {content}
         """
     )
-    chain = prompt | llm | JsonOutputParser()
     try:
-        result = await invoke_with_retry(
-            chain,
+        result = await call_llm_with_rotation(
+            prompt,
+            JsonOutputParser(),
             {"title": state["title"], "content": state["content"]},
             config={"timeout": 15}
         )
@@ -188,7 +195,5 @@ async def bias_node(state: AgentState) -> Dict[str, Any]:
             "bias_explanation": result.get("bias_explanation", "Neutral consideration.")
         }
     except Exception as e:
-        if "429" in str(e) or "ResourceExhausted" in str(e) or "quota" in str(e).lower():
-             raise e
         print(f"Bias Node Error: {e}")
-        return {"bias_score": 0.0, "bias_explanation": "Analysis unavailable at this moment."}
+        return {"bias_score": 0.0, "bias_explanation": "Analysis unavailable."}

@@ -123,13 +123,17 @@ export const api = {
     update: (data: any) => fetchWithAuth("/preferences/me", { method: "PUT", body: JSON.stringify(data) }),
   },
   payments: {
-    createIntent: (amount: number) => fetchWithAuth("/payments/create", {
+    createIntent: (amount: number, plan: string = "pro") => fetchWithAuth("/payments/create", {
       method: "POST",
-      body: JSON.stringify({ amount })
+      body: JSON.stringify({ amount, plan })
     }),
-    verify: (data: any) => fetchWithAuth("/payments/verify", {
+    verify: (data: { transaction_signature: string; amount: number; sender_address?: string; payment_id?: string }) => fetchWithAuth("/payments/verify", {
       method: "POST",
       body: JSON.stringify(data)
+    }),
+    cancel: (payment_id: string) => fetchWithAuth("/payments/cancel", {
+      method: "POST",
+      body: JSON.stringify({ payment_id })
     }),
     history: () => fetchWithAuth("/payments/history"),
   }

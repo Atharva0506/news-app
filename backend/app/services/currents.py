@@ -22,52 +22,90 @@ class LiveNewsProvider(NewsProvider):
     BASE_URL = "https://api.currentsapi.services/v1"
     
     def __init__(self):
-        self.api_key = settings.CURRENTS_API_KEY
+        self.api_keys = settings.CURRENTS_API_KEYS
+        self.current_key_index = 0
         
+    def _get_current_key(self) -> str:
+        if not self.api_keys:
+            raise Exception("No Currents API keys configured")
+        return self.api_keys[self.current_key_index]
+        
+    def _rotate_key(self):
+        self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
+        print(f"Rotating to Currents API key index {self.current_key_index}")
+
     async def fetch_latest_news(self, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
-            try:
-                params = {
-                    "apiKey": self.api_key, 
-                    "language": language, 
-                    "limit": 5
-                }
-                if category:
-                    params["category"] = category
+            # Try up to len(keys) times
+            for _ in range(len(self.api_keys)):
+                try:
+                    params = {
+                        "apiKey": self._get_current_key(), 
+                        "language": language, 
+                        "limit": 5
+                    }
+                    if category:
+                        params["category"] = category
+                        
+                    response = await client.get(
+                        f"{self.BASE_URL}/latest-news",
+                        params=params
+                    )
                     
-                response = await client.get(
-                    f"{self.BASE_URL}/latest-news",
-                    params=params
-                )
-                response.raise_for_status()
-                data = response.json()
-                return data.get("news", [])
-            except Exception as e:
-                print(f"Error fetching news (Live): {e}")
-                return []
+                    if response.status_code == 429 or response.status_code == 401:
+                        # Rate limited or Unauthorized, rotate key and retry
+                        print(f"Currents API Error {response.status_code} with key index {self.current_key_index}. Rotating...")
+                        self._rotate_key()
+                        continue
+                        
+                    response.raise_for_status()
+                    data = response.json()
+                    return data.get("news", [])
+                except Exception as e:
+                    print(f"Error fetching news (Live): {e}")
+                    # If it's not a rate limit issue (e.g. network), maybe we shouldn't rotate?
+                    # But for robustness, let's just try next key if it's an HTTP error
+                    if isinstance(e, httpx.HTTPStatusError):
+                         if e.response.status_code in [429, 401]:
+                             self._rotate_key()
+                             continue
+                    break # Stop if it's another kind of error or we ran out of retries logic handled by loop
+            return []
 
     async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
-            try:
-                params = {
-                    "apiKey": self.api_key, 
-                    "language": language, 
-                    "keywords": keywords,
-                    "limit": 5
-                }
-                if category:
-                    params["category"] = category
+             for _ in range(len(self.api_keys)):
+                try:
+                    params = {
+                        "apiKey": self._get_current_key(), 
+                        "language": language, 
+                        "keywords": keywords,
+                        "limit": 5
+                    }
+                    if category:
+                        params["category"] = category
+                        
+                    response = await client.get(
+                        f"{self.BASE_URL}/search",
+                        params=params
+                    )
                     
-                response = await client.get(
-                    f"{self.BASE_URL}/search",
-                    params=params
-                )
-                response.raise_for_status()
-                data = response.json()
-                return data.get("news", [])
-            except Exception as e:
-                print(f"Error searching news (Live): {e}")
-                return []
+                    if response.status_code == 429 or response.status_code == 401:
+                        print(f"Currents API Error {response.status_code} with key index {self.current_key_index}. Rotating...")
+                        self._rotate_key()
+                        continue
+
+                    response.raise_for_status()
+                    data = response.json()
+                    return data.get("news", [])
+                except Exception as e:
+                    print(f"Error searching news (Live): {e}")
+                    if isinstance(e, httpx.HTTPStatusError):
+                         if e.response.status_code in [429, 401]:
+                             self._rotate_key()
+                             continue
+                    break
+             return []
 
 class TestNewsProvider(NewsProvider):
     MOCK_FILE_PATH = "app/tests/data/currents_mock.json"

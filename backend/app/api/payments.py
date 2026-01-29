@@ -15,13 +15,41 @@ router = APIRouter()
 @router.post("/create", response_model=PaymentIntentResponse)
 async def create_payment_intent(
     payload: PaymentIntentCreate,
+    db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user)
 ) -> Any:
     """
-    Generate a payment intent (wallet address to send to)
+    Generate a payment intent and record it as PENDING
     """
-    intent = await solana_service.generate_payment_intent(current_user.id, payload.amount)
-    return intent
+    try:
+        intent = await solana_service.generate_payment_intent(current_user.id, payload.amount)
+        
+        # Create PENDING transaction record
+        tx = PaymentTransaction(
+            user_id=current_user.id,
+            amount=payload.amount,
+            status=TransactionStatus.PENDING,
+            transaction_signature=None, # Not signed yet
+            is_test=(intent["mode"] == "TEST"),
+            plan=payload.plan
+        )
+        db.add(tx)
+        await db.commit()
+        await db.refresh(tx)
+        
+        return PaymentIntentResponse(
+            payment_id=tx.id,
+            address=intent["address"],
+            reference=intent["reference"],
+            mode=intent["mode"]
+        )
+    except Exception as e:
+        print(f"Error creating payment intent: {e}")
+        # Return a clean error to the frontend
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Payment initialization failed: {str(e)}"
+        )
 
 @router.post("/verify", response_model=TransactionSchema)
 async def verify_payment(
@@ -30,37 +58,40 @@ async def verify_payment(
     current_user: User = Depends(deps.get_current_active_user)
 ) -> Any:
     """
-    Verify a Solana transaction signature
+    Verify a Solana transaction signature and complete payment
     """
-    # Check if transaction already processed
-    result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.transaction_signature == payload.transaction_signature))
-    existing_tx = result.scalars().first()
-    if existing_tx:
-        raise HTTPException(status_code=400, detail="Transaction already processed")
+    # Find the pending transaction
+    result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.id == payload.payment_id))
+    tx = result.scalars().first()
+    
+    if not tx:
+        raise HTTPException(status_code=404, detail="Payment transaction not found")
+        
+    if tx.status == TransactionStatus.COMPLETED:
+        return tx # Already verified
+        
+    if tx.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
     
     # Verify with Solana Service
     verification = await solana_service.verify_transaction(payload.transaction_signature, payload.amount)
     
     if not verification["success"]:
+        # Log failure reason if possible? 
+        # For now, just raise error, but frontend might try again.
+        # If it's a hard failure, we could mark as FAILED.
         raise HTTPException(status_code=400, detail=verification["message"])
     
-    # Record Transaction
-    tx = PaymentTransaction(
-        user_id=current_user.id,
-        amount=payload.amount,
-        transaction_signature=payload.transaction_signature,
-        sender_address=payload.sender_address,
-        status=TransactionStatus.COMPLETED
-    )
+    # Update Transaction
+    tx.transaction_signature = payload.transaction_signature
+    tx.sender_address = payload.sender_address
+    tx.status = TransactionStatus.COMPLETED
+    
     db.add(tx)
-    await db.flush() # Get ID
     
     # Create Subscription
-    # Default 30 days
     expiry = datetime.utcnow() + timedelta(days=30)
     
-    # Check if existing active subscription, extend it
-    # For now, just create new active one
     subscription = Subscription(
         user_id=current_user.id,
         end_date=expiry,
@@ -79,16 +110,53 @@ async def verify_payment(
     
     return tx
 
+from app.schemas.payment import PaymentCancel
+
+@router.post("/cancel", response_model=TransactionSchema)
+async def cancel_payment(
+    payload: PaymentCancel,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user)
+) -> Any:
+    """
+    Mark a payment intent as CANCELLED (e.g. user rejected wallet popup)
+    """
+    result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.id == payload.payment_id))
+    tx = result.scalars().first()
+    
+    if not tx:
+        raise HTTPException(status_code=404, detail="Payment transaction not found")
+        
+    if tx.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    if tx.status == TransactionStatus.COMPLETED:
+         raise HTTPException(status_code=400, detail="Cannot cancel completed transaction")
+         
+    tx.status = TransactionStatus.CANCELLED
+    db.add(tx)
+    await db.commit()
+    await db.refresh(tx)
+    
+    return tx
+
 @router.get("/status", response_model=TransactionSchema)
 async def check_transaction_status(
-    signature: str,
+    signature: str = None,
+    payment_id: str = None, # Can check by ID too
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user)
 ) -> Any:
     """
     Check status of a transaction
     """
-    result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.transaction_signature == signature))
+    if payment_id:
+        result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.id == payment_id))
+    elif signature:
+        result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.transaction_signature == signature))
+    else:
+        raise HTTPException(status_code=400, detail="Provide signature or payment_id")
+        
     tx = result.scalars().first()
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction not found")

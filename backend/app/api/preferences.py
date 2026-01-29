@@ -46,6 +46,15 @@ async def update_user_preferences(
         prefs = UserPreference(user_id=current_user.id)
         db.add(prefs)
     
+    # Limit Enforcement
+    max_categories = 5 if current_user.is_premium else 1
+    
+    if len(prefs_in.favorite_categories) > max_categories:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"{'Pro' if current_user.is_premium else 'Free'} plan limit: {max_categories} categories. Please upgrade or remove categories."
+        )
+
     # Update fields
     prefs.favorite_categories = prefs_in.favorite_categories
     prefs.favorite_keywords = prefs_in.favorite_keywords

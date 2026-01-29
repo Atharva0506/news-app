@@ -278,10 +278,23 @@ export default function Dashboard() {
                 setSelectedArticle(prev => ({
                   ...prev,
                   ...data.article,
-                  // Ensure defaults if missing (though backend handles this)
                   summary_short: data.article.summary_short || prev.summary_short,
                   sentiment: data.article.sentiment || "Neutral"
                 }));
+
+                const analysisMessage = `**Deep Analysis Report**
+
+**Summary**: ${data.article.summary_short || "N/A"}
+
+**Sentiment**: ${data.article.sentiment || "Neutral"}
+**Bias Analysis**: ${data.article.bias_explanation || "N/A"} (Score: ${data.article.bias_score || 0})
+
+**Detailed Summary**:
+${data.article.summary_detail || "N/A"}
+
+**Tags**: ${data.article.tags ? data.article.tags.join(", ") : "None"}`;
+
+                setChatMessages(prev => [...prev, { role: 'ai', content: analysisMessage }]);
 
               } else if (data.status === 'error') {
                 toast.error(data.message);
@@ -504,7 +517,7 @@ export default function Dashboard() {
               ) : (
                 chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-lg px-4 py-2 text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                    <div className={`max-w-[80%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                       }`}>
                       {msg.content}
                     </div>
