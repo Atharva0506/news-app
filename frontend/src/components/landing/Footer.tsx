@@ -11,6 +11,7 @@ const footerLinks = {
   Company: [
     { label: "About Me", href: "/about" },
     { label: "Portfolio", href: "https://atharva-naik-portfolio.vercel.app/" },
+    { label: "Contact: atharvn.coder@gmail.com", href: "mailto:atharvn.coder@gmail.com" },
   ],
   Legal: [
     { label: "Privacy", href: "/privacy" },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -13,46 +13,67 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-const plans = [
-  {
-    name: "Free",
-    id: "free",
-    description: "Perfect for trying out NewsAI",
-    monthlyPrice: 0,
-    displayPrice: "0 SOL",
-    features: [
-      "10 AI summaries per day",
-      "Basic bias detection",
-      "1 news category",
-      "Email digest",
-    ],
-    cta: "Get Started",
-    popular: false,
-  },
-  {
-    name: "Pro",
-    id: "pro",
-    description: "For individuals who want more",
-    monthlyPrice: 0.5,
-    displayPrice: "0.5 SOL",
-    features: [
-      "Unlimited AI summaries",
-      "Advanced bias detection",
-      "Up to 5 news categories",
-      "Real-time notifications",
-      "AI Q&A assistant",
-      "Multi-agent analysis",
-      "Priority support",
-    ],
-    cta: "Pay with Solana",
-    popular: true,
-  },
-];
+
+
 
 export default function Pricing() {
   const { user, refreshProfile } = useAuth();
   const [isProcessing, setIsProcessing] = useState<string | null>(null); // Plan Name
   const navigate = useNavigate();
+
+  // Dynamic Pricing State
+  const [solPrice, setSolPrice] = useState<number | null>(null);
+  const [solNetwork, setSolNetwork] = useState<string>("devnet");
+
+  useEffect(() => {
+    // Fetch pricing and network config from backend
+    api.payments.getConfig()
+      .then(config => {
+        setSolPrice(config.pro_plan_price);
+        setSolNetwork(config.solana_network);
+      })
+      .catch(err => {
+        console.error("Failed to load payment config:", err);
+        // Fallback to loading state or handle error
+        toast.error("Could not load pricing information");
+      });
+  }, []);
+
+  const plans = [
+    {
+      name: "Free",
+      id: "free",
+      description: "Perfect for trying out NewsAI",
+      monthlyPrice: 0,
+      displayPrice: "0 SOL",
+      features: [
+        "10 AI summaries per day",
+        "Basic bias detection",
+        "1 news category",
+        "Email digest",
+      ],
+      cta: "Get Started",
+      popular: false,
+    },
+    {
+      name: "Pro",
+      id: "pro",
+      description: "For individuals who want more",
+      monthlyPrice: solPrice!, // Can be null initially (handled in UI)
+      displayPrice: solPrice !== null ? `${solPrice} SOL` : "Loading...",
+      features: [
+        "Unlimited AI summaries",
+        "Advanced bias detection",
+        "Up to 5 news categories",
+        "Real-time notifications",
+        "AI Q&A assistant",
+        "Multi-agent analysis",
+        "Priority support",
+      ],
+      cta: "Pay with Solana",
+      popular: true,
+    },
+  ];
 
   // Wallet Adapter Hooks
   const { connection } = useConnection();
@@ -199,9 +220,20 @@ export default function Pricing() {
             </p>
 
             {/* Solana Network Notice */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm font-medium mb-6">
-              <span>⚠️ Payments are currently on Solana Devnet (testing network). Do not use real SOL.</span>
-            </div>
+            {/* Solana Network Notice */}
+            {/* Solana Network Notice */}
+            {solNetwork && (
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium mb-6 ${solNetwork === "mainnet"
+                ? "bg-green-500/10 border border-green-500/20 text-green-600"
+                : "bg-yellow-500/10 border border-yellow-500/20 text-yellow-500"
+                }`}>
+                <span>
+                  {solNetwork === "mainnet"
+                    ? "✅ Payments are running on Mainnet (real payments)"
+                    : "⚠️ Payments are running on Devnet (testing mode)"}
+                </span>
+              </div>
+            )}
 
             <div className="flex justify-center">
               <WalletMultiButton />
@@ -248,12 +280,12 @@ export default function Pricing() {
                     }`}
                   variant={plan.popular ? "default" : "outline"}
                   onClick={() => handleSubscribe(plan)}
-                  disabled={isProcessing === plan.name || (plan.monthlyPrice > 0 && !publicKey)}
+                  disabled={isProcessing === plan.name || (plan.monthlyPrice > 0 && !publicKey) || (plan.id === "pro" && solPrice === null)}
                 >
-                  {isProcessing === plan.name ? (
+                  {isProcessing === plan.name || (plan.id === "pro" && solPrice === null) ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Processing...
+                      {plan.id === "pro" && solPrice === null ? "Loading..." : "Processing..."}
                     </>
                   ) : (
                     plan.cta

@@ -27,7 +27,7 @@ if not api_keys:
 
 llm_instances = [
     ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=settings.GEMINI_MODEL,
         google_api_key=key,
         temperature=0,
         convert_system_message_to_human=True,

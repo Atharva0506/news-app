@@ -12,6 +12,18 @@ from app.schemas.payment import PaymentIntentResponse, PaymentIntentCreate, Paym
 
 router = APIRouter()
 
+from app.core.config import settings
+
+@router.get("/config")
+async def get_payment_config() -> Any:
+    """
+    Get payment configuration (Price, Network)
+    """
+    return {
+        "pro_plan_price": settings.PRO_PLAN_PRICE_SOL,
+        "solana_network": settings.SOLANA_NETWORK
+    }
+
 @router.post("/create", response_model=PaymentIntentResponse)
 async def create_payment_intent(
     payload: PaymentIntentCreate,
