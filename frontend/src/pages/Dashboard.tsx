@@ -312,11 +312,7 @@ export default function Dashboard() {
               } else if (data.status === 'complete') {
                 setAiProcessStatus(null);
                 toast.success("Analysis Complete!");
-                // Update specific article in frontend logic if needed (e.g. show summary)
-                // But since we are stateless, we just show it in chat or panel?
-                // The current UI might expect it in `selectedArticle`.
-                // We can update selectedArticle state.
-                // We can update selectedArticle state.
+
                 setSelectedArticle(prev => ({
                   ...prev,
                   ...data.article,

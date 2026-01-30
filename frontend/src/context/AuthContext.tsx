@@ -90,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("token");
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("daily_briefing_summary");
+        localStorage.removeItem("cached_feed");
         setUser(null);
         toast.success("Logged out successfully");
         navigate("/login");

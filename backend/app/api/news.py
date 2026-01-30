@@ -28,6 +28,7 @@ async def get_news_feed(
     """
     from app.models.news import UserPreference
     from app.models.user import User
+    from app.models.daily_cache import UserDailyCache
     from datetime import datetime
     import uuid
 
@@ -40,14 +41,19 @@ async def get_news_feed(
         # Pro: Unlimited Refresh
         pass
     else:
-        # Free: Check Daily Limit
-        last_refresh = current_user.last_news_refresh_date
-        if last_refresh and last_refresh.date() == today:
-             raise HTTPException(status_code=403, detail="Daily refresh limit reached. Upgrade to Pro for more refresh tokens.")
+        # Free: Check Cache First
+        existing_cache = await db.execute(
+            select(UserDailyCache)
+            .where(UserDailyCache.user_id == current_user.id)
+            .where(UserDailyCache.expires_at > datetime.now(timezone.utc))
+        )
+        cache_entry = existing_cache.scalars().first()
         
-        current_user.last_news_refresh_date = datetime.now(timezone.utc)
-        db.add(current_user)
-        await db.commit()
+        if cache_entry and cache_entry.news_feed:
+            # Return cached feed
+            return [NewsSchema(**item) for item in cache_entry.news_feed]
+        
+        # If no cache (or expired), proceed to fetch NEW data (and cache it at the end)
 
     fetch_category = category
     fetch_keywords = search
@@ -155,6 +161,40 @@ async def get_news_feed(
     # 6. Apply Limits (Free vs Premium)
     if isinstance(current_user, User) and not current_user.is_premium:
          articles = articles[:2]
+         
+         # SAVE TO CACHE
+         from datetime import timedelta
+         
+         # Convert to dict for JSON storage
+         feed_data = [a.model_dump(mode='json') for a in articles]
+         
+         # Check if update or insert needed (we upsert logic essentially)
+         # We already queried cache_entry at top. If it exists but news_feed was empty/expired (unlikely given query), or need new.
+         # Actually we queried for *valid* cache. If we are here, valid cache didn't exist.
+         # So we check if ANY row exists to update, or create new.
+         
+         cache_check = await db.execute(select(UserDailyCache).where(UserDailyCache.user_id == current_user.id))
+         user_cache = cache_check.scalars().first()
+         
+         if user_cache:
+             user_cache.news_feed = feed_data
+             user_cache.expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+             user_cache.created_at = datetime.now(timezone.utc) # Refresh created_at
+         else:
+             user_cache = UserDailyCache(
+                 user_id=current_user.id,
+                 news_feed=feed_data,
+                 summary=None, # Keep existing or None? If new, None. 
+                 expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
+             )
+             db.add(user_cache)
+             
+         # Update User's last refresh date so Frontend knows to disable button
+         current_user.last_news_refresh_date = datetime.now(timezone.utc)
+         db.add(current_user)
+             
+         await db.commit()
+
     else:
          # Pagination simulation
          start = offset

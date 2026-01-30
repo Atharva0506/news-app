@@ -2,8 +2,11 @@ import { motion } from "framer-motion";
 import { ArrowRight, Play, Sparkles, Zap, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { VideoModal } from "./VideoModal";
 
 export function Hero() {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-hero pt-16">
       {/* Background decoration */}
@@ -60,11 +63,22 @@ export function Hero() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="h-12 px-8 text-base">
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 px-8 text-base"
+              onClick={() => setIsVideoOpen(true)}
+            >
               <Play className="mr-2 h-4 w-4" />
               View Demo
             </Button>
           </motion.div>
+
+          <VideoModal
+            isOpen={isVideoOpen}
+            onClose={() => setIsVideoOpen(false)}
+            videoSrc="/News AI Demo.webm"
+          />
 
           {/* Stats */}
           <motion.div

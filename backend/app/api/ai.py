@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.models.user import User
 # from app.models.news import NewsArticle # Removed persistence dependency
 from app.models.news import UserPreference, NewsCategory # Kept for prefs
+from app.models.daily_cache import UserDailyCache
 from app.models.payment import AIUsageLog
 from app.services.ai_agents.graph import news_graph
 from app.services.ai_agents.nodes import call_llm_with_rotation
@@ -261,20 +262,51 @@ async def summarize_feed(
         # Pro: Unlimited Refresh
         pass
     else:
-        # Free: Check Daily Limit
-        last_refresh = current_user.last_summary_refresh_date
-        if last_refresh and last_refresh.date() == today:
-             raise HTTPException(status_code=403, detail="Daily refresh limit reached. Upgrade to Pro for more refresh tokens.")
+        # Free: Check Cache First
+        existing_cache = await db.execute(
+            select(UserDailyCache)
+            .where(UserDailyCache.user_id == current_user.id)
+            .where(UserDailyCache.expires_at > datetime.now(timezone.utc))
+        )
+        cache_entry = existing_cache.scalars().first()
         
-        current_user.last_summary_refresh_date = datetime.now(timezone.utc)
-        db.add(current_user)
-        await db.commit()
+        if cache_entry and cache_entry.summary:
+            # Return cached summary
+            return cache_entry.summary
+        
+        # If no cache (or expired), proceed to generate NEW summary (and cache it at the end)
 
     if settings.NEWS_MODE == "TEST":
         await asyncio.sleep(2) # Simulate delay
-        return {
+        response_data = {
             "summary": "This is a mock daily briefing summary generated in TEST mode. The AI agents have analyzed the latest test headlines and identified key trends in technology and finance. The market is showing positive momentum, and new AI tools are being released rapidly. (Mock Data)"
         }
+        
+        # Cache for Free Users (even in test mode to support flow)
+        if not current_user.is_premium:
+             from datetime import timedelta
+             cache_check = await db.execute(select(UserDailyCache).where(UserDailyCache.user_id == current_user.id))
+             user_cache = cache_check.scalars().first()
+             
+             if user_cache:
+                 user_cache.summary = response_data
+                 user_cache.expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+             else:
+                  user_cache = UserDailyCache(
+                      user_id=current_user.id,
+                      news_feed=None,
+                      summary=response_data,
+                      expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
+                  )
+                  db.add(user_cache)
+             
+             # Update User last refresh date
+             current_user.last_summary_refresh_date = datetime.now(timezone.utc)
+             db.add(current_user)
+             
+             await db.commit()
+             
+        return response_data
 
     from app.services.currents import currents_service
     
@@ -302,12 +334,44 @@ async def summarize_feed(
             "Summarize the following latest news highlights into a single cohesive daily briefing paragraph.\n\nNews:\n{news}"
         )
         
-        summary = await call_llm_with_rotation(
+        summary_text = await call_llm_with_rotation(
             prompt,
             StrOutputParser(),
             {"news": combined_content}
         )
-        return {"summary": summary}
+        
+        response_data = {"summary": summary_text}
+        
+        # Cache for Free Users
+        if not current_user.is_premium:
+            from datetime import timedelta
+            
+            cache_check = await db.execute(select(UserDailyCache).where(UserDailyCache.user_id == current_user.id))
+            user_cache = cache_check.scalars().first()
+            
+            if user_cache:
+                user_cache.summary = response_data
+                # We update expires_at only if it's expired? 
+                # Or extend it? If they generated news 2 hours ago, and summary now.
+                # If we extend, news feed persists longer.
+                # Simplest: Set expires_at to 24h from NOW. 
+                user_cache.expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+            else:
+                 user_cache = UserDailyCache(
+                     user_id=current_user.id,
+                     news_feed=None,
+                     summary=response_data,
+                     expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
+                 )
+                 db.add(user_cache)
+            
+            # Update User last refresh date
+            current_user.last_summary_refresh_date = datetime.now(timezone.utc)
+            db.add(current_user)
+            
+            await db.commit()
+            
+        return response_data
         
     except Exception as e:
         status_code, detail = handle_ai_error(e)
