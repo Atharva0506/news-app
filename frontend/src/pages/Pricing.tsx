@@ -145,15 +145,18 @@ export default function Pricing() {
           try {
             signature = await sendTransaction(transaction, connection);
           } catch (walletErr: any) {
-            if (walletErr.message?.includes("User rejected") || walletErr.name === "WalletSignTransactionError") {
-              console.log("User rejected signature");
+            console.log("Wallet Error Details:", walletErr);
+            // Handle User Rejection or Plugin Closure (which is effectively a rejection)
+            if (
+              walletErr.message?.includes("User rejected") ||
+              walletErr.name === "WalletSignTransactionError" ||
+              walletErr.name === "WalletSendTransactionError" ||
+              walletErr.message?.includes("Plugin Closed")
+            ) {
+              console.log("User rejected signature or closed wallet");
               toast.warning("Transaction cancelled by user");
-              // Optional: Call backend to cancel the intent?
+              // Call backend to cancel the intent
               await api.payments.cancel(intent.payment_id);
-              return;
-            }
-            if (walletErr.message?.includes("Plugin Closed")) {
-              toast.error("Wallet popup closed. Please try again.");
               return;
             }
             throw walletErr; // Re-throw other errors
