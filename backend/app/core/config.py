@@ -64,6 +64,12 @@ class Settings(BaseSettings):
             # Fix sslmode argument for asyncpg
             if "sslmode=" in url:
                  url = url.replace("sslmode=", "ssl=")
+            
+            # Remove channel_binding if present (not supported by asyncpg connect)
+            if "channel_binding=" in url:
+                url = url.replace("&channel_binding=prefer", "").replace("?channel_binding=prefer", "")
+                url = url.replace("&channel_binding=require", "").replace("?channel_binding=require", "")
+            
             return url
         
         if self.POSTGRES_SERVER and self.POSTGRES_USER and self.POSTGRES_PASSWORD:
