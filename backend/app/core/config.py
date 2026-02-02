@@ -53,7 +53,12 @@ class Settings(BaseSettings):
         In development, constructs from individual POSTGRES_* components.
         """
         if self.APP_ENV == "production" and self.DATABASE_URL:
-            return self.DATABASE_URL
+            url = self.DATABASE_URL
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            if url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url
         
         if self.POSTGRES_SERVER and self.POSTGRES_USER and self.POSTGRES_PASSWORD:
             return (
