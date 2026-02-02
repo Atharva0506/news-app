@@ -54,10 +54,16 @@ class Settings(BaseSettings):
         """
         if self.APP_ENV == "production" and self.DATABASE_URL:
             url = self.DATABASE_URL
+            # Fix Render's default postgres:// scheme
             if url.startswith("postgres://"):
                 url = url.replace("postgres://", "postgresql://", 1)
+            # Force asyncpg driver if not specified
             if url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
                 url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            
+            # Fix sslmode argument for asyncpg
+            if "sslmode=" in url:
+                 url = url.replace("sslmode=", "ssl=")
             return url
         
         if self.POSTGRES_SERVER and self.POSTGRES_USER and self.POSTGRES_PASSWORD:
