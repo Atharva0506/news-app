@@ -21,7 +21,6 @@ import asyncio
 
 router = APIRouter()
 
-# Schema for Stateless Article Processing
 from pydantic import BaseModel
 class ArticleContext(BaseModel):
     id: str
@@ -45,10 +44,8 @@ async def process_article(
     Body must contain article details.
     """
     import asyncio
-
-    # Premium Check Logic
+    
     if not current_user.is_premium:
-        # Check Daily Limit
         await check_ai_limit(db, current_user.id)
 
     async def event_generator():
@@ -81,9 +78,6 @@ async def process_article(
                     msg = messages.get(agent_name, f"Processing {agent_name}...")
                     yield f"data: {json.dumps({'status': 'progress', 'agent': agent_name, 'message': msg})}\n\n"
             
-            # Streaming Complete - Use accumulated state for final result
-            # No DB Saving!
-            
             # Log Usage
             log = AIUsageLog(
                 user_id=current_user.id,
@@ -93,7 +87,6 @@ async def process_article(
             db.add(log)
             await db.commit()
             
-            # Return final data
             final_data = {
                 "id": article.id,
                 "summary_short": accumulated_state.get("summary_short"),
@@ -258,11 +251,11 @@ async def summarize_feed(
     from datetime import datetime, timezone
     today = datetime.now(timezone.utc).date()
 
+    today = datetime.now(timezone.utc).date()
+
     if current_user.is_premium:
-        # Pro: Unlimited Refresh
         pass
     else:
-        # Free: Check Cache First
         existing_cache = await db.execute(
             select(UserDailyCache)
             .where(UserDailyCache.user_id == current_user.id)
@@ -271,18 +264,14 @@ async def summarize_feed(
         cache_entry = existing_cache.scalars().first()
         
         if cache_entry and cache_entry.summary:
-            # Return cached summary
             return cache_entry.summary
-        
-        # If no cache (or expired), proceed to generate NEW summary (and cache it at the end)
 
     if settings.NEWS_MODE == "TEST":
-        await asyncio.sleep(2) # Simulate delay
+        await asyncio.sleep(2) 
         response_data = {
             "summary": "This is a mock daily briefing summary generated in TEST mode. The AI agents have analyzed the latest test headlines and identified key trends in technology and finance. The market is showing positive momentum, and new AI tools are being released rapidly. (Mock Data)"
         }
         
-        # Cache for Free Users (even in test mode to support flow)
         if not current_user.is_premium:
              from datetime import timedelta
              cache_check = await db.execute(select(UserDailyCache).where(UserDailyCache.user_id == current_user.id))
@@ -319,10 +308,8 @@ async def summarize_feed(
         category = prefs.favorite_categories[0]
         
     try:
-        # Fetch directly
         articles = await currents_service.fetch_latest_news(category=category)
         
-        # Limit to top 5 for summary
         articles = articles[:5]
         
         if not articles:
@@ -351,10 +338,6 @@ async def summarize_feed(
             
             if user_cache:
                 user_cache.summary = response_data
-                # We update expires_at only if it's expired? 
-                # Or extend it? If they generated news 2 hours ago, and summary now.
-                # If we extend, news feed persists longer.
-                # Simplest: Set expires_at to 24h from NOW. 
                 user_cache.expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
             else:
                  user_cache = UserDailyCache(

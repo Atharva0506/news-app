@@ -36,7 +36,6 @@ class LiveNewsProvider(NewsProvider):
 
     async def fetch_latest_news(self, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
-            # Try up to len(keys) times
             for _ in range(len(self.api_keys)):
                 try:
                     params = {
@@ -53,7 +52,6 @@ class LiveNewsProvider(NewsProvider):
                     )
                     
                     if response.status_code == 429 or response.status_code == 401:
-                        # Rate limited or Unauthorized, rotate key and retry
                         print(f"Currents API Error {response.status_code} with key index {self.current_key_index}. Rotating...")
                         self._rotate_key()
                         continue
@@ -63,13 +61,11 @@ class LiveNewsProvider(NewsProvider):
                     return data.get("news", [])
                 except Exception as e:
                     print(f"Error fetching news (Live): {e}")
-                    # If it's not a rate limit issue (e.g. network), maybe we shouldn't rotate?
-                    # But for robustness, let's just try next key if it's an HTTP error
                     if isinstance(e, httpx.HTTPStatusError):
                          if e.response.status_code in [429, 401]:
                              self._rotate_key()
                              continue
-                    break # Stop if it's another kind of error or we ran out of retries logic handled by loop
+                    break 
             return []
 
     async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -111,7 +107,6 @@ class TestNewsProvider(NewsProvider):
     MOCK_FILE_PATH = "app/tests/data/currents_mock.json"
     
     def __init__(self):
-        # Ensure path is absolute or relative to root
         self.file_path = os.path.join(os.getcwd(), self.MOCK_FILE_PATH)
         
     async def _load_mock_data(self) -> List[Dict[str, Any]]:
@@ -159,7 +154,5 @@ class CurrentsService:
 
     async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
         return await self.provider.fetch_search_news(keywords, language, category)
-
-    # Ingest logic removed as per request to not store in DB
     
 currents_service = CurrentsService()

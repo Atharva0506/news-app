@@ -19,10 +19,8 @@ from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from app.core.config import settings
 from app.services.ai_agents.state import AgentState
 
-# Initialize LLMs (one per key)
 api_keys = settings.GOOGLE_API_KEYS
 if not api_keys:
-    # Fallback to single key if list is empty (though config should handle this)
     api_keys = [settings.GOOGLE_API_KEY]
 
 llm_instances = [
@@ -52,13 +50,12 @@ async def call_llm_with_rotation(prompt, parser, input_data, config=None):
     """
     global current_llm_index
     
-    # Try getting result, rotating if necessary
-    # We try at most len(api_keys) * 2 times to be robust
+    global current_llm_index
+    
     max_attempts = len(llm_instances) * 2
     
     for attempt in range(max_attempts):
         try:
-            # Build chain with current LLM
             current_llm = get_current_llm()
             chain = prompt | current_llm | parser
             
@@ -73,10 +70,8 @@ async def call_llm_with_rotation(prompt, parser, input_data, config=None):
                 await asyncio.sleep(0.5) 
                 continue
             else:
-                # Non-retriable error (e.g. invalid prompt)
                 raise e
     
-    # Check if the last error was quota related
     raise HTTPException(
         status_code=429,
         detail="AI Usage Limit Reached. Please try again later."

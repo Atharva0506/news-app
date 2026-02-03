@@ -39,11 +39,6 @@ export function NewsFeed({
     const { refreshProfile } = useAuth();
 
     useEffect(() => {
-        // Try to load from cache first for immediate display if available, 
-        // but still fetch fresh to ensure up-to-date if allowed.
-        // actually, we should just fetch, and if it fails, fallback.
-        // But for better UX, maybe we can show cached first? 
-        // Let's stick to "fallback on error" to ensure we try to get fresh news if possible.
         fetchNews();
     }, [filters.category, filters.sentiment, filters.search]);
 
@@ -52,7 +47,6 @@ export function NewsFeed({
         try {
             const data = await api.news.getFeed(filters);
             setArticles(data);
-            // Cache the successful feed
             localStorage.setItem("cached_feed", JSON.stringify(data));
             await refreshProfile();
         } catch (error: any) {
@@ -61,7 +55,6 @@ export function NewsFeed({
             const cached = localStorage.getItem("cached_feed");
             if (cached) {
                 setArticles(JSON.parse(cached));
-                // Only show "Limit reached" toast if that was the actual error
                 if (error.status === 403 || error.message.includes("limit")) {
                     toast.info("Daily limit reached. Showing cached feed.");
                 } else {

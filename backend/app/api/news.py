@@ -32,16 +32,11 @@ async def get_news_feed(
     from datetime import datetime
     import uuid
 
-    # 1. Determine Fetch Parameters
-    from datetime import datetime, timezone
     today = datetime.now(timezone.utc).date()
 
-    # Limit Logic
     if current_user.is_premium:
-        # Pro: Unlimited Refresh
         pass
     else:
-        # Free: Check Cache First
         existing_cache = await db.execute(
             select(UserDailyCache)
             .where(UserDailyCache.user_id == current_user.id)
@@ -50,16 +45,12 @@ async def get_news_feed(
         cache_entry = existing_cache.scalars().first()
         
         if cache_entry and cache_entry.news_feed:
-            # Return cached feed
             return [NewsSchema(**item) for item in cache_entry.news_feed]
-        
-        # If no cache (or expired), proceed to fetch NEW data (and cache it at the end)
 
     fetch_category = category
     fetch_keywords = search
     try:
         if fetch_keywords:
-            # Check limits for keywords? Assuming 1 search for now based on first keyword or query
             raw_news = await currents_service.fetch_search_news(keywords=fetch_keywords, category=fetch_category)
         
         elif category:
@@ -67,31 +58,23 @@ async def get_news_feed(
             raw_news = await currents_service.fetch_latest_news(category=category)
             
         else:
-            # Use Preferences
             prefs_result = await db.execute(select(UserPreference).where(UserPreference.user_id == current_user.id))
             prefs = prefs_result.scalars().first()
             
             preferred_categories = prefs.favorite_categories if (prefs and prefs.favorite_categories) else []
             
-            # Limit enforcement (redundant check but safe)
             max_cats = 5 if current_user.is_premium else 1
             preferred_categories = preferred_categories[:max_cats]
             
             if not preferred_categories:
-                # No prefs, fetch general
                 raw_news = await currents_service.fetch_latest_news()
             else:
-                # Fetch all categories
-                # Note: This does sequential fetching for simplicity. Parallel gather could be better for perf.
                 all_articles = []
-                # Use a set to avoid duplicates if API returns overlapping content (unlikely with different cats but possible)
                 seen_ids = set()
                 
-                # Simple optimization: If only 1 category, just fetch it
                 if len(preferred_categories) == 1:
                      raw_news = await currents_service.fetch_latest_news(category=preferred_categories[0])
                 else:
-                    # Parallel fetch is better here
                     import asyncio
                     tasks = [currents_service.fetch_latest_news(category=cat) for cat in preferred_categories]
                     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -108,7 +91,6 @@ async def get_news_feed(
         print(f"Feed fetch error: {e}")
         raw_news = []
 
-    # Deduplicate mechanism
     unique_news = []
     seen = set()
     for item in raw_news:
@@ -141,7 +123,7 @@ async def get_news_feed(
                 pass
                 
         article = NewsSchema(
-            id=item.get("id") or str(uuid.uuid4()), # Use API ID or generate one
+            id=item.get("id") or str(uuid.uuid4()),
             title=item.get("title", "No Title"),
             description=item.get("description", ""),
             url=item.get("url", "#"),
