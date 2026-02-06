@@ -29,7 +29,7 @@ async def get_news_feed(
     from app.models.news import UserPreference
     from app.models.user import User
     from app.models.daily_cache import UserDailyCache
-    from datetime import datetime
+    from datetime import datetime, timezone
     import uuid
 
     today = datetime.now(timezone.utc).date()
