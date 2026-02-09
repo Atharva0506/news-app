@@ -54,6 +54,12 @@ export default function Pricing() {
       ],
       cta: "Get Started",
       popular: false,
+      missing_features: [
+        "Real-time notifications",
+        "AI Q&A assistant",
+        "Multi-agent analysis",
+        "Priority support"
+      ]
     },
     {
       name: "Pro",
@@ -300,6 +306,16 @@ export default function Pricing() {
                     <li key={i} className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-accent shrink-0 mt-0.5" />
                       <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
+                  {/* @ts-ignore */}
+                  {plan.missing_features?.map((feature, i) => (
+                    <li key={`missing-${i}`} className="flex items-start gap-3 text-muted-foreground/50">
+                      <div className="h-5 w-5 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="block w-4 h-px bg-current rotate-45 absolute"></span>
+                        <span className="block w-4 h-px bg-current -rotate-45 absolute"></span>
+                      </div>
+                      <span className="text-sm line-through">{feature}</span>
                     </li>
                   ))}
                 </ul>

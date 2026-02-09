@@ -1,6 +1,6 @@
 from typing import Optional, List
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, Integer, ForeignKey
+from sqlalchemy import String, Boolean, DateTime, Integer, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 import uuid
@@ -33,6 +33,13 @@ class User(Base):
     ai_logs: Mapped[List["AIUsageLog"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     transactions: Mapped[List["PaymentTransaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     subscriptions: Mapped[List["Subscription"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    saved_chats: Mapped[List["SavedChat"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
+    # Email Verification & Security
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    verification_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    reset_password_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    reset_password_expires: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 

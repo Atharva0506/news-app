@@ -49,9 +49,13 @@ class UserPreference(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     
+    language: Mapped[str] = mapped_column(String, default="en")
+    country: Mapped[str] = mapped_column(String, default="us")
+    content_type: Mapped[str] = mapped_column(String, default="news") # news, articles, discussion
+    
     favorite_categories: Mapped[List[str]] = mapped_column(ARRAY(String), default=[])
     favorite_keywords: Mapped[List[str]] = mapped_column(ARRAY(String), default=[])
-    summary_style: Mapped[str] = mapped_column(String, default="short", server_default="short") # short, detailed, bullet
+    summary_style: Mapped[str] = mapped_column(String, default="short") # short, detailed, bullet
     
     user: Mapped["User"] = relationship(back_populates="preferences")
 

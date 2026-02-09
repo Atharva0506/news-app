@@ -30,3 +30,4 @@ solders>=0.18.0
 
 # Utilities
 httpx>=0.26.0
+fastapi-mail>=1.4.1

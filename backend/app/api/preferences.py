@@ -56,6 +56,9 @@ async def update_user_preferences(
         )
 
     # Update fields
+    prefs.language = prefs_in.language
+    prefs.country = prefs_in.country
+    prefs.content_type = prefs_in.content_type
     prefs.favorite_categories = prefs_in.favorite_categories
     prefs.favorite_keywords = prefs_in.favorite_keywords
     prefs.summary_style = prefs_in.summary_style

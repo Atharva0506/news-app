@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     # --- CORS / Security ---
     FRONTEND_ORIGIN: str = "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173"
 
+    # --- Email (Gmail) ---
+    MAIL_USER: str
+    MAIL_PASS: str
+    MAIL_FROM_NAME: str = "News App Support"
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.gmail.com"
+
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         """

@@ -35,6 +35,9 @@ class NewsCategory(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class UserPreferenceBase(BaseModel):
+    language: str = "en"
+    country: str = "us"
+    content_type: str = "news"
     favorite_categories: List[str] = []
     favorite_keywords: List[str] = []
     summary_style: str = "short"

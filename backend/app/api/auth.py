@@ -1,6 +1,6 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Body, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -8,10 +8,82 @@ from sqlalchemy.future import select
 from app.api import deps
 from app.core import security
 from app.core.config import settings
+from app.core.email import send_verification_email, send_reset_password_email
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, User as UserSchema
+import secrets
 
 router = APIRouter()
+
+@router.post("/verify-email")
+async def verify_email(
+    token: str = Body(..., embed=True),
+    db: AsyncSession = Depends(deps.get_db)
+) -> Any:
+    """
+    Verify email with token.
+    """
+    result = await db.execute(select(User).where(User.verification_token == token))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid verification token")
+        
+    user.is_verified = True
+    user.verification_token = None
+    db.add(user)
+    await db.commit()
+    return {"message": "Email verified successfully"}
+
+@router.post("/forgot-password")
+async def forgot_password(
+    email: str = Body(..., embed=True),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    db: AsyncSession = Depends(deps.get_db)
+) -> Any:
+    """
+    Trigger password reset email.
+    """
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalars().first()
+    
+    if user:
+        token = secrets.token_urlsafe(32)
+        user.reset_password_token = token
+        user.reset_password_expires = datetime.now() + timedelta(hours=1)
+        db.add(user)
+        await db.commit()
+        
+        background_tasks.add_task(send_reset_password_email, user.email, token)
+        
+    # Always return success to prevent email enumeration
+    return {"message": "If an account exists, a reset link has been sent."}
+
+@router.post("/reset-password")
+async def reset_password(
+    token: str = Body(...),
+    new_password: str = Body(...),
+    db: AsyncSession = Depends(deps.get_db)
+) -> Any:
+    """
+    Reset password with token.
+    """
+    result = await db.execute(select(User).where(User.reset_password_token == token))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+        
+    if user.reset_password_expires and datetime.now(user.reset_password_expires.tzinfo) > user.reset_password_expires:
+         raise HTTPException(status_code=400, detail="Token expired")
+         
+    user.hashed_password = security.get_password_hash(new_password)
+    user.reset_password_token = None
+    user.reset_password_expires = None
+    db.add(user)
+    await db.commit()
+    
+    return {"message": "Password reset successfully"}
 
 @router.post("/login", response_model=Token)
 async def login_access_token(
@@ -84,6 +156,7 @@ async def register(
     *,
     db: AsyncSession = Depends(deps.get_db),
     user_in: UserCreate,
+    background_tasks: BackgroundTasks
 ) -> Any:
     """
     Create new user without the need to be logged in
@@ -96,14 +169,20 @@ async def register(
             detail="The user with this username already exists in the system",
         )
         
+    verification_token = secrets.token_urlsafe(32)
     user = User(
         email=user_in.email,
         hashed_password=security.get_password_hash(user_in.password),
         full_name=user_in.full_name,
+        verification_token=verification_token,
+        is_verified=False
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
+    
+    background_tasks.add_task(send_verification_email, user.email, verification_token)
+    
     return user
 
 @router.get("/me", response_model=UserSchema)
@@ -178,6 +257,20 @@ async def delete_user_me(
     """
     Delete own user account and all associated data.
     """
+    # Explicitly delete related data to ensure cleanup
+    from app.models.news import UserPreference
+    from app.models.chat import SavedChat
+    from app.models.payment import AIUsageLog, PaymentTransaction, Subscription, TransactionStatus
+    
+    # Delete Preferences
+    # Actually we can just delete by filtering
+    from sqlalchemy import delete
+    await db.execute(delete(UserPreference).where(UserPreference.user_id == current_user.id))
+    await db.execute(delete(SavedChat).where(SavedChat.user_id == current_user.id))
+    await db.execute(delete(AIUsageLog).where(AIUsageLog.user_id == current_user.id))
+    await db.execute(delete(Subscription).where(Subscription.user_id == current_user.id))
+    await db.execute(delete(PaymentTransaction).where(PaymentTransaction.user_id == current_user.id))
+    
     await db.delete(current_user)
     await db.commit()
     return Response(status_code=204)

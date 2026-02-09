@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Home, Newspaper, Settings as SettingsIcon, User, Sparkles, Search,
-  Menu, ChevronLeft, ChevronRight, Send, History
+  Menu, ChevronLeft, ChevronRight, Send, History, MessageSquareDashed
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import SavedChatsList from "@/components/SavedChatsList";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -39,6 +40,7 @@ const isSameDay = (d1?: string) => {
 const navItems = [
   { icon: Home, label: "Home", href: "/dashboard" },
   { icon: Newspaper, label: "My Feed", href: "/dashboard/feed" },
+  { icon: MessageSquareDashed, label: "Saved Chats", href: "/dashboard/saved" },
   { icon: History, label: "Billing History", href: "/dashboard/billing" },
   { icon: SettingsIcon, label: "Settings", href: "/dashboard/settings" },
 ];
@@ -197,7 +199,28 @@ export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isSettingsPage = location.pathname.includes("/settings");
+
+  useEffect(() => {
+    // Check if user has preferences set, if not redirect to onboarding
+    if (user) {
+      // Skip check if already on settings or onboarding (though this is dashboard)
+      // Check local storage flag to avoid repeated checks?
+      const hasOnboarded = localStorage.getItem("has_onboarded");
+      if (!hasOnboarded) {
+        api.preferences.get().then((res: any) => {
+          // Assume res.data contains preference object
+          const prefs = res.data;
+          if (prefs && (!prefs.favorite_categories || prefs.favorite_categories.length === 0)) {
+            navigate("/onboarding");
+          } else {
+            localStorage.setItem("has_onboarded", "true");
+          }
+        }).catch((err: any) => console.error("Pref check failed", err));
+      }
+    }
+  }, [user, navigate]);
 
   // Filter State
   const [searchQuery, setSearchQuery] = useState("");
@@ -442,6 +465,10 @@ ${data.article.summary_detail || "N/A"}
             <Settings />
           ) : location.pathname.includes("/billing") ? (
             <BillingHistoryPage />
+          ) : location.pathname.includes("/saved") ? (
+            <div className="max-w-4xl mx-auto">
+              <SavedChatsList />
+            </div>
           ) : (
             <>
               {user && (

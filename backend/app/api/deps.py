@@ -16,6 +16,11 @@ reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/auth/login"
 )
 
+reusable_oauth2_optional = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/auth/login",
+    auto_error=False
+)
+
 async def get_db() -> Generator[AsyncSession, None, None]:
     async with AsyncSessionLocal() as session:
         yield session
@@ -39,7 +44,12 @@ async def get_current_user(
     
     # In Pydantic v2/SQLAlchemy, get might not work with Async. Use select.
     # Note: user_id is the subject.
-    result = await db.execute(select(User).where(User.id == token_data.sub))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.preferences))
+        .where(User.id == token_data.sub)
+    )
     user = result.scalars().first()
     
     if not user:
@@ -72,4 +82,34 @@ def get_current_premium_user(
             status_code=403,
             detail="Premium subscription required for this feature"
         )
+    return current_user
+
+async def get_current_user_optional(
+    db: AsyncSession = Depends(get_db),
+    token: Optional[str] = Depends(reusable_oauth2_optional)
+) -> Optional[User]:
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+        token_data = TokenPayload(**payload)
+    except (JWTError, ValidationError):
+        return None
+    
+    if token_data.sub is None:
+        return None
+        
+    result = await db.execute(select(User).where(User.id == token_data.sub))
+    user = result.scalars().first()
+    return user
+
+async def get_current_active_user_optional(
+    current_user: Optional[User] = Depends(get_current_user_optional),
+) -> Optional[User]:
+    if not current_user:
+        return None
+    if not current_user.is_active:
+        return None
     return current_user

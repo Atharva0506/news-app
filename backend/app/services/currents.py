@@ -11,11 +11,11 @@ from app.models.news import NewsArticle, NewsCategory
 
 class NewsProvider(ABC):
     @abstractmethod
-    async def fetch_latest_news(self, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def fetch_latest_news(self, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
         pass
         
     @abstractmethod
-    async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def fetch_search_news(self, keywords: str, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
         pass
 
 class LiveNewsProvider(NewsProvider):
@@ -34,13 +34,15 @@ class LiveNewsProvider(NewsProvider):
         self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
         print(f"Rotating to Currents API key index {self.current_key_index}")
 
-    async def fetch_latest_news(self, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def fetch_latest_news(self, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
             for _ in range(len(self.api_keys)):
                 try:
                     params = {
                         "apiKey": self._get_current_key(), 
                         "language": language, 
+                        "country": country,
+                        "type": type_,
                         "limit": 5
                     }
                     if category:
@@ -68,13 +70,15 @@ class LiveNewsProvider(NewsProvider):
                     break 
             return []
 
-    async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def fetch_search_news(self, keywords: str, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
              for _ in range(len(self.api_keys)):
                 try:
                     params = {
                         "apiKey": self._get_current_key(), 
                         "language": language, 
+                        "country": country,
+                        "type": type_,
                         "keywords": keywords,
                         "limit": 5
                     }
@@ -122,14 +126,14 @@ class TestNewsProvider(NewsProvider):
             print(f"Error loading mock news: {e}")
             return []
             
-    async def fetch_latest_news(self, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def fetch_latest_news(self, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
         print(f"Fetching news in TEST mode from {self.file_path}")
         all_news = await self._load_mock_data()
         if category:
             all_news = [n for n in all_news if category.lower() in [c.lower() for c in n.get("category", [])]]
         return all_news[:5] # Apply limit
         
-    async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def fetch_search_news(self, keywords: str, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
         print(f"Searching news in TEST mode from {self.file_path}")
         all_news = await self._load_mock_data()
         filtered = [
@@ -149,10 +153,10 @@ class CurrentsService:
         else:
             self.provider = TestNewsProvider()
             
-    async def fetch_latest_news(self, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
-        return await self.provider.fetch_latest_news(language, category)
+    async def fetch_latest_news(self, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        return await self.provider.fetch_latest_news(language, country, type_, category)
 
-    async def fetch_search_news(self, keywords: str, language: str = "en", category: Optional[str] = None) -> List[Dict[str, Any]]:
-        return await self.provider.fetch_search_news(keywords, language, category)
+    async def fetch_search_news(self, keywords: str, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        return await self.provider.fetch_search_news(keywords, language, country, type_, category)
     
 currents_service = CurrentsService()

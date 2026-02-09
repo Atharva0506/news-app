@@ -12,6 +12,7 @@ interface User {
     refresh_tokens: number;
     last_news_refresh_date?: string;
     last_summary_refresh_date?: string;
+    preferences?: any; // To avoid importing types if not convenient
 }
 
 interface AuthContextType {
@@ -42,6 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             const userData = await api.auth.me();
             setUser(userData);
+
+            // Check for onboarding
+            // Ensure we don't redirect if we are already on onboarding page
+            if (userData && !userData.preferences && location.pathname !== '/onboarding' && location.pathname !== '/login' && location.pathname !== '/signup') {
+                navigate('/onboarding');
+            }
+
         } catch (error) {
             //   console.error("Auth check failed", error);
             localStorage.removeItem("token");

@@ -3,6 +3,8 @@ from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, ConfigDict
 
+from app.schemas.news import UserPreference
+
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
@@ -27,7 +29,11 @@ class UserInDBBase(UserBase):
     last_news_refresh_date: Optional[datetime] = None
     last_summary_refresh_date: Optional[datetime] = None
     
+    # Relationships
+    preferences: Optional[UserPreference] = None
+    
     model_config = ConfigDict(from_attributes=True)
+
 
 class User(UserInDBBase):
     pass

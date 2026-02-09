@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    watch: {
+      ignored: ["**/node_modules_corrupt/**"],
+    },
   },
   plugins: [
     react(),

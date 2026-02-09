@@ -159,5 +159,19 @@ export const api = {
     }),
     history: () => fetchWithAuth("/payments/history"),
     getConfig: () => fetch(`${API_URL}/payments/config`).then(res => res.json()),
+  },
+  support: {
+    chat: (message: string, history: any[]) => fetchWithAuth("/support/chat", {
+      method: "POST",
+      body: JSON.stringify({ message, history })
+    })
+  },
+  chat: {
+    list: () => fetchWithAuth("/chat/"),
+    create: (title: string, messages: any[]) => fetchWithAuth("/chat/", {
+      method: "POST",
+      body: JSON.stringify({ title, messages })
+    }),
+    delete: (id: string) => fetchWithAuth(`/chat/${id}`, { method: "DELETE" })
   }
 };
