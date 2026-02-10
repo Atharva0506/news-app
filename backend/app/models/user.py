@@ -26,6 +26,9 @@ class User(Base):
     refresh_tokens: Mapped[int] = mapped_column(Integer, default=0)
     last_news_refresh_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     last_summary_refresh_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Onboarding Status
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
 
     # Relationships
 

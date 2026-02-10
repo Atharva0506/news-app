@@ -30,12 +30,12 @@ async def support_chat(
     import os
 
     try:
-        if not settings.GOOGLE_API_KEY:
+        if not settings.GOOGLE_API_KEYS:
              raise HTTPException(status_code=500, detail="AI Service not configured")
 
         llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
-            google_api_key=settings.GOOGLE_API_KEY,
+            model="gemini-2.5-flash",
+            google_api_key=settings.GOOGLE_API_KEYS[0],
             temperature=0.3
         )
 

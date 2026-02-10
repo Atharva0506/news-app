@@ -31,9 +31,9 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.add_column('user_preferences', sa.Column('language', sa.String(), nullable=False))
-    op.add_column('user_preferences', sa.Column('country', sa.String(), nullable=False))
-    op.add_column('user_preferences', sa.Column('content_type', sa.String(), nullable=False))
+    op.add_column('user_preferences', sa.Column('language', sa.String(), nullable=False, server_default='en'))
+    op.add_column('user_preferences', sa.Column('country', sa.String(), nullable=False, server_default='us'))
+    op.add_column('user_preferences', sa.Column('content_type', sa.String(), nullable=False, server_default='news'))
     op.add_column('users', sa.Column('is_verified', sa.Boolean(), server_default=sa.text('false'), nullable=False))
     op.add_column('users', sa.Column('verification_token', sa.String(), nullable=True))
     op.add_column('users', sa.Column('reset_password_token', sa.String(), nullable=True))

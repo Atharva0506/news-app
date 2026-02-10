@@ -47,9 +47,9 @@ export default function Pricing() {
       monthlyPrice: 0,
       displayPrice: "0 SOL",
       features: [
-        "10 AI summaries per day",
+        "1 AI summaries per day",
         "Basic bias detection",
-        "1 news category",
+        "3 news category",
         "Email digest",
       ],
       cta: "Get Started",
@@ -198,7 +198,16 @@ export default function Pricing() {
 
     } catch (error: any) {
       console.error("Payment Flow Error:", error);
-      toast.error(error.message || "Payment initialization failed");
+      if (error.message && error.message.includes("verify your email")) {
+        toast.error("Email verification required", {
+          action: {
+            label: "Resend Email",
+            onClick: () => api.auth.resendVerification().then(() => toast.success("Verification email sent!"))
+          }
+        });
+      } else {
+        toast.error(error.message || "Payment initialization failed");
+      }
     } finally {
       setIsProcessing(null);
     }

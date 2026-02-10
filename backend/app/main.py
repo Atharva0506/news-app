@@ -23,8 +23,9 @@ app.include_router(payments.router, prefix=f"{settings.API_V1_STR}/payments", ta
 app.include_router(news.router, prefix=f"{settings.API_V1_STR}/news", tags=["news"])
 app.include_router(ai.router, prefix=f"{settings.API_V1_STR}/ai", tags=["ai"])
 
-from app.api import preferences, chat, support
+from app.api import preferences, chat, support, onboarding
 app.include_router(preferences.router, prefix=f"{settings.API_V1_STR}/preferences", tags=["preferences"])
+app.include_router(onboarding.router, prefix=f"{settings.API_V1_STR}/onboarding", tags=["onboarding"])
 app.include_router(chat.router, prefix=f"{settings.API_V1_STR}/chat", tags=["chat"])
 app.include_router(support.router, prefix=f"{settings.API_V1_STR}/support", tags=["support"])
 

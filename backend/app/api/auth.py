@@ -35,6 +35,27 @@ async def verify_email(
     await db.commit()
     return {"message": "Email verified successfully"}
 
+@router.post("/resend-verification")
+async def resend_verification(
+    current_user: User = Depends(deps.get_current_active_user),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    db: AsyncSession = Depends(deps.get_db)
+) -> Any:
+    """
+    Resend verification email to current user.
+    """
+    if current_user.is_verified:
+        return {"message": "Email already verified"}
+        
+    # Generate new token
+    verification_token = secrets.token_urlsafe(32)
+    current_user.verification_token = verification_token
+    db.add(current_user)
+    await db.commit()
+    
+    background_tasks.add_task(send_verification_email, current_user.email, verification_token)
+    return {"message": "Verification email sent"}
+
 @router.post("/forgot-password")
 async def forgot_password(
     email: str = Body(..., embed=True),
@@ -179,7 +200,13 @@ async def register(
     )
     db.add(user)
     await db.commit()
-    await db.refresh(user)
+    # Eager load preferences to avoid MissingGreenlet error on Pydantic validation
+    # user.preferences is not loaded by default and accessing it triggers lazy load which fails in async
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(User).options(selectinload(User.preferences)).where(User.id == user.id)
+    )
+    user = result.scalars().first()
     
     background_tasks.add_task(send_verification_email, user.email, verification_token)
     
@@ -192,6 +219,38 @@ async def read_users_me(
     """
     Get current user.
     """
+    return current_user
+
+@router.put("/me", response_model=UserSchema)
+async def update_user_me(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    password: str = Body(None),
+    full_name: str = Body(None),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Update own user (full_name, password).
+    """
+    current_user_data = current_user.model_dump()
+    user_in = {}
+    if password is not None:
+        user_in["password"] = password
+    if full_name is not None:
+        user_in["full_name"] = full_name
+
+    if user_in:
+        # Update user attributes
+        if "password" in user_in:
+            hashed_password = security.get_password_hash(user_in["password"])
+            current_user.hashed_password = hashed_password
+        if "full_name" in user_in:
+            current_user.full_name = user_in["full_name"]
+        
+        db.add(current_user)
+        await db.commit()
+        await db.refresh(current_user)
+    
     return current_user
 
 @router.get("/me/usage", response_model=dict)

@@ -28,6 +28,8 @@ class UserInDBBase(UserBase):
     refresh_tokens: int = 0
     last_news_refresh_date: Optional[datetime] = None
     last_summary_refresh_date: Optional[datetime] = None
+    onboarding_completed: bool = False
+    is_verified: bool = False
     
     # Relationships
     preferences: Optional[UserPreference] = None

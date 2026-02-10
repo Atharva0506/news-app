@@ -24,7 +24,25 @@ async def send_email(email_to: List[EmailStr], subject: str, html_content: str):
         subtype=MessageType.html
     )
     fm = FastMail(conf)
-    await fm.send_message(message)
+    
+    if not settings.MAIL_USER or not settings.MAIL_PASS:
+        _print_mock_email(email_to, subject, html_content)
+        return
+
+    try:
+        await fm.send_message(message)
+    except Exception as e:
+        print(f"[EMAIL ERROR] Failed to send email: {e}")
+        print("[EMAIL ERROR] Falling back to mock email output:")
+        _print_mock_email(email_to, subject, html_content)
+
+
+def _print_mock_email(email_to, subject, html_content):
+    print(f"--- MOCK EMAIL ---")
+    print(f"To: {email_to}")
+    print(f"Subject: {subject}")
+    print(f"Body: {html_content}")
+    print(f"--- END MOCK EMAIL ---")
 
 async def send_verification_email(email_to: str, token: str):
     link = f"{settings.FRONTEND_ORIGIN.split(',')[0]}/verify-email?token={token}"

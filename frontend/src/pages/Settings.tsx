@@ -30,10 +30,12 @@ import { Separator } from "@/components/ui/separator";
 export default function Settings() {
     const { user, logout } = useAuth();
     const [preferences, setPreferences] = useState<{
+        language?: string;
+        country?: string;
         favorite_categories: string[];
         favorite_keywords: string[];
         summary_style?: string;
-    }>({ favorite_categories: [], favorite_keywords: [], summary_style: "short" });
+    }>({ favorite_categories: [], favorite_keywords: [], summary_style: "short", language: "en", country: "us" });
 
     const [newKeyword, setNewKeyword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -87,6 +89,12 @@ export default function Settings() {
     const addKeyword = () => {
         if (!newKeyword.trim()) return;
         if (preferences.favorite_keywords.includes(newKeyword.trim())) return;
+
+        const maxKeywords = user?.is_premium ? 5 : 3;
+        if (preferences.favorite_keywords.length >= maxKeywords) {
+            toast.error(user?.is_premium ? "Max 5 keywords allowed." : "Free plan limited to 3 keywords.");
+            return;
+        }
 
         savePreferences({
             ...preferences,
@@ -144,19 +152,63 @@ export default function Settings() {
                             </div>
                             <div>
                                 <h2 className="text-lg font-semibold">Account Information</h2>
-                                <p className="text-sm text-muted-foreground">Your personal details</p>
+                                <p className="text-sm text-muted-foreground">Manage your personal details</p>
                             </div>
                         </div>
 
                         <div className="grid gap-6 md:grid-cols-2">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Full Name</label>
-                                <Input value={user?.full_name || ""} disabled className="bg-muted/50" />
+                                <div className="flex gap-2">
+                                    <Input
+                                        value={user?.full_name || ""}
+                                        onChange={(e) => {
+                                            // Handle local state update? 
+                                            // Actually better to have a local state form or just prompt on blur.
+                                            // For simplicity, let's make a small inline form or dialog.
+                                            // Let's implement a direct update button pattern.
+                                        }}
+                                        disabled={true} // For now, let's keep it simple or implement edit mode
+                                        className="bg-muted/50"
+                                    />
+                                    <EditProfileDialog user={user} />
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Email Address</label>
-                                <Input value={user?.email || ""} disabled className="bg-muted/50" />
+                                <div className="space-y-2">
+                                    <Input value={user?.email || ""} disabled className="bg-muted/50" />
+                                    {user?.is_verified ? (
+                                        <div className="flex items-center gap-2 text-sm text-green-600 bg-green-500/10 px-3 py-1.5 rounded-lg w-fit">
+                                            <Sparkles className="h-3 w-3" />
+                                            Verified
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-between gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                                            <span className="text-sm text-yellow-600 flex items-center gap-2">
+                                                <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                                                Unverified
+                                            </span>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 text-xs border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10"
+                                                onClick={() => {
+                                                    api.auth.resendVerification()
+                                                        .then(() => toast.success("Verification email sent!"))
+                                                        .catch(() => toast.error("Failed to send email"));
+                                                }}
+                                            >
+                                                Resend
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                            <ChangePasswordDialog />
                         </div>
                     </div>
 
@@ -220,8 +272,8 @@ export default function Settings() {
                                             key={cat}
                                             onClick={() => toggleCategory(cat)}
                                             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${preferences.favorite_categories.includes(cat)
-                                                    ? 'bg-accent text-accent-foreground border-accent'
-                                                    : 'bg-background text-muted-foreground border-input hover:border-accent hover:text-accent'
+                                                ? 'bg-accent text-accent-foreground border-accent'
+                                                : 'bg-background text-muted-foreground border-input hover:border-accent hover:text-accent'
                                                 }`}
                                         >
                                             {cat}
@@ -230,9 +282,53 @@ export default function Settings() {
                                 </div>
                             </div>
 
+                            {/* Language & Region */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                    <label className="text-sm font-medium">Content Language</label>
+                                    <Select
+                                        value={preferences.language || "en"}
+                                        onValueChange={(val) => savePreferences({ ...preferences, language: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select language" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="en">English</SelectItem>
+                                            <SelectItem value="es">Spanish</SelectItem>
+                                            <SelectItem value="fr">French</SelectItem>
+                                            <SelectItem value="de">German</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-sm font-medium">Region</label>
+                                    <Select
+                                        value={preferences.country || "us"}
+                                        onValueChange={(val) => savePreferences({ ...preferences, country: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select region" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="us">United States</SelectItem>
+                                            <SelectItem value="uk">United Kingdom</SelectItem>
+                                            <SelectItem value="in">India</SelectItem>
+                                            <SelectItem value="ca">Canada</SelectItem>
+                                            <SelectItem value="au">Australia</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
                             {/* Keywords */}
                             <div className="space-y-3">
-                                <label className="text-sm font-medium">Topic Keywords</label>
+                                <div className="flex justify-between items-center">
+                                    <label className="text-sm font-medium">Topic Keywords</label>
+                                    <span className="text-xs text-muted-foreground">
+                                        {preferences.favorite_keywords.length} / {user?.is_premium ? 5 : 3} used
+                                    </span>
+                                </div>
                                 <div className="flex gap-2">
                                     <Input
                                         placeholder="Add topic (e.g. 'AI', 'Startup')"
@@ -240,8 +336,15 @@ export default function Settings() {
                                         onChange={(e) => setNewKeyword(e.target.value)}
                                         onKeyDown={(e) => e.key === "Enter" && addKeyword()}
                                         className="max-w-xs"
+                                        disabled={preferences.favorite_keywords.length >= (user?.is_premium ? 5 : 3)}
                                     />
-                                    <Button variant="outline" onClick={addKeyword}>Add</Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={addKeyword}
+                                        disabled={preferences.favorite_keywords.length >= (user?.is_premium ? 5 : 3)}
+                                    >
+                                        Add
+                                    </Button>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     {preferences.favorite_keywords.map(kw => (
@@ -322,5 +425,125 @@ export default function Settings() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function EditProfileDialog({ user }: { user: any }) {
+    const { refreshProfile } = useAuth();
+    const [name, setName] = useState(user?.full_name || "");
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            await api.auth.updateProfile({ full_name: name });
+            await refreshProfile();
+            toast.success("Profile updated!");
+            setOpen(false);
+        } catch (e: any) {
+            toast.error("Failed to update profile");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <AlertDialog open={open} onOpenChange={setOpen}>
+            <AlertDialogTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0 bg-background">
+                    <span className="sr-only">Edit</span>
+                    <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 15 15"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                    >
+                        <path
+                            d="M11.8536 1.14645C11.6583 0.951184 11.3417 0.951184 11.1465 1.14645L3.71455 8.57836C3.62459 8.66832 3.55263 8.77461 3.50251 8.89155L2.04044 12.303C1.9599 12.491 2.00178 12.709 2.14646 12.8536C2.29113 12.9982 2.50905 13.0401 2.69697 12.9596L6.10847 11.4975C6.2254 11.4474 6.3317 11.3754 6.42166 11.2855L13.8536 3.85355C14.0488 3.65829 14.0488 3.34171 13.8536 3.14645L11.8536 1.14645ZM4.42166 9.28547L11.5 2.20711L12.7929 3.5L5.71455 10.5784L4.21924 11.2192L3.78081 10.7808L4.42166 9.28547Z"
+                            fill="currentColor"
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                        />
+                    </svg>
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Edit Profile</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Update your public profile information.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Full Name</label>
+                        <Input value={name} onChange={(e) => setName(e.target.value)} />
+                    </div>
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={(e) => { e.preventDefault(); handleSave(); }} disabled={loading}>
+                        {loading ? "Saving..." : "Save Changes"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
+function ChangePasswordDialog() {
+    const [password, setPassword] = useState("");
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const handleSave = async () => {
+        if (!password) return;
+        setLoading(true);
+        try {
+            await api.auth.updateProfile({ password });
+            toast.success("Password updated successfully!");
+            setOpen(false);
+            setPassword("");
+        } catch (e: any) {
+            toast.error("Failed to update password");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <AlertDialog open={open} onOpenChange={setOpen}>
+            <AlertDialogTrigger asChild>
+                <Button variant="outline">Change Password</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Change Password</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Enter your new password below. You'll need to login again with the new password.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">New Password</label>
+                        <Input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter new password"
+                        />
+                    </div>
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={(e) => { e.preventDefault(); handleSave(); }} disabled={loading || !password}>
+                        {loading ? "Updating..." : "Update Password"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }

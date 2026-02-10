@@ -12,6 +12,8 @@ interface User {
     refresh_tokens: number;
     last_news_refresh_date?: string;
     last_summary_refresh_date?: string;
+    onboarding_completed: boolean;
+    is_verified?: boolean; // Added for verification check
     preferences?: any; // To avoid importing types if not convenient
 }
 
@@ -45,9 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(userData);
 
             // Check for onboarding
-            // Ensure we don't redirect if we are already on onboarding page
-            if (userData && !userData.preferences && location.pathname !== '/onboarding' && location.pathname !== '/login' && location.pathname !== '/signup') {
+            if (userData && !userData.onboarding_completed && location.pathname !== '/onboarding' && location.pathname !== '/login' && location.pathname !== '/signup') {
                 navigate('/onboarding');
+            }
+            // If completed onboarding and on onboarding page, redirect to dashboard
+            if (userData && userData.onboarding_completed && location.pathname === '/onboarding') {
+                navigate('/dashboard');
             }
 
         } catch (error) {
@@ -83,10 +88,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const register = async (email: string, password: string, fullName: string) => {
         setIsLoggingIn(true);
         try {
+            console.log("Registering user...", email);
             await api.auth.signup({ email, password, full_name: fullName });
+            console.log("Registration successful, logging in...");
             // Auto login after signup
             await login(email, password);
+            console.log("Login successful after registration");
         } catch (error: any) {
+            console.error("Registration flow failed:", error);
             toast.error(error.message || "Registration failed");
             throw error;
         } finally {

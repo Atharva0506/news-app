@@ -56,7 +56,7 @@ export function SupportChat() {
             // So "ai" should be fine or "model". Let's use "model" to be safe for Google.
 
             const res = await api.support.chat(userMsg, history);
-            setMessages(prev => [...prev, { role: "ai", content: res.data.response }]);
+            setMessages(prev => [...prev, { role: "ai", content: res.response }]);
         } catch (error) {
             console.error(error);
             setMessages(prev => [...prev, { role: "ai", content: "Sorry, I'm having trouble connecting right now. Please try again later." }]);
@@ -89,8 +89,8 @@ export function SupportChat() {
                             {messages.map((msg, i) => (
                                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                                     <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${msg.role === "user"
-                                            ? "bg-accent text-accent-foreground"
-                                            : "bg-secondary text-secondary-foreground"
+                                        ? "bg-accent text-accent-foreground"
+                                        : "bg-secondary text-secondary-foreground"
                                         }`}>
                                         {msg.content}
                                     </div>

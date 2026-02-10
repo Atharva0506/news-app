@@ -19,6 +19,7 @@ interface Article {
     published_at: string;
     sentiment?: string;
     bias_score?: number;
+    image?: string;
 }
 
 export interface NewsFilters {
@@ -103,61 +104,74 @@ export function NewsFeed({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.1 }}
-                    className="p-6 rounded-2xl border border-border bg-card hover:border-accent/30 transition-all shadow-soft hover:shadow-glow cursor-pointer"
+                    className="group rounded-2xl border border-border bg-card hover:border-accent/30 transition-all shadow-soft hover:shadow-glow cursor-pointer overflow-hidden flex flex-col sm:flex-row"
                     onClick={() => onSelectArticle(article)}
                 >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                        <h2 className="text-lg font-semibold leading-tight">
-                            {article.title}
-                        </h2>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="shrink-0"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectArticle(article);
-                            }}
-                        >
-                            <MessageSquare className="h-4 w-4 text-accent" />
-                        </Button>
-                    </div>
+                    {/* Image Section - Stacked on mobile, Left on desktop */}
+                    {article.image && (
+                        <div className="shrink-0 w-full sm:w-48 md:w-64 h-48 sm:h-auto relative overflow-hidden bg-muted">
+                            <img
+                                src={article.image}
+                                alt={article.title}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
+                        </div>
+                    )}
 
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                        {article.summary_short || article.description}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-2 mt-auto">
-                        {article.category?.map(cat => (
-                            <Badge key={cat} variant="secondary">{cat}</Badge>
-                        ))}
-
-                        <Badge className={biasColors[getBiasLabel(article.bias_score)]}>
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            {getBiasLabel(article.bias_score)}
-                        </Badge>
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {new Date(article.published_at).toLocaleDateString()}
-                        </span>
-
-                        <div className="ml-auto flex items-center gap-2">
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground hidden sm:flex">
-                                <TrendingUp className="h-3 w-3" />
-                                {article.author || "Unknown"}
-                            </span>
+                    <div className="flex flex-col flex-1 p-5 md:p-6">
+                        <div className="flex items-start justify-between gap-4 mb-2">
+                            <h2 className="text-lg font-semibold leading-tight group-hover:text-accent transition-colors line-clamp-2">
+                                {article.title}
+                            </h2>
                             <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 gap-1 ml-2"
+                                variant="ghost"
+                                size="icon"
+                                className="shrink-0 -mt-1 -mr-2"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    window.open(article.url, '_blank', 'noopener,noreferrer');
+                                    onSelectArticle(article);
                                 }}
                             >
-                                <ExternalLink className="h-3 w-3" />
-                                <span className="sr-only sm:not-sr-only sm:inline-block">Read</span>
+                                <MessageSquare className="h-4 w-4 text-muted-foreground hover:text-accent" />
                             </Button>
+                        </div>
+
+                        <p className="text-muted-foreground text-sm mb-4 line-clamp-2 sm:line-clamp-3">
+                            {article.summary_short || article.description}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2 mt-auto pt-2">
+                            {article.category?.map(cat => (
+                                <Badge key={cat} variant="secondary" className="text-xs font-normal">{cat}</Badge>
+                            ))}
+
+                            <Badge className={`${biasColors[getBiasLabel(article.bias_score)]} border-0`}>
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                {getBiasLabel(article.bias_score)}
+                            </Badge>
+
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
+                                <Clock className="h-3 w-3" />
+                                {new Date(article.published_at).toLocaleDateString()}
+                            </span>
+
+                            <div className="hidden sm:flex items-center gap-2 border-l border-border pl-2 ml-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-xs px-2 hover:bg-accent/10 hover:text-accent"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(article.url, '_blank', 'noopener,noreferrer');
+                                    }}
+                                >
+                                    <ExternalLink className="h-3 w-3 mr-1" />
+                                    Read Source
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </motion.article>

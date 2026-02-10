@@ -33,6 +33,12 @@ async def create_payment_intent(
     """
     Generate a payment intent and record it as PENDING
     """
+    if not current_user.is_verified:
+         raise HTTPException(
+             status_code=403, 
+             detail="Please verify your email address before upgrading to Pro."
+         )
+         
     try:
         intent = await solana_service.generate_payment_intent(current_user.id, payload.amount)
         

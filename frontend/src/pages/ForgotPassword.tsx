@@ -1,72 +1,81 @@
-import { useState } from 'react';
-import { auth } from '../api/api';
-import { Link } from 'react-router-dom';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { ArrowLeft, Mail } from "lucide-react";
 
-const ForgotPassword = () => {
-    const [email, setEmail] = useState('');
-    const [submitted, setSubmitted] = useState(false);
-    const [loading, setLoading] = useState(false);
+export default function ForgotPassword() {
+    const [email, setEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        if (!email) return;
+
+        setIsLoading(true);
         try {
-            await auth.forgotPassword(email);
-            setSubmitted(true);
-        } catch (error) {
-            console.error(error);
-            // Ideally show error toast
+            await api.auth.forgotPassword(email);
+            setIsSubmitted(true);
+            toast.success("Reset link sent if account exists.");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to send reset link");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-gray-800 rounded-lg p-8 shadow-xl">
-                <h2 className="text-3xl font-bold mb-6 text-center">Reset Password</h2>
-
-                {!submitted ? (
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <p className="text-gray-400 text-center">Enter your email to receive a reset link.</p>
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Email Address</label>
-                            <input
-                                type="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-gray-700 border border-gray-600 rounded p-3 text-white focus:outline-none focus:border-blue-500"
-                                placeholder="you@example.com"
-                            />
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>Forgot Password</CardTitle>
+                    <CardDescription>
+                        Enter your email address and we'll send you a link to reset your password.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {!isSubmitted ? (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="name@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <Button type="submit" className="w-full" disabled={isLoading}>
+                                {isLoading ? "Sending..." : "Send Reset Link"}
+                            </Button>
+                        </form>
+                    ) : (
+                        <div className="text-center py-4 space-y-4">
+                            <div className="bg-green-500/10 text-green-500 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center">
+                                <Mail className="h-6 w-6" />
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                If an account exists for <strong>{email}</strong>, you will receive a password reset link shortly.
+                            </p>
+                            <Button variant="outline" className="w-full" onClick={() => setIsSubmitted(false)}>
+                                Try another email
+                            </Button>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition disabled:opacity-50"
-                        >
-                            {loading ? 'Sending...' : 'Send Reset Link'}
-                        </button>
-                        <div className="text-center">
-                            <Link to="/login" className="text-sm text-gray-400 hover:text-white">Back to Login</Link>
-                        </div>
-                    </form>
-                ) : (
-                    <div className="text-center space-y-4">
-                        <div className="text-green-500 text-5xl">✉️</div>
-                        <h3 className="text-xl font-bold">Check your email</h3>
-                        <p className="text-gray-400">If an account exists for {email}, we have sent a password reset link.</p>
-                        <button
-                            onClick={() => setSubmitted(false)}
-                            className="text-blue-400 hover:underline text-sm"
-                        >
-                            Try another email
-                        </button>
-                    </div>
-                )}
-            </div>
+                    )}
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                    <Link to="/login" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Login
+                    </Link>
+                </CardFooter>
+            </Card>
         </div>
     );
-};
-
-export default ForgotPassword;
+}

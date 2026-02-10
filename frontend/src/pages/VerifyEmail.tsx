@@ -1,65 +1,61 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { auth } from '../api/api';
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
-const VerifyEmail = () => {
+export default function VerifyEmail() {
     const [searchParams] = useSearchParams();
+    const token = searchParams.get("token");
     const navigate = useNavigate();
-    const token = searchParams.get('token');
-    const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
+
+    const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+    const [message, setMessage] = useState("Verifying your email...");
 
     useEffect(() => {
         if (!token) {
-            setStatus('error');
+            setStatus("error");
+            setMessage("No verification token found.");
             return;
         }
 
         const verify = async () => {
             try {
-                await auth.verifyEmail(token);
-                setStatus('success');
-                setTimeout(() => navigate('/login'), 3000);
-            } catch (error) {
-                console.error(error);
-                setStatus('error');
+                await api.auth.verifyEmail(token);
+                setStatus("success");
+                setMessage("Email verified successfully! You can now access all features.");
+            } catch (error: any) {
+                setStatus("error");
+                setMessage(error.message || "Verification failed. The link may be invalid or expired.");
             }
         };
 
         verify();
-    }, [token, navigate]);
+    }, [token]);
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
-            <div className="bg-gray-800 p-8 rounded-lg shadow-xl text-center max-w-md w-full">
-                {status === 'verifying' && (
-                    <>
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                        <h2 className="text-xl font-bold">Verifying your email...</h2>
-                    </>
-                )}
-                {status === 'success' && (
-                    <>
-                        <div className="text-green-500 text-5xl mb-4">✓</div>
-                        <h2 className="text-2xl font-bold mb-2">Email Verified!</h2>
-                        <p className="text-gray-400">Redirecting to login...</p>
-                    </>
-                )}
-                {status === 'error' && (
-                    <>
-                        <div className="text-red-500 text-5xl mb-4">✗</div>
-                        <h2 className="text-2xl font-bold mb-2">Verification Failed</h2>
-                        <p className="text-gray-400 mb-4">Invalid or expired token.</p>
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                        >
-                            Back to Login
-                        </button>
-                    </>
-                )}
-            </div>
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <div className="flex justify-center mb-4">
+                        {status === "loading" && <Loader2 className="h-12 w-12 animate-spin text-primary" />}
+                        {status === "success" && <CheckCircle2 className="h-12 w-12 text-green-500" />}
+                        {status === "error" && <XCircle className="h-12 w-12 text-destructive" />}
+                    </div>
+                    <CardTitle className="text-center">Email Verification</CardTitle>
+                    <CardDescription className="text-center">{message}</CardDescription>
+                </CardHeader>
+                <CardFooter className="flex justify-center">
+                    {status === "loading" ? (
+                        <Button disabled>Please wait...</Button>
+                    ) : (
+                        <Button onClick={() => navigate(status === "success" ? "/dashboard" : "/login")}>
+                            {status === "success" ? "Go to Dashboard" : "Back to Login"}
+                        </Button>
+                    )}
+                </CardFooter>
+            </Card>
         </div>
     );
-};
-
-export default VerifyEmail;
+}

@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
 import { UsageStats } from "@/components/dashboard/UsageStats";
 import { NewsFeed } from "@/components/dashboard/NewsFeed";
@@ -31,11 +31,26 @@ import { Badge } from "@/components/ui/badge";
 const isSameDay = (d1?: string) => {
   if (!d1) return false;
   const date1 = new Date(d1);
-  const date2 = new Date();
-  return date1.getDate() === date2.getDate() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getFullYear() === date2.getFullYear();
+  const now = new Date();
+
+  // Check if it's the same UTC day
+  return date1.getUTCFullYear() === now.getUTCFullYear() &&
+    date1.getUTCMonth() === now.getUTCMonth() &&
+    date1.getUTCDate() === now.getUTCDate();
 }
+
+const getTimeUntilNextReset = () => {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setUTCDate(now.getUTCDate() + 1);
+  tomorrow.setUTCHours(0, 0, 0, 0);
+
+  const diff = tomorrow.getTime() - now.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  return `${hours}h ${minutes}m`;
+};
 
 const navItems = [
   { icon: Home, label: "Home", href: "/dashboard" },
@@ -202,25 +217,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const isSettingsPage = location.pathname.includes("/settings");
 
-  useEffect(() => {
-    // Check if user has preferences set, if not redirect to onboarding
-    if (user) {
-      // Skip check if already on settings or onboarding (though this is dashboard)
-      // Check local storage flag to avoid repeated checks?
-      const hasOnboarded = localStorage.getItem("has_onboarded");
-      if (!hasOnboarded) {
-        api.preferences.get().then((res: any) => {
-          // Assume res.data contains preference object
-          const prefs = res.data;
-          if (prefs && (!prefs.favorite_categories || prefs.favorite_categories.length === 0)) {
-            navigate("/onboarding");
-          } else {
-            localStorage.setItem("has_onboarded", "true");
-          }
-        }).catch((err: any) => console.error("Pref check failed", err));
-      }
-    }
-  }, [user, navigate]);
+  // Onboarding check is now handled by AuthContext
 
   // Filter State
   const [searchQuery, setSearchQuery] = useState("");
@@ -403,6 +400,7 @@ ${data.article.summary_detail || "N/A"}
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <div className="flex flex-col h-full"><SidebarContent mobile /></div>
               </SheetContent>
             </Sheet>
@@ -445,7 +443,7 @@ ${data.article.summary_detail || "N/A"}
                     {user?.is_premium
                       ? "Unlimited Refresh (Premium)"
                       : user && !user.is_premium && isSameDay(user.last_news_refresh_date)
-                        ? "Upgrade to Pro to refresh multiple times."
+                        ? `Daily limit reached. Next available in ${getTimeUntilNextReset()}. Upgrade for unlimited.`
                         : "Refresh Feed"}
                   </p>
                 </TooltipContent>
@@ -471,6 +469,18 @@ ${data.article.summary_detail || "N/A"}
             </div>
           ) : (
             <>
+              {user && !user.is_verified && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    <span className="text-sm font-medium">Please verify your email address to upgrade to Pro.</span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => api.auth.resendVerification().then(() => toast.success("Verification email sent!"))} className="h-8 border-yellow-500/20 hover:bg-yellow-500/10 text-yellow-700">
+                    Resend Email
+                  </Button>
+                </div>
+              )}
+
               {user && (
                 <div className="mb-8">
                   <FeedSummary />
@@ -532,6 +542,7 @@ ${data.article.summary_detail || "N/A"}
 
       <Sheet open={aiPanelOpen} onOpenChange={setAiPanelOpen}>
         <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col">
+          <SheetTitle className="sr-only">AI Assistant</SheetTitle>
           <div className="p-4 border-b border-border">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">

@@ -120,9 +120,35 @@ export const api = {
       }),
     signup: (data: any) => fetchWithAuth("/auth/register", { method: "POST", body: JSON.stringify(data) }),
     me: () => fetchWithAuth("/auth/me"),
+    updateProfile: (data: { full_name?: string; password?: string }) => fetchWithAuth("/auth/me", { method: "PUT", body: JSON.stringify(data) }),
     usage: () => fetchWithAuth("/auth/me/usage"),
     refresh: (token: string) => fetchWithAuth(`/auth/refresh?refresh_token=${token}`, { method: "POST" }),
     deleteAccount: () => fetchWithAuth("/auth/me", { method: "DELETE" }),
+    verifyEmail: (token: string) => fetch(`${API_URL}/auth/verify-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token })
+    }).then(async res => {
+      if (!res.ok) throw new ApiError(res.status, (await res.json()).detail);
+      return res.json();
+    }),
+    forgotPassword: (email: string) => fetch(`${API_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    }).then(async res => {
+      if (!res.ok) throw new ApiError(res.status, (await res.json()).detail);
+      return res.json();
+    }),
+    resetPassword: (token: string, new_password: string) => fetch(`${API_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, new_password })
+    }).then(async res => {
+      if (!res.ok) throw new ApiError(res.status, (await res.json()).detail);
+      return res.json();
+    }),
+    resendVerification: () => fetchWithAuth("/auth/resend-verification", { method: "POST" }),
   },
   news: {
     getFeed: (filters?: { category?: string; sentiment?: string; search?: string }) => {
@@ -143,6 +169,9 @@ export const api = {
   preferences: {
     get: () => fetchWithAuth("/preferences/me"),
     update: (data: any) => fetchWithAuth("/preferences/me", { method: "PUT", body: JSON.stringify(data) }),
+  },
+  onboarding: {
+    submit: (data: any) => fetchWithAuth("/onboarding/submit", { method: "POST", body: JSON.stringify(data) }),
   },
   payments: {
     createIntent: (amount: number, plan: string = "pro") => fetchWithAuth("/payments/create", {
