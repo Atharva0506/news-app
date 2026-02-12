@@ -1,7 +1,7 @@
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 class NewsBase(BaseModel):
     title: str
@@ -24,7 +24,7 @@ class News(NewsBase):
     bias_score: Optional[float] = None
     bias_explanation: Optional[str] = None # Premium only
     created_at: Optional[datetime] = None
-    category: List[str] = [] # Changed from simple category_id
+    category: List[str] = Field(default=[], validation_alias="tags") # Map to tags from DB model
 
     model_config = ConfigDict(from_attributes=True)
 

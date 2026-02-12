@@ -43,7 +43,7 @@ export default function Pricing() {
     {
       name: "Free",
       id: "free",
-      description: "Perfect for trying out NewsAI",
+      description: "Perfect for trying out NewsAI. Includes a 3-Day Free Trial of Pro features.",
       monthlyPrice: 0,
       displayPrice: "0 SOL",
       features: [
@@ -241,15 +241,20 @@ export default function Pricing() {
             {/* Solana Network Notice */}
             {/* Solana Network Notice */}
             {solNetwork && (
-              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium mb-6 ${solNetwork === "mainnet"
-                ? "bg-green-500/10 border border-green-500/20 text-green-600"
-                : "bg-yellow-500/10 border border-yellow-500/20 text-yellow-500"
-                }`}>
-                <span>
-                  {solNetwork === "mainnet"
-                    ? "✅ Payments are running on Mainnet (real payments)"
-                    : "⚠️ Payments are running on Devnet (testing mode)"}
-                </span>
+              <div className="flex flex-col items-center gap-2 mb-6">
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${solNetwork === "mainnet"
+                  ? "bg-green-500/10 border border-green-500/20 text-green-600"
+                  : "bg-yellow-500/10 border border-yellow-500/20 text-yellow-500"
+                  }`}>
+                  <span>
+                    {solNetwork === "mainnet"
+                      ? "✅ Payments are running on Mainnet (real payments)"
+                      : "⚠️ Payments are running on Devnet (testing mode)"}
+                  </span>
+                </div>
+                <a href="/solana-guide" className="text-sm text-muted-foreground hover:text-accent underline">
+                  New to Solana? Read our Payment Guide
+                </a>
               </div>
             )}
 

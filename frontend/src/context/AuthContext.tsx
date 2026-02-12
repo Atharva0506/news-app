@@ -15,6 +15,12 @@ interface User {
     onboarding_completed: boolean;
     is_verified?: boolean; // Added for verification check
     preferences?: any; // To avoid importing types if not convenient
+
+    // Plan & Trial
+    plan_type?: string;
+    trial_start_date?: string;
+    trial_end_date?: string;
+    deep_analysis_count?: number;
 }
 
 interface AuthContextType {
@@ -108,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("daily_briefing_summary");
         localStorage.removeItem("cached_feed");
+        localStorage.removeItem("has_onboarded");
         setUser(null);
         toast.success("Logged out successfully");
         navigate("/login");

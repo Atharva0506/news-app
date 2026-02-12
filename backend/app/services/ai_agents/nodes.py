@@ -8,9 +8,7 @@ from app.core.config import settings
 from app.services.ai_agents.state import AgentState
 from fastapi import HTTPException
 
-import os
 import asyncio
-import random
 from typing import Dict, Any, List
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate

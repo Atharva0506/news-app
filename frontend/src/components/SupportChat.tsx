@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
     role: "user" | "ai";
@@ -85,21 +86,30 @@ export function SupportChat() {
                             </Button>
                         </div>
 
+
+
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50" ref={scrollRef}>
                             {messages.map((msg, i) => (
                                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                                    <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${msg.role === "user"
-                                        ? "bg-accent text-accent-foreground"
-                                        : "bg-secondary text-secondary-foreground"
+                                    <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm ${msg.role === "user"
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-card border border-border text-card-foreground"
                                         }`}>
-                                        {msg.content}
+                                        {msg.role === "ai" ? (
+                                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                            </div>
+                                        ) : (
+                                            msg.content
+                                        )}
                                     </div>
                                 </div>
                             ))}
                             {isLoading && (
                                 <div className="flex justify-start">
-                                    <div className="bg-secondary rounded-lg px-3 py-2">
+                                    <div className="bg-card border border-border rounded-lg px-3 py-2 flex items-center gap-2">
                                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        <span className="text-xs text-muted-foreground">Thinking...</span>
                                     </div>
                                 </div>
                             )}

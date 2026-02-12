@@ -11,7 +11,7 @@ const faqs = [
     },
     {
         question: "What is the Solana payment integration?",
-        answer: "We use the Solana blockchain for fast, secure, and low-fee subscription payments. You can pay using any Solana-compatible wallet (like Phantom or Solflare). Currently, payments are processed on the **Solana Devnet** for testing purposes.",
+        answer: "We use the Solana blockchain for fast, secure, and low-fee subscription payments. You can pay using any Solana-compatible wallet (like Phantom or Solflare). Currently, payments are processed on the **Solana Devnet** for testing purposes. Need help? Check out our <a href='/solana-guide' class='text-accent hover:underline'>Solana Payment Guide</a>.",
     },
     {
         question: "Is there a free plan available?",

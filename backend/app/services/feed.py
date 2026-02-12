@@ -65,6 +65,11 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
              # Let's allow generation if NO cache exists (emergency fix).
              pass
 
+    from app.core.plan_checker import check_trial_expiration
+    
+    # Check trial expiration first
+    user = await check_trial_expiration(user, db)
+
     # 4. Fetch News from Currents
     # Fetch Preferences
     prefs_result = await db.execute(select(UserPreference).where(UserPreference.user_id == user.id))
@@ -139,15 +144,9 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
         ))
 
     # 6. Apply Limit & Cache
-    if not user.is_premium:
-         # Limit to 20 articles for cache to save space, but display might be less. 
-         # Wait, user is limited to "One news feed". 
-         # API usually returns 30-50. 
-         # Let's cache all but display limiting is handled by frontend or here?
-         # "Free users limited to 2 articles" - Wait, comment in api/news.py said 2 articles.
-         # Requirement says "One news feed". Usually a feed has multiple articles.
-         # Let's limit to 10 for Free, 50 for Pro.
-         articles = articles[:10]
+    # User Request: Free and Trial users get 5 news per day. Pro unlimited (or high limit).
+    if user.plan_type in ["free", "trial"]:
+         articles = articles[:5]
     else:
          articles = articles[:50]
 

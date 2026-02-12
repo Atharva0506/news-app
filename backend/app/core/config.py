@@ -45,12 +45,10 @@ class Settings(BaseSettings):
     # --- CORS / Security ---
     FRONTEND_ORIGIN: str = "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173"
 
-    # --- Email (Gmail) ---
-    MAIL_USER: str
-    MAIL_PASS: str
+    # --- Email (Resend) ---
+    RESEND_API_KEY: str = "re_123456789"  # Placeholder, will come from .env
     MAIL_FROM_NAME: str = "News App Support"
-    MAIL_PORT: int = 587
-    MAIL_SERVER: str = "smtp.gmail.com"
+    MAIL_FROM_EMAIL: str = "onboarding@resend.dev"  # Default for testing
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

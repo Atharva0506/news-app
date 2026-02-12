@@ -39,6 +39,7 @@ async def support_chat(
             temperature=0.3
         )
 
+        
         # System Prompt
         system_prompt = """You are the official AI Support Agent for NewsAI, a next-generation AI-powered news aggregator platform.
         

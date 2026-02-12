@@ -90,15 +90,18 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
               // Refresh failed
               localStorage.removeItem("token");
               localStorage.removeItem("refresh_token");
+              localStorage.removeItem("has_onboarded");
             }
           } catch (refreshErr) {
             // Refresh process failed
             localStorage.removeItem("token");
             localStorage.removeItem("refresh_token");
+            localStorage.removeItem("has_onboarded");
             throw error;
           }
         } else {
           localStorage.removeItem("token");
+          localStorage.removeItem("has_onboarded");
         }
       }
       throw error;
@@ -151,11 +154,12 @@ export const api = {
     resendVerification: () => fetchWithAuth("/auth/resend-verification", { method: "POST" }),
   },
   news: {
-    getFeed: (filters?: { category?: string; sentiment?: string; search?: string }) => {
+    getFeed: (filters?: { category?: string; sentiment?: string; search?: string; refresh?: boolean }) => {
       const params = new URLSearchParams();
       if (filters?.category) params.append("category", filters.category);
       if (filters?.sentiment) params.append("sentiment", filters.sentiment);
       if (filters?.search) params.append("search", filters.search);
+      if (filters?.refresh) params.append("refresh", "true");
 
       return fetchWithAuth(`/news/feed?${params.toString()}`);
     },
@@ -164,7 +168,10 @@ export const api = {
   ai: {
     ask: (data: { question: string; article_id?: string; context?: string }) =>
       fetchWithAuth("/ai/ask", { method: "POST", body: JSON.stringify(data) }),
-    summarizeFeed: () => fetchWithAuth("/ai/feed/summary", { method: "POST" }),
+    summarizeFeed: (refresh: boolean = false) => fetchWithAuth("/ai/feed/summary", {
+      method: "POST",
+      body: JSON.stringify({ refresh })
+    }),
   },
   preferences: {
     get: () => fetchWithAuth("/preferences/me"),

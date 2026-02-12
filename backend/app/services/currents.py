@@ -34,26 +34,20 @@ class LiveNewsProvider(NewsProvider):
         self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
         print(f"Rotating to Currents API key index {self.current_key_index}")
 
-    async def fetch_latest_news(self, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def _fetch_from_api(self, endpoint: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
             for _ in range(len(self.api_keys)):
                 try:
-                    params = {
-                        "apiKey": self._get_current_key(), 
-                        "language": language, 
-                        "country": country,
-                        "type": type_,
-                        "limit": 5
-                    }
-                    if category:
-                        params["category"] = category
-                        
+                    # Inject current key
+                    params["apiKey"] = self._get_current_key()
+                    
                     response = await client.get(
-                        f"{self.BASE_URL}/latest-news",
-                        params=params
+                        f"{self.BASE_URL}/{endpoint}",
+                        params=params, 
+                        timeout=10.0
                     )
                     
-                    if response.status_code == 429 or response.status_code == 401:
+                    if response.status_code in [401, 429]:
                         print(f"Currents API Error {response.status_code} with key index {self.current_key_index}. Rotating...")
                         self._rotate_key()
                         continue
@@ -61,51 +55,43 @@ class LiveNewsProvider(NewsProvider):
                     response.raise_for_status()
                     data = response.json()
                     return data.get("news", [])
+                    
                 except Exception as e:
-                    print(f"Error fetching news (Live): {e}")
+                    print(f"Error calling Currents ({endpoint}): {e}")
+                     # Handle httpx specific errors if needed
                     if isinstance(e, httpx.HTTPStatusError):
                          if e.response.status_code in [429, 401]:
                              self._rotate_key()
                              continue
-                    break 
+                    # On other errors (connection, timeout), try next key? Or break?
+                    # Let's try next key just in case.
+                    continue
             return []
 
-    async def fetch_search_news(self, keywords: str, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
-        async with httpx.AsyncClient() as client:
-             for _ in range(len(self.api_keys)):
-                try:
-                    params = {
-                        "apiKey": self._get_current_key(), 
-                        "language": language, 
-                        "country": country,
-                        "type": type_,
-                        "keywords": keywords,
-                        "limit": 5
-                    }
-                    if category:
-                        params["category"] = category
-                        
-                    response = await client.get(
-                        f"{self.BASE_URL}/search",
-                        params=params
-                    )
-                    
-                    if response.status_code == 429 or response.status_code == 401:
-                        print(f"Currents API Error {response.status_code} with key index {self.current_key_index}. Rotating...")
-                        self._rotate_key()
-                        continue
+    async def fetch_latest_news(self, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        params = {
+            "language": language, 
+            "country": country,
+            "type": type_,
+            "limit": 5
+        }
+        if category:
+            params["category"] = category
+            
+        return await self._fetch_from_api("latest-news", params)
 
-                    response.raise_for_status()
-                    data = response.json()
-                    return data.get("news", [])
-                except Exception as e:
-                    print(f"Error searching news (Live): {e}")
-                    if isinstance(e, httpx.HTTPStatusError):
-                         if e.response.status_code in [429, 401]:
-                             self._rotate_key()
-                             continue
-                    break
-             return []
+    async def fetch_search_news(self, keywords: str, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        params = {
+            "language": language, 
+            "country": country,
+            "type": type_,
+            "keywords": keywords,
+            "limit": 5
+        }
+        if category:
+            params["category"] = category
+            
+        return await self._fetch_from_api("search", params)
 
 class TestNewsProvider(NewsProvider):
     MOCK_FILE_PATH = "app/tests/data/currents_mock.json"

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquare, AlertCircle, Clock, TrendingUp, ExternalLink } from "lucide-react";
+import { MessageSquare, AlertCircle, Clock, TrendingUp, ExternalLink, Search, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
@@ -30,24 +30,38 @@ export interface NewsFilters {
 
 export function NewsFeed({
     onSelectArticle,
-    filters = {}
+    filters = {},
+    refreshTrigger = 0
 }: {
     onSelectArticle: (article: Article) => void,
-    filters?: NewsFilters
+    filters?: NewsFilters,
+    refreshTrigger?: number
 }) {
     const [articles, setArticles] = useState<Article[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { refreshProfile } = useAuth();
 
+    // Effect for Filters (Load from DB/Cache)
     useEffect(() => {
-        fetchNews();
+        fetchNews(false);
     }, [filters.category, filters.sentiment, filters.search]);
 
-    const fetchNews = async () => {
+    // Effect for Refresh Button (Force API Fetch)
+    useEffect(() => {
+        if (refreshTrigger > 0) {
+            fetchNews(true);
+        }
+    }, [refreshTrigger]);
+
+    const fetchNews = async (forceRefresh: boolean = false) => {
         setIsLoading(true);
         try {
-            const data = await api.news.getFeed(filters);
+            const data = await api.news.getFeed({ ...filters, refresh: forceRefresh });
             setArticles(data);
+            if (!forceRefresh) {
+                // Only update local cache on initial load if we want, or always?
+                // Always is fine.
+            }
             localStorage.setItem("cached_feed", JSON.stringify(data));
             await refreshProfile();
         } catch (error: any) {
@@ -59,7 +73,7 @@ export function NewsFeed({
                 if (error.status === 403 || error.message.includes("limit")) {
                     toast.info("Daily limit reached. Showing cached feed.");
                 } else {
-                    toast.warning("Could not fetch fresh news. Showing cached feed.");
+                    if (forceRefresh) toast.warning("Could not refresh. Showing cached feed.");
                 }
             } else {
                 toast.error(error.message || "Failed to load news feed");
@@ -92,6 +106,32 @@ export function NewsFeed({
                         <Skeleton className="h-4 w-5/6 mb-4" />
                     </div>
                 ))}
+            </div>
+        );
+    }
+
+    if (articles.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-border bg-card/50">
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <Search className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No articles found</h3>
+                <p className="text-muted-foreground max-w-sm mb-6">
+                    We couldn't find any news articles matching your current filters.
+                </p>
+                <div className="flex gap-2">
+                    {/* Suggest clearing filters or refreshing */}
+                    {(filters.category || filters.sentiment || filters.search) && (
+                        <Button variant="outline" onClick={() => window.location.reload()}>
+                            Clear Filters
+                        </Button>
+                    )}
+                    <Button onClick={() => fetchNews(true)}>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Refresh Feed
+                    </Button>
+                </div>
             </div>
         );
     }

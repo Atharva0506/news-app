@@ -22,9 +22,17 @@ class UserInDBBase(UserBase):
     id: UUID
     is_premium: bool
     premium_expiry: Optional[datetime] = None
-    created_at: datetime
+    
+    # Plan & Trial
+    plan_type: str = "free"
+    trial_start_date: Optional[datetime] = None
+    trial_end_date: Optional[datetime] = None
     
     # Usage Limits
+    deep_analysis_count: int = 0
+    deep_analysis_last_reset: Optional[datetime] = None
+    
+    # Legacy / Other Limits
     refresh_tokens: int = 0
     last_news_refresh_date: Optional[datetime] = None
     last_summary_refresh_date: Optional[datetime] = None

@@ -8,10 +8,11 @@ from sqlalchemy.future import select
 from app.api import deps
 from app.core import security
 from app.core.config import settings
-from app.core.email import send_verification_email, send_reset_password_email
+from app.core.email import EmailService
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, User as UserSchema
 import secrets
+from datetime import timezone
 
 router = APIRouter()
 
@@ -53,7 +54,7 @@ async def resend_verification(
     db.add(current_user)
     await db.commit()
     
-    background_tasks.add_task(send_verification_email, current_user.email, verification_token)
+    background_tasks.add_task(EmailService.send_verification_email, current_user.email, verification_token)
     return {"message": "Verification email sent"}
 
 @router.post("/forgot-password")
@@ -75,7 +76,7 @@ async def forgot_password(
         db.add(user)
         await db.commit()
         
-        background_tasks.add_task(send_reset_password_email, user.email, token)
+        background_tasks.add_task(EmailService.send_password_reset_email, user.email, token)
         
     # Always return success to prevent email enumeration
     return {"message": "If an account exists, a reset link has been sent."}
@@ -162,14 +163,13 @@ async def refresh_token(
         raise HTTPException(status_code=400, detail="Inactive user")
         
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_refresh_token = security.create_refresh_token(user.id)
     return {
         "access_token": security.create_access_token(
             user.id, expires_delta=access_token_expires
         ),
         "token_type": "bearer",
-        "refresh_token": refresh_token # Return same refresh token? Or rotate? For simplicity return same or new. Rotate is better security.
-        # Let's rotate.
-        # "refresh_token": security.create_refresh_token(user.id) 
+        "refresh_token": new_refresh_token 
     }
 
 @router.post("/register", response_model=UserSchema)
@@ -191,12 +191,28 @@ async def register(
         )
         
     verification_token = secrets.token_urlsafe(32)
+    
+    # Initialize logic for 3-Day Free Trial
+    now = datetime.now(timezone.utc)
+    trial_days = 3
+    trial_end = now + timedelta(days=trial_days)
+    
     user = User(
         email=user_in.email,
         hashed_password=security.get_password_hash(user_in.password),
         full_name=user_in.full_name,
         verification_token=verification_token,
-        is_verified=False
+        is_verified=False,
+        
+        # Trial Initialization
+        plan_type="trial",
+        trial_start_date=now,
+        trial_end_date=trial_end,
+        is_premium=True, # Enable Pro features during trial
+        premium_expiry=trial_end,
+        
+        # Limits
+        deep_analysis_count=0
     )
     db.add(user)
     await db.commit()
@@ -208,7 +224,7 @@ async def register(
     )
     user = result.scalars().first()
     
-    background_tasks.add_task(send_verification_email, user.email, verification_token)
+    background_tasks.add_task(EmailService.send_verification_email, user.email, verification_token)
     
     return user
 
@@ -305,7 +321,12 @@ async def read_user_usage(
         "limit_daily": 10000 if current_user.is_premium else 1000,
         "refresh_tokens": current_user.refresh_tokens,
         "news_refresh_available": news_available,
-        "summary_refresh_available": summary_available
+        "summary_refresh_available": summary_available,
+        
+        # New Fields
+        "plan_type": current_user.plan_type,
+        "deep_analysis_count": current_user.deep_analysis_count,
+        "trial_end_date": current_user.trial_end_date
     }
 
 @router.delete("/me", status_code=204, response_class=Response)

@@ -61,6 +61,7 @@ const navItems = [
 ];
 
 import { RefreshCw } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 const FeedSummary = () => {
   const { user, refreshProfile } = useAuth();
@@ -76,13 +77,13 @@ const FeedSummary = () => {
     if (cached) {
       setSummary(cached);
     } else {
-      generateSummary();
+      generateSummary(false);
     }
   }, []);
 
-  const generateSummary = () => {
+  const generateSummary = (forceRefresh: boolean = false) => {
     setLoading(true);
-    api.ai.summarizeFeed()
+    api.ai.summarizeFeed(forceRefresh)
       .then(data => {
         setSummary(data.summary);
         localStorage.setItem(CACHE_KEY, data.summary);
@@ -118,7 +119,7 @@ const FeedSummary = () => {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-                  onClick={generateSummary}
+                  onClick={() => generateSummary(true)}
                   disabled={loading || (user && !user.is_premium && isSameDay(user.last_summary_refresh_date))}
                 >
                   <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
@@ -137,9 +138,11 @@ const FeedSummary = () => {
           </Tooltip>
         </TooltipProvider>
       </div>
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        {loading ? "Refreshing..." : summary}
-      </p>
+      <div className="text-sm leading-relaxed text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
+        {loading ? "Refreshing..." : (
+          <ReactMarkdown>{summary || ""}</ReactMarkdown>
+        )}
+      </div>
     </div>
   );
 }
@@ -524,7 +527,7 @@ ${data.article.summary_detail || "N/A"}
               </div>
 
               <NewsFeed
-                key={feedRefreshKey}
+                refreshTrigger={feedRefreshKey}
                 onSelectArticle={(article) => {
                   setSelectedArticle(article);
                   setAiPanelOpen(true);
@@ -616,9 +619,11 @@ ${data.article.summary_detail || "N/A"}
               ) : (
                 chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                    <div className={`max-w-[80%] rounded-lg px-4 py-2 text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                       }`}>
-                      {msg.content}
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 ))

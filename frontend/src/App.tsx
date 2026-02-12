@@ -2,62 +2,96 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/hooks/use-theme";
-import { AuthProvider } from "@/context/AuthContext";
-import { WalletContextProvider } from "@/context/WalletContextProvider";
-import Index from "./pages/Index";
-import Pricing from "./pages/Pricing";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
-import About from "./pages/About";
-import FAQ from "./pages/FAQ";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Cookies from "./pages/Cookies";
-import Onboarding from "./pages/Onboarding";
-import VerifyEmail from "./pages/VerifyEmail";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { ThemeProvider } from "@/hooks/use-theme"; // Corrected path
+import { WalletContextProvider } from "@/context/WalletContextProvider"; // Corrected path
 import { SupportChat } from "@/components/SupportChat";
+import { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
+
+// Lazy Load Pages
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const About = lazy(() => import("./pages/About"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const SolanaGuide = lazy(() => import("./pages/SolanaGuide"));
 
 const queryClient = new QueryClient();
+
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    // Redirect to login but save the attempted location
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+// Loading Fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <WalletContextProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/dashboard/*" element={<Dashboard />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/cookies" element={<Cookies />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+      <WalletContextProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route
+                    path="/dashboard/*"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/solana-guide" element={<SolanaGuide />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
               <SupportChat />
-            </WalletContextProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </WalletContextProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

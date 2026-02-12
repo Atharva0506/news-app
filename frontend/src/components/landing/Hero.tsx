@@ -47,7 +47,7 @@ export function Hero() {
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
             AI-powered summaries, bias detection, and smart personalization.
-            Get the complete picture in seconds, not hours.
+            Get the complete picture in seconds, not hours. <span className="text-accent font-medium block mt-2">Start your 3-Day Free Trial today.</span>
           </motion.p>
 
           {/* CTA Buttons */}

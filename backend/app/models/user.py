@@ -22,7 +22,16 @@ class User(Base):
     is_premium: Mapped[bool] = mapped_column(Boolean, default=False)
     premium_expiry: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
+    # Plan & Trial
+    plan_type: Mapped[str] = mapped_column(String, default="free", server_default=text("'free'"))  # free, trial, pro
+    trial_start_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    trial_end_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
     # Usage Limits
+    deep_analysis_count: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    deep_analysis_last_reset: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Legacy / Other Limits
     refresh_tokens: Mapped[int] = mapped_column(Integer, default=0)
     last_news_refresh_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     last_summary_refresh_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
