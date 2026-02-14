@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
 import { Cpu, Zap, Activity } from "lucide-react";
@@ -18,7 +19,10 @@ export function UsageStats() {
     const [stats, setStats] = useState<UsageData | null>(null);
 
     useEffect(() => {
-        api.auth.usage().then(setStats).catch(console.error);
+        const fetchUsage = () => api.auth.usage().then(setStats).catch(console.error);
+        fetchUsage();
+        const interval = setInterval(fetchUsage, 60000);
+        return () => clearInterval(interval);
     }, []);
 
     if (!stats) return null;
@@ -27,6 +31,8 @@ export function UsageStats() {
 
     // Calculate Days Left if Trial
     let daysLeft = 0;
+    // Only calculate if plan is strictly trial, or if it's pro but we want to show expiry (handled below separately)
+    // But for the "Trial: X Days Left" badge, only show if plan_type is trial.
     if (stats.plan_type === 'trial' && stats.trial_end_date) {
         const end = new Date(stats.trial_end_date);
         const now = new Date();
@@ -61,13 +67,28 @@ export function UsageStats() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
+                    {/* Trial upgrade link */}
+                    {stats.plan_type === 'trial' && (
+                        <Link to="/pricing" className="block text-xs text-center py-1.5 px-3 bg-accent/10 text-accent rounded-md hover:bg-accent/20 transition-colors">
+                            ✨ Upgrade to Pro for unlimited access
+                        </Link>
+                    )}
+                    {/* Pro plan expiry */}
+                    {stats.plan_type === 'pro' && stats.trial_end_date && (
+                        <p className="text-xs text-muted-foreground text-center">
+                            Expires {new Date(stats.trial_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                    )}
                     {/* General AI Token Usage */}
                     <div>
                         <div className="flex justify-between text-xs mb-1">
                             <span className="text-muted-foreground">AI Tokens (Daily)</span>
-                            <span>{stats.daily_tokens} / {stats.limit_daily}</span>
+                            <span>{stats.plan_type === 'pro' ? 'Unlimited' : `${stats.daily_tokens} / ${stats.limit_daily}`}</span>
                         </div>
-                        <Progress value={percentage} className="h-1.5" />
+                        <Progress
+                            value={stats.plan_type === 'pro' ? 0 : percentage}
+                            className="h-1.5"
+                        />
                     </div>
 
                     {/* Deep Analysis Limit */}
@@ -84,7 +105,7 @@ export function UsageStats() {
                         />
                         {stats.plan_type !== 'pro' && stats.deep_analysis_count >= 1 && (
                             <p className="text-[10px] text-destructive mt-1">
-                                Limit reached. Upgrade to Pro used unlimited.
+                                Limit reached. Upgrade to Pro for unlimited.
                             </p>
                         )}
                     </div>

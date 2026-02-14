@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = "re_123456789"  # Placeholder, will come from .env
     MAIL_FROM_NAME: str = "News App Support"
     MAIL_FROM_EMAIL: str = "onboarding@resend.dev"  # Default for testing
+    TEST_EMAIL_RECIPIENT: str = "atharvan.coder@gmail.com" # For dev mode redirection
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

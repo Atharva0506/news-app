@@ -33,3 +33,4 @@ httpx>=0.26.0
 fastapi-mail>=1.4.1
 resend>=0.1.0
 ratelimit>=2.2.1
+slowapi>=0.1.9

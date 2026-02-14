@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Body, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Body, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -329,28 +329,36 @@ async def read_user_usage(
         "trial_end_date": current_user.trial_end_date
     }
 
-@router.delete("/me", status_code=204, response_class=Response)
+@router.delete("/me", status_code=200)
 async def delete_user_me(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ):
     """
-    Delete own user account and all associated data.
+    Schedule user account for deletion (7-day grace period).
+    User can cancel by logging back in within 7 days.
+    Account must be at least 7 days old to be deleted.
     """
-    # Explicitly delete related data to ensure cleanup
-    from app.models.news import UserPreference
-    from app.models.chat import SavedChat
-    from app.models.payment import AIUsageLog, PaymentTransaction, Subscription, TransactionStatus
-    
-    # Delete Preferences
-    # Actually we can just delete by filtering
-    from sqlalchemy import delete
-    await db.execute(delete(UserPreference).where(UserPreference.user_id == current_user.id))
-    await db.execute(delete(SavedChat).where(SavedChat.user_id == current_user.id))
-    await db.execute(delete(AIUsageLog).where(AIUsageLog.user_id == current_user.id))
-    await db.execute(delete(Subscription).where(Subscription.user_id == current_user.id))
-    await db.execute(delete(PaymentTransaction).where(PaymentTransaction.user_id == current_user.id))
-    
-    await db.delete(current_user)
+    from datetime import datetime, timezone, timedelta
+
+    if current_user.deleted_at:
+        return {"message": "Account is already scheduled for deletion."}
+
+    # Enforce 7-day minimum account age
+    if current_user.created_at:
+        account_age = datetime.now(timezone.utc) - current_user.created_at.replace(tzinfo=timezone.utc)
+        if account_age < timedelta(days=7):
+            eligible_date = current_user.created_at.replace(tzinfo=timezone.utc) + timedelta(days=7)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Account must be at least 7 days old to be deleted. You can delete after {eligible_date.strftime('%b %d, %Y')}."
+            )
+
+    current_user.deleted_at = datetime.now(timezone.utc)
+    db.add(current_user)
     await db.commit()
-    return Response(status_code=204)
+
+    return {
+        "message": "Account scheduled for deletion. Log back in within 7 days to cancel."
+    }
+

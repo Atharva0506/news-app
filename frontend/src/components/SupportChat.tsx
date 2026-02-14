@@ -3,8 +3,10 @@ import { MessageCircle, X, Send, Loader2, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 interface Message {
     role: "user" | "ai";
@@ -12,6 +14,7 @@ interface Message {
 }
 
 export function SupportChat() {
+    const { user } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { role: "ai", content: "Hi! I'm the NewsAI support bot. How can I help you today?" }
@@ -27,6 +30,7 @@ export function SupportChat() {
     }, [messages, isOpen]);
 
     const cleanHistory = messages.filter(m => m.role !== 'ai' || m.content !== "Hi! I'm the NewsAI support bot. How can I help you today?");
+    const hasConversation = cleanHistory.length > 0;
 
     const handleSubmit = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -38,23 +42,10 @@ export function SupportChat() {
         setIsLoading(true);
 
         try {
-            // Convert history to format expected by backend if needed, or backend handles it
-            // Backend expects role: "user" | "ai" (or "model"?)
-            // Backend logic uses 'role' matching schema.
             const history = cleanHistory.map(m => ({
-                role: m.role === 'user' ? 'user' : 'model', // Gemini expects 'model' usually, but backend wrapper might handle it.
-                // My backend code: messages.append((msg.role, msg.content))
-                // And Gemini expects "model" for AI.
-                // Let's send "model" for AI role.
+                role: m.role === 'user' ? 'user' : 'model',
                 content: m.content
             }));
-
-            // Correction: My backend loop:
-            // for msg in request.history[-5:]:
-            //    messages.append((msg.role, msg.content))
-            // LangChain ChatGoogleGenerativeAI usage invokes with (role, content) tuples.
-            // It maps "human"/"user" to user, "ai"/"assistant"/"model" to model.
-            // So "ai" should be fine or "model". Let's use "model" to be safe for Google.
 
             const res = await api.support.chat(userMsg, history);
             setMessages(prev => [...prev, { role: "ai", content: res.response }]);
@@ -65,6 +56,8 @@ export function SupportChat() {
             setIsLoading(false);
         }
     };
+
+
 
     return (
         <div className="fixed bottom-4 right-4 z-50">
@@ -81,12 +74,10 @@ export function SupportChat() {
                                 <Bot className="h-5 w-5 text-accent" />
                                 <span className="font-semibold">NewsAI Support</span>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)}>
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
-
-
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50" ref={scrollRef}>
                             {messages.map((msg, i) => (

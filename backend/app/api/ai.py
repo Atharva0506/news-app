@@ -74,10 +74,12 @@ async def process_article(
                     msg = messages.get(agent_name, f"Processing {agent_name}...")
                     yield f"data: {json.dumps({'status': 'progress', 'agent': agent_name, 'message': msg})}\n\n"
             
+            # Estimate tokens from accumulated output (~4 chars per token)
+            estimated_tokens = sum(len(str(v)) for v in accumulated_state.values() if isinstance(v, str)) // 4
             log = AIUsageLog(
                 user_id=current_user.id,
                 action="process_article",
-                tokens_used=1000 
+                tokens_used=max(estimated_tokens, 100)
             )
             db.add(log)
             await increment_deep_analysis_usage(current_user, db)
@@ -143,17 +145,9 @@ async def ask_ai(
              fallback_query = select(NewsArticle).order_by(desc(NewsArticle.published_at)).limit(10)
              result = await db.execute(fallback_query)
              articles = result.scalars().all()
-        
+
         if not articles:
-             from app.services.news_service import news_service
-             prefs_result = await db.execute(select(UserPreference).where(UserPreference.user_id == current_user.id))
-             prefs = prefs_result.scalars().first()
-             
-             await news_service.fetch_and_store_news(db, prefs)
-             
-             fallback_query = select(NewsArticle).order_by(desc(NewsArticle.published_at)).limit(10)
-             result = await db.execute(fallback_query)
-             articles = result.scalars().all()
+            return {"answer": "No articles found in your feed yet. Please refresh your news feed first, then try asking again."}
 
         if articles:
             context_text = "Here are some relevant articles found in our database:\n\n"
@@ -163,8 +157,6 @@ async def ask_ai(
                     content_snippet = content_snippet[:500] + "..."
                 
                 context_text += f"- Title: {art.title}\n  Summary: {art.description}\n  Content: {content_snippet}\n\n"
-        else:
-             context_text = "General inquiry about the application or news (No specific articles found)."
 
     prompt = ChatPromptTemplate.from_template(
         """
@@ -217,10 +209,11 @@ async def compare_articles(
          status_code, detail = handle_ai_error(e)
          raise HTTPException(status_code=status_code, detail=detail)
     
+    estimated_tokens = len(comparison) // 4
     log = AIUsageLog(
         user_id=current_user.id,
         action="compare",
-        tokens_used=1000
+        tokens_used=max(estimated_tokens, 100)
     )
     db.add(log)
     await db.commit()

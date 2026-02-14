@@ -25,7 +25,16 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const SolanaGuide = lazy(() => import("./pages/SolanaGuide"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,      // 5 minutes
+      gcTime: 10 * 60 * 1000,         // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -41,8 +50,54 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   }
 
   if (!user) {
-    // Redirect to login but save the attempted location
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // If onboarding not completed, redirect to onboarding (unless already there)
+  if (!user.onboarding_completed && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return children;
+};
+
+// Guest Route — redirects logged-in users away from login/signup
+const GuestRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to={user.onboarding_completed ? "/dashboard" : "/onboarding"} replace />;
+  }
+
+  return children;
+};
+
+// Onboarding Route — blocks re-visiting if already completed
+const OnboardingRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.onboarding_completed) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -69,8 +124,8 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/faq" element={<FAQ />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+                  <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
                   <Route
                     path="/dashboard/*"
                     element={
@@ -82,9 +137,9 @@ const App = () => (
                   <Route
                     path="/onboarding"
                     element={
-                      <ProtectedRoute>
+                      <OnboardingRoute>
                         <Onboarding />
-                      </ProtectedRoute>
+                      </OnboardingRoute>
                     }
                   />
                   <Route path="/pricing" element={<Pricing />} />

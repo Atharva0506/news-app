@@ -114,7 +114,7 @@ export default function Settings() {
         try {
             setIsLoading(true);
             await api.auth.deleteAccount();
-            toast.success("Account deleted successfully");
+            toast.success("Account scheduled for deletion. You have 7 days to cancel by logging back in.");
             // Force logout and redirect
             localStorage.removeItem("token");
             localStorage.removeItem("refresh_token");
@@ -382,39 +382,58 @@ export default function Settings() {
                     </div>
 
                     {/* Danger Zone */}
-                    <div className="border border-destructive/20 bg-destructive/5 rounded-xl p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <Trash2 className="h-5 w-5 text-destructive" />
-                            <h2 className="text-lg font-semibold text-destructive">Danger Zone</h2>
-                        </div>
+                    {(() => {
+                        const accountTooNew = user?.created_at
+                            ? (Date.now() - new Date(user.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000
+                            : false;
+                        const eligibleDate = user?.created_at
+                            ? new Date(new Date(user.created_at).getTime() + 7 * 24 * 60 * 60 * 1000)
+                                .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                            : null;
 
-                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div>
-                                <p className="font-medium text-destructive-foreground/90">Delete Account</p>
-                                <p className="text-sm text-muted-foreground">Permanently delete your account and all data.</p>
+                        return (
+                            <div className="border border-destructive/20 bg-destructive/5 rounded-xl p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Trash2 className="h-5 w-5 text-destructive" />
+                                    <h2 className="text-lg font-semibold text-destructive">Danger Zone</h2>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <div>
+                                        <p className="font-medium text-destructive-foreground/90">Delete Account</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {accountTooNew
+                                                ? `You can delete your account after ${eligibleDate}.`
+                                                : "Permanently delete your account and all data."
+                                            }
+                                        </p>
+                                    </div>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" disabled={accountTooNew}>
+                                                Delete Account
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Your account will be scheduled for deletion. You have 7 days to
+                                                    log back in to cancel. After 7 days, all data will be permanently removed.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                    Delete Account
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                             </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive">Delete Account</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete your account
-                                            and remove your data from our servers.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                            Delete Account
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    </div>
+                        );
+                    })()}
 
                     <div className="flex justify-center pt-4">
                         <Button variant="ghost" onClick={logout} className="text-muted-foreground hover:text-foreground">

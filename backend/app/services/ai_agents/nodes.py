@@ -1,13 +1,5 @@
 import os
-from typing import Dict, Any
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
-
-from app.core.config import settings
-from app.services.ai_agents.state import AgentState
-from fastapi import HTTPException
-
+import logging
 import asyncio
 from typing import Dict, Any, List
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -16,6 +8,9 @@ from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 
 from app.core.config import settings
 from app.services.ai_agents.state import AgentState
+from fastapi import HTTPException
+
+logger = logging.getLogger(__name__)
 
 api_keys = settings.GOOGLE_API_KEYS
 if not api_keys:
@@ -40,14 +35,12 @@ def get_current_llm():
 def rotate_llm():
     global current_llm_index
     current_llm_index = (current_llm_index + 1) % len(llm_instances)
-    print(f"Rotating Gemini API Key to index {current_llm_index}")
+    logger.warning(f"Rotating Gemini API Key to index {current_llm_index}")
 
 async def call_llm_with_rotation(prompt, parser, input_data, config=None):
     """
     Invokes chain with rotation on 429/Quota errors.
     """
-    global current_llm_index
-    
     global current_llm_index
     
     max_attempts = len(llm_instances) * 2
@@ -62,7 +55,7 @@ async def call_llm_with_rotation(prompt, parser, input_data, config=None):
         except Exception as e:
             msg = str(e)
             if "429" in msg or "ResourceExhausted" in msg or "quota" in msg.lower():
-                print(f"Gemini 429/Quota error (Key Index {current_llm_index}): {msg}")
+                logger.warning(f"Gemini 429/Quota error (Key Index {current_llm_index}): {msg}")
                 rotate_llm()
                 # Optional: Add small backoff even when rotating to be safe?
                 await asyncio.sleep(0.5) 

@@ -61,6 +61,10 @@ def get_current_active_user(
 ) -> User:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    if current_user.deleted_at:
+        from datetime import datetime, timezone, timedelta
+        if datetime.now(timezone.utc) - current_user.deleted_at > timedelta(days=7):
+            raise HTTPException(status_code=403, detail="Account has been deleted")
     return current_user
 
 def get_current_active_superuser(

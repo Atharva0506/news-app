@@ -13,14 +13,17 @@ interface User {
     last_news_refresh_date?: string;
     last_summary_refresh_date?: string;
     onboarding_completed: boolean;
-    is_verified?: boolean; // Added for verification check
-    preferences?: any; // To avoid importing types if not convenient
+    is_verified?: boolean;
+    preferences?: any;
 
     // Plan & Trial
     plan_type?: string;
     trial_start_date?: string;
     trial_end_date?: string;
     deep_analysis_count?: number;
+
+    // Account Metadata
+    created_at?: string;
 }
 
 interface AuthContextType {
@@ -51,18 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             const userData = await api.auth.me();
             setUser(userData);
-
-            // Check for onboarding
-            if (userData && !userData.onboarding_completed && location.pathname !== '/onboarding' && location.pathname !== '/login' && location.pathname !== '/signup') {
-                navigate('/onboarding');
-            }
-            // If completed onboarding and on onboarding page, redirect to dashboard
-            if (userData && userData.onboarding_completed && location.pathname === '/onboarding') {
-                navigate('/dashboard');
-            }
-
         } catch (error) {
-            //   console.error("Auth check failed", error);
             localStorage.removeItem("token");
             setUser(null);
         } finally {
@@ -80,9 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await api.auth.login({ username, password });
             localStorage.setItem("token", data.access_token);
             if (data.refresh_token) localStorage.setItem("refresh_token", data.refresh_token);
-            await fetchUser();
+            const userData = await api.auth.me();
+            setUser(userData);
             toast.success("Welcome back!");
-            navigate("/dashboard");
+            navigate(userData.onboarding_completed ? "/dashboard" : "/onboarding");
         } catch (error: any) {
             toast.error(error.message || "Login failed");
             throw error;

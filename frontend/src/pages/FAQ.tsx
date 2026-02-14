@@ -6,24 +6,32 @@ import { Footer } from "@/components/landing/Footer";
 
 const faqs = [
     {
-        question: "How does the AI summary work?",
-        answer: "Our multi-agent AI system analyzes thousands of news articles in real-time. It uses specialized agents to collect, verify, classification, and summarize content, providing you with concise, unbiased updates.",
+        question: "What's the difference between Free and Pro?",
+        answer: "The <strong>Free plan</strong> gives you 1,000 AI chat tokens, daily auto news summaries, automatic feed refresh, and basic features with strict rate limits. The <strong>Pro plan</strong> gives you 10,000 AI chat tokens, 3 deep analyses per day, manual news summary & feed refresh, billing history, and higher rate limits. All new accounts also get a <strong>3-day free trial</strong> of Pro features.",
     },
     {
-        question: "What is the Solana payment integration?",
-        answer: "We use the Solana blockchain for fast, secure, and low-fee subscription payments. You can pay using any Solana-compatible wallet (like Phantom or Solflare). Currently, payments are processed on the **Solana Devnet** for testing purposes. Need help? Check out our <a href='/solana-guide' class='text-accent hover:underline'>Solana Payment Guide</a>.",
+        question: "What are token limits?",
+        answer: "Tokens are units the AI uses to process and generate text. On the <strong>Free plan</strong>, you get up to <strong>1,000 tokens per chat</strong>. On the <strong>Pro plan</strong>, this increases to <strong>10,000 tokens per chat</strong>, allowing for longer, more detailed conversations and answers.",
     },
     {
-        question: "Is there a free plan available?",
-        answer: "Yes! Our Free plan gives you access to 10 AI summaries per day and basic bias detection. It's perfect for casual readers who want to try out our technology.",
+        question: "What is deep analysis?",
+        answer: "Deep analysis is a <strong>Pro-only feature</strong> that gives you an in-depth AI breakdown of any news article — including sentiment, bias detection, fact-checking cues, and a comprehensive summary. Pro users can run up to <strong>3 deep analyses per day</strong>. Free plan users do not have access to this feature.",
     },
     {
-        question: "What are the limits of the Pro plan?",
-        answer: "The Pro plan creates a premium experience with unlimited AI summaries, advanced bias analysis, real-time notifications, and access to our AI Q&A assistant. It also unlocks all news categories.",
+        question: "How does the free trial work?",
+        answer: "When you sign up, your first <strong>3 days</strong> automatically include all <strong>Pro features</strong> — 10,000 chat tokens, deep analysis, manual refresh, and more. No payment is needed. After the trial ends, your account switches to the Free plan unless you upgrade.",
     },
     {
-        question: "Can I cancel my subscription?",
-        answer: "Absolutely. You can cancel your subscription at any time from your dashboard settings. Your premium access will continue until the end of the current billing period.",
+        question: "What happens after my limits are reached?",
+        answer: "If you hit your AI chat token limit, you'll need to wait until the next day for it to reset. For Pro users, deep analysis usage (3/day) also resets daily. You won't lose any saved data or preferences — the limits simply pause AI-powered features until the next cycle.",
+    },
+    {
+        question: "How do payments and billing work?",
+        answer: "We use the <strong>Solana blockchain</strong> for fast, secure, low-fee payments. You can pay using any Solana-compatible wallet (Phantom, Solflare, etc.). Pro users have access to <strong>billing history & invoices</strong> in their account settings. Need help? Check our <a href='/solana-guide' class='text-accent hover:underline'>Solana Payment Guide</a>.",
+    },
+    {
+        question: "How do I upgrade to Pro?",
+        answer: "Head to the <a href='/pricing' class='text-accent hover:underline'>Pricing page</a>, connect your Solana wallet, and click <strong>Pay with Solana</strong> on the Pro plan. The upgrade is instant. If you're still in your free trial, you can wait until it ends and then decide whether to upgrade.",
     },
 ];
 
@@ -79,13 +87,7 @@ export default function FAQ() {
                                             className="overflow-hidden"
                                         >
                                             <div className="px-6 pb-6 text-muted-foreground leading-relaxed border-t border-border/50 pt-4">
-                                                {faq.answer.includes("**") ? (
-                                                    <span dangerouslySetInnerHTML={{
-                                                        __html: faq.answer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                                    }} />
-                                                ) : (
-                                                    faq.answer
-                                                )}
+                                                <span dangerouslySetInnerHTML={{ __html: faq.answer }} />
                                             </div>
                                         </motion.div>
                                     )}

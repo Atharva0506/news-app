@@ -43,38 +43,38 @@ export default function Pricing() {
     {
       name: "Free",
       id: "free",
-      description: "Perfect for trying out NewsAI. Includes a 3-Day Free Trial of Pro features.",
+      description: "Get started with NewsAI — includes a 3-day Free Trial of all Pro features.",
       monthlyPrice: 0,
       displayPrice: "0 SOL",
       features: [
-        "1 AI summaries per day",
-        "Basic bias detection",
-        "3 news category",
-        "Email digest",
+        "AI chat limit: 1,000 tokens",
+        "Daily auto news summaries",
+        "Automatic feed refresh",
+        "Basic features included",
+        "🎉 3-day Pro trial on signup",
       ],
-      cta: "Get Started",
+      cta: "Get Started Free",
       popular: false,
       missing_features: [
-        "Real-time notifications",
-        "AI Q&A assistant",
-        "Multi-agent analysis",
-        "Priority support"
+        "Deep analysis",
+        "Manual news summary & refresh",
+        "Billing history",
+        "Higher rate limits",
       ]
     },
     {
       name: "Pro",
       id: "pro",
-      description: "For individuals who want more",
+      description: "Unlock the full power of NewsAI with higher limits and advanced features.",
       monthlyPrice: solPrice!, // Can be null initially (handled in UI)
       displayPrice: solPrice !== null ? `${solPrice} SOL` : "Loading...",
       features: [
-        "Unlimited AI summaries",
-        "Advanced bias detection",
-        "Up to 5 news categories",
-        "Real-time notifications",
-        "AI Q&A assistant",
-        "Multi-agent analysis",
-        "Priority support",
+        "AI chat limit: 10,000 tokens",
+        "3 deep analyses per day",
+        "Manual news summary & feed refresh",
+        "Billing history & invoices",
+        "All features unlocked",
+        "Higher rate limits",
       ],
       cta: "Pay with Solana",
       popular: true,
@@ -93,6 +93,10 @@ export default function Pricing() {
     }
     if (plan.monthlyPrice === 0) {
       toast.info("You are already on the Free Plan");
+      return;
+    }
+    if (user?.plan_type === 'pro' && plan.id === 'pro') {
+      toast.info("You are already subscribed to Pro!");
       return;
     }
 
@@ -303,12 +307,22 @@ export default function Pricing() {
                     }`}
                   variant={plan.popular ? "default" : "outline"}
                   onClick={() => handleSubscribe(plan)}
-                  disabled={isProcessing === plan.name || (plan.monthlyPrice > 0 && !publicKey) || (plan.id === "pro" && solPrice === null)}
+                  disabled={
+                    isProcessing === plan.name ||
+                    (plan.monthlyPrice > 0 && !publicKey) ||
+                    (plan.id === "pro" && solPrice === null) ||
+                    (plan.id === "pro" && user?.plan_type === 'pro')
+                  }
                 >
                   {isProcessing === plan.name || (plan.id === "pro" && solPrice === null) ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       {plan.id === "pro" && solPrice === null ? "Loading..." : "Processing..."}
+                    </>
+                  ) : plan.id === 'pro' && user?.plan_type === 'pro' ? (
+                    <>
+                      <Check className="mr-2 h-5 w-5" />
+                      Currently Subscribed
                     </>
                   ) : (
                     plan.cta

@@ -39,6 +39,9 @@ class UserInDBBase(UserBase):
     onboarding_completed: bool = False
     is_verified: bool = False
     
+    # Account Metadata
+    created_at: Optional[datetime] = None
+    
     # Relationships
     preferences: Optional[UserPreference] = None
     

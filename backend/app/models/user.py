@@ -53,5 +53,8 @@ class User(Base):
     reset_password_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     reset_password_expires: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Soft-delete (7-day grace period)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
 
 

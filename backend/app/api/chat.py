@@ -46,6 +46,23 @@ async def list_saved_chats(
     )
     return result.scalars().all()
 
+@router.get("/{chat_id}", response_model=SavedChatOut)
+async def get_saved_chat(
+    chat_id: uuid.UUID,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_premium_user)
+) -> Any:
+    """
+    Get a single saved chat by ID (Premium Only).
+    """
+    result = await db.execute(
+        select(SavedChat).where(SavedChat.id == chat_id, SavedChat.user_id == current_user.id)
+    )
+    saved_chat = result.scalars().first()
+    if not saved_chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    return saved_chat
+
 @router.post("/", response_model=SavedChatOut)
 async def create_saved_chat(
     db: AsyncSession = Depends(deps.get_db),

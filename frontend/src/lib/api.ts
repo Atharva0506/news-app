@@ -204,6 +204,7 @@ export const api = {
   },
   chat: {
     list: () => fetchWithAuth("/chat/"),
+    get: (id: string) => fetchWithAuth(`/chat/${id}`),
     create: (title: string, messages: any[]) => fetchWithAuth("/chat/", {
       method: "POST",
       body: JSON.stringify({ title, messages })

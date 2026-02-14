@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Home, Newspaper, Settings as SettingsIcon, User, Sparkles, Search,
-  Menu, ChevronLeft, ChevronRight, Send, History, MessageSquareDashed
+  Menu, ChevronLeft, ChevronRight, Send, History, MessageSquareDashed,
+  Bookmark, Lock, Loader2
 } from "lucide-react";
 import SavedChatsList from "@/components/SavedChatsList";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -233,6 +234,7 @@ export default function Dashboard() {
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isSavingChat, setIsSavingChat] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -547,14 +549,53 @@ ${data.article.summary_detail || "N/A"}
         <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col">
           <SheetTitle className="sr-only">AI Assistant</SheetTitle>
           <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-accent" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">AI Assistant</h3>
+                  <p className="text-xs text-muted-foreground">Ask anything regarding news</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold">AI Assistant</h3>
-                <p className="text-xs text-muted-foreground">Ask anything regarding news</p>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                disabled={chatMessages.length === 0 || isSavingChat}
+                title={user?.is_premium ? "Save chat" : "Pro feature — Upgrade to save chats"}
+                onClick={async () => {
+                  if (!user?.is_premium) {
+                    toast.error("Upgrade to Pro to save chats", {
+                      action: { label: "Upgrade", onClick: () => navigate("/pricing") }
+                    });
+                    return;
+                  }
+                  if (chatMessages.length === 0 || isSavingChat) return;
+                  setIsSavingChat(true);
+                  try {
+                    const firstUserMsg = chatMessages.find(m => m.role === 'user');
+                    const title = firstUserMsg
+                      ? firstUserMsg.content.slice(0, 60) + (firstUserMsg.content.length > 60 ? "..." : "")
+                      : "AI Chat";
+                    await api.chat.create(title, chatMessages);
+                    toast.success("Chat saved successfully!");
+                  } catch (error: any) {
+                    toast.error(error.message || "Failed to save chat");
+                  } finally {
+                    setIsSavingChat(false);
+                  }
+                }}
+              >
+                {isSavingChat ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : user?.is_premium ? (
+                  <Bookmark className="h-4 w-4" />
+                ) : (
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+              </Button>
             </div>
           </div>
 
