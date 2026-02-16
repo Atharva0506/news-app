@@ -7,31 +7,31 @@ import { Footer } from "@/components/landing/Footer";
 const faqs = [
     {
         question: "What's the difference between Free and Pro?",
-        answer: "The <strong>Free plan</strong> gives you 1,000 AI chat tokens, daily auto news summaries, automatic feed refresh, and basic features with strict rate limits. The <strong>Pro plan</strong> gives you 10,000 AI chat tokens, 3 deep analyses per day, manual news summary & feed refresh, billing history, and higher rate limits. All new accounts also get a <strong>3-day free trial</strong> of Pro features.",
+        answer: "The <strong>Free plan</strong> gives you 1,000 AI chat tokens/day, 1 news summary per day, 1 feed refresh per day, and basic features — but no deep analysis or chat saving. The <strong>Pro plan</strong> gives you 10,000 AI chat tokens/day, 3 deep analyses per day, unlimited news summary & feed refresh, saved chat history, billing history, and higher rate limits. All new accounts also get a <strong>3-day free trial</strong> of Pro features (except Save Chat).",
     },
     {
         question: "What are token limits?",
-        answer: "Tokens are units the AI uses to process and generate text. On the <strong>Free plan</strong>, you get up to <strong>1,000 tokens per chat</strong>. On the <strong>Pro plan</strong>, this increases to <strong>10,000 tokens per chat</strong>, allowing for longer, more detailed conversations and answers.",
+        answer: "Tokens are units the AI uses to process and generate text. On the <strong>Free plan</strong>, you get up to <strong>1,000 tokens per day</strong>. On the <strong>Pro plan</strong>, this increases to <strong>10,000 tokens per day</strong>, allowing for longer, more detailed conversations and answers.",
     },
     {
         question: "What is deep analysis?",
-        answer: "Deep analysis is a <strong>Pro-only feature</strong> that gives you an in-depth AI breakdown of any news article — including sentiment, bias detection, fact-checking cues, and a comprehensive summary. Pro users can run up to <strong>3 deep analyses per day</strong>. Free plan users do not have access to this feature.",
+        answer: "Deep analysis gives you an in-depth AI breakdown of any news article — including sentiment, bias detection, fact-checking cues, and a comprehensive summary. <strong>Pro users</strong> can run up to <strong>3 deep analyses per day</strong>. During the <strong>free trial</strong>, you get <strong>1 deep analysis per day</strong>. <strong>Free plan</strong> users (after trial) do not have access to this feature.",
     },
     {
         question: "How does the free trial work?",
-        answer: "When you sign up, your first <strong>3 days</strong> automatically include all <strong>Pro features</strong> — 10,000 chat tokens, deep analysis, manual refresh, and more. No payment is needed. After the trial ends, your account switches to the Free plan unless you upgrade.",
+        answer: "When you sign up, your first <strong>3 days</strong> automatically include all <strong>Pro features except Save Chat</strong> — 10,000 chat tokens/day, 1 deep analysis per day, and unlimited refresh. No payment is needed. During the trial, you'll see an <strong>Upgrade to Pro</strong> button. After the trial ends, your account switches to the Free plan (1,000 tokens, 1 summary/day, 1 refresh/day, no deep analysis) unless you upgrade.",
     },
     {
         question: "What happens after my limits are reached?",
-        answer: "If you hit your AI chat token limit, you'll need to wait until the next day for it to reset. For Pro users, deep analysis usage (3/day) also resets daily. You won't lose any saved data or preferences — the limits simply pause AI-powered features until the next cycle.",
+        answer: "If you hit your AI chat token limit, you'll need to wait until the next day for it to reset. For Pro users, deep analysis usage (3/day) also resets daily. Free users are limited to 1 news summary and 1 feed refresh per day. You won't lose any saved data or preferences — the limits simply pause AI-powered features until the next cycle.",
     },
     {
         question: "How do payments and billing work?",
-        answer: "We use the <strong>Solana blockchain</strong> for fast, secure, low-fee payments. You can pay using any Solana-compatible wallet (Phantom, Solflare, etc.). Pro users have access to <strong>billing history & invoices</strong> in their account settings. Need help? Check our <a href='/solana-guide' class='text-accent hover:underline'>Solana Payment Guide</a>.",
+        answer: "We use the <strong>Solana blockchain</strong> for fast, secure, low-fee payments. You can pay using any Solana-compatible wallet (Phantom, Solflare, etc.). Pro users have access to <strong>billing history & invoices</strong> in their account settings. <strong>Note:</strong> You cannot make another payment while your current Pro subscription is still active. Need help? Check our <a href='/solana-guide' class='text-accent hover:underline'>Solana Payment Guide</a>.",
     },
     {
         question: "How do I upgrade to Pro?",
-        answer: "Head to the <a href='/pricing' class='text-accent hover:underline'>Pricing page</a>, connect your Solana wallet, and click <strong>Pay with Solana</strong> on the Pro plan. The upgrade is instant. If you're still in your free trial, you can wait until it ends and then decide whether to upgrade.",
+        answer: "Head to the <a href='/pricing' class='text-accent hover:underline'>Pricing page</a>, connect your Solana wallet, and click <strong>Pay with Solana</strong> on the Pro plan. The upgrade is instant. If you're still in your free trial, you can upgrade anytime to unlock 3 deep analyses per day and Save Chat.",
     },
 ];
 

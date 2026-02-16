@@ -18,60 +18,63 @@ async def check_trial_expiration(user: User, db: AsyncSession) -> User:
             await db.refresh(user)
     return user
 
+def _get_deep_analysis_limit(plan_type: str) -> int:
+    """Returns the daily deep analysis limit for a plan."""
+    if plan_type == "pro":
+        return 3
+    if plan_type == "trial":
+        return 1
+    return 0
+
 async def assert_deep_analysis_access(user: User, db: AsyncSession):
     """
     Enforces Deep Analysis limits:
-    - Pro: Unlimited
+    - Pro: 3 per day
     - Trial: 1 per day
     - Free: 0 (Locked)
     """
-    # First, ensure trial status is up to date
     user = await check_trial_expiration(user, db)
-    
-    if user.plan_type == "pro":
-        return True # Unlimited
-    
+
     if user.plan_type == "free":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"error_code": "PLAN_LIMIT_REACHED", "message": "Upgrade to Pro to unlock Deep Analysis."}
         )
-        
-    if user.plan_type == "trial":
-        # Check usage for today
-        # We rely on the caller to increment usage or we check log. 
-        # Using `deep_analysis_count` field in User model for simpler tracking?
-        # The prompt asked for `deep_analysis_count` field. Let's use it.
-        
-        # Reset if day changed
-        now = datetime.now(timezone.utc)
-        if user.deep_analysis_last_reset:
-            if user.deep_analysis_last_reset.date() < now.date():
-                user.deep_analysis_count = 0
-                user.deep_analysis_last_reset = now
-                db.add(user)
-                await db.commit()
-        else:
-             user.deep_analysis_last_reset = now
-             user.deep_analysis_count = 0
-             db.add(user)
-             await db.commit()
-             
-        if user.deep_analysis_count >= 1:
-             raise HTTPException(
+
+    limit = _get_deep_analysis_limit(user.plan_type)
+
+    # Reset counter if day changed
+    now = datetime.now(timezone.utc)
+    if user.deep_analysis_last_reset:
+        if user.deep_analysis_last_reset.date() < now.date():
+            user.deep_analysis_count = 0
+            user.deep_analysis_last_reset = now
+            db.add(user)
+            await db.commit()
+    else:
+        user.deep_analysis_last_reset = now
+        user.deep_analysis_count = 0
+        db.add(user)
+        await db.commit()
+
+    if user.deep_analysis_count >= limit:
+        if user.plan_type == "trial":
+            raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail={"error_code": "TRIAL_LIMIT_REACHED", "message": "Upgrade to Pro to unlock unlimited Deep Analysis."}
+                detail={"error_code": "TRIAL_LIMIT_REACHED", "message": "Trial limit: 1 deep analysis/day. Upgrade to Pro for 3/day."}
             )
-            
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"error_code": "PRO_LIMIT_REACHED", "message": "Daily limit reached (3/day). Try again tomorrow."}
+            )
+
     return True
 
 async def increment_deep_analysis_usage(user: User, db: AsyncSession):
     """
     Increments the usage user counter.
     """
-    if user.plan_type == "pro":
-        return
-        
     user.deep_analysis_count += 1
     user.deep_analysis_last_reset = datetime.now(timezone.utc)
     db.add(user)

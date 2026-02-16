@@ -39,11 +39,13 @@ async def create_payment_intent(
              detail="Please verify your email address before upgrading to Pro."
          )
 
-    if current_user.plan_type == "pro":
-        raise HTTPException(
-            status_code=400,
-            detail="You are already a Pro member."
-        )
+    # Check for active unexpired subscription
+    if current_user.plan_type == "pro" and current_user.premium_expiry:
+        if current_user.premium_expiry > datetime.utcnow():
+            raise HTTPException(
+                status_code=400,
+                detail="You already have an active Pro subscription. Please wait until it expires before renewing."
+            )
          
     try:
         intent = await solana_service.generate_payment_intent(current_user.id, payload.amount)
@@ -128,6 +130,9 @@ async def verify_payment(
     current_user.is_premium = True
     current_user.premium_expiry = expiry
     current_user.plan_type = "pro"
+    # Clear trial fields on upgrade
+    current_user.trial_start_date = None
+    current_user.trial_end_date = None
     db.add(current_user)
     
     await db.commit()

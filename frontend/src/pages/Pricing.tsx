@@ -39,26 +39,26 @@ export default function Pricing() {
       });
   }, []);
 
+  const isProActive = user?.plan_type === 'pro' && user?.premium_expiry && new Date(user.premium_expiry) > new Date();
+
   const plans = [
     {
       name: "Free",
       id: "free",
-      description: "Get started with NewsAI — includes a 3-day Free Trial of all Pro features.",
+      description: "Get started with NewsAI — includes a 3-day Free Trial of all Pro features (except Save Chat).",
       monthlyPrice: 0,
       displayPrice: "0 SOL",
       features: [
-        "AI chat limit: 1,000 tokens",
-        "Daily auto news summaries",
-        "Automatic feed refresh",
-        "Basic features included",
+        "AI chat limit: 1,000 tokens/day",
+        "1 news summary per day",
+        "1 feed refresh per day",
         "🎉 3-day Pro trial on signup",
       ],
       cta: "Get Started Free",
       popular: false,
       missing_features: [
-        "Deep analysis",
-        "Manual news summary & refresh",
-        "Billing history",
+        "Deep analysis (locked)",
+        "Save chat history",
         "Higher rate limits",
       ]
     },
@@ -69,9 +69,10 @@ export default function Pricing() {
       monthlyPrice: solPrice!, // Can be null initially (handled in UI)
       displayPrice: solPrice !== null ? `${solPrice} SOL` : "Loading...",
       features: [
-        "AI chat limit: 10,000 tokens",
+        "AI chat limit: 10,000 tokens/day",
         "3 deep analyses per day",
-        "Manual news summary & feed refresh",
+        "Unlimited news summary & feed refresh",
+        "Save chat history",
         "Billing history & invoices",
         "All features unlocked",
         "Higher rate limits",
@@ -95,8 +96,8 @@ export default function Pricing() {
       toast.info("You are already on the Free Plan");
       return;
     }
-    if (user?.plan_type === 'pro' && plan.id === 'pro') {
-      toast.info("You are already subscribed to Pro!");
+    if (isProActive && plan.id === 'pro') {
+      toast.info("You already have an active Pro subscription. Wait until it expires to renew.");
       return;
     }
 
@@ -311,7 +312,7 @@ export default function Pricing() {
                     isProcessing === plan.name ||
                     (plan.monthlyPrice > 0 && !publicKey) ||
                     (plan.id === "pro" && solPrice === null) ||
-                    (plan.id === "pro" && user?.plan_type === 'pro')
+                    (plan.id === "pro" && isProActive)
                   }
                 >
                   {isProcessing === plan.name || (plan.id === "pro" && solPrice === null) ? (
@@ -319,7 +320,7 @@ export default function Pricing() {
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       {plan.id === "pro" && solPrice === null ? "Loading..." : "Processing..."}
                     </>
-                  ) : plan.id === 'pro' && user?.plan_type === 'pro' ? (
+                  ) : plan.id === 'pro' && isProActive ? (
                     <>
                       <Check className="mr-2 h-5 w-5" />
                       Currently Subscribed

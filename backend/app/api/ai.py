@@ -227,6 +227,19 @@ async def summarize_feed(
     current_user: User = Depends(deps.get_current_active_user)
 ) -> Any:
     from datetime import datetime, timezone, timedelta
+    from app.core.plan_checker import check_trial_expiration
+
+    # Ensure trial status is up to date
+    current_user = await check_trial_expiration(current_user, db)
+
+    # For free users: enforce 1 summary per day
+    if current_user.plan_type == "free":
+        today = datetime.now(timezone.utc).date()
+        if current_user.last_summary_refresh_date and current_user.last_summary_refresh_date.date() == today:
+            raise HTTPException(
+                status_code=403,
+                detail="Free plan: 1 summary per day. Upgrade to Pro for unlimited."
+            )
     
     if not refresh:
         existing_cache = await db.execute(

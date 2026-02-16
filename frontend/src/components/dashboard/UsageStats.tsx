@@ -12,7 +12,9 @@ interface UsageData {
     limit_daily: number;
     plan_type: string;
     deep_analysis_count: number;
+    deep_analysis_limit: number;
     trial_end_date?: string;
+    subscription_expiry?: string;
 }
 
 export function UsageStats() {
@@ -31,14 +33,14 @@ export function UsageStats() {
 
     // Calculate Days Left if Trial
     let daysLeft = 0;
-    // Only calculate if plan is strictly trial, or if it's pro but we want to show expiry (handled below separately)
-    // But for the "Trial: X Days Left" badge, only show if plan_type is trial.
     if (stats.plan_type === 'trial' && stats.trial_end_date) {
         const end = new Date(stats.trial_end_date);
         const now = new Date();
         const diff = end.getTime() - now.getTime();
-        daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        daysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
     }
+
+    const deepLimit = stats.deep_analysis_limit;
 
     return (
         <Card>
@@ -70,23 +72,29 @@ export function UsageStats() {
                     {/* Trial upgrade link */}
                     {stats.plan_type === 'trial' && (
                         <Link to="/pricing" className="block text-xs text-center py-1.5 px-3 bg-accent/10 text-accent rounded-md hover:bg-accent/20 transition-colors">
-                            ✨ Upgrade to Pro for unlimited access
+                            ✨ Upgrade to Pro — 3 deep analyses/day + Save Chats
+                        </Link>
+                    )}
+                    {/* Free upgrade link */}
+                    {stats.plan_type === 'free' && (
+                        <Link to="/pricing" className="block text-xs text-center py-1.5 px-3 bg-accent/10 text-accent rounded-md hover:bg-accent/20 transition-colors">
+                            ✨ Upgrade to Pro for advanced features
                         </Link>
                     )}
                     {/* Pro plan expiry */}
-                    {stats.plan_type === 'pro' && stats.trial_end_date && (
+                    {stats.plan_type === 'pro' && stats.subscription_expiry && (
                         <p className="text-xs text-muted-foreground text-center">
-                            Expires {new Date(stats.trial_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            Expires {new Date(stats.subscription_expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </p>
                     )}
                     {/* General AI Token Usage */}
                     <div>
                         <div className="flex justify-between text-xs mb-1">
                             <span className="text-muted-foreground">AI Tokens (Daily)</span>
-                            <span>{stats.plan_type === 'pro' ? 'Unlimited' : `${stats.daily_tokens} / ${stats.limit_daily}`}</span>
+                            <span>{stats.daily_tokens} / {stats.limit_daily.toLocaleString()}</span>
                         </div>
                         <Progress
-                            value={stats.plan_type === 'pro' ? 0 : percentage}
+                            value={percentage}
                             className="h-1.5"
                         />
                     </div>
@@ -96,16 +104,24 @@ export function UsageStats() {
                         <div className="flex justify-between text-xs mb-1">
                             <span className="text-muted-foreground">Deep Analysis</span>
                             <span>
-                                {stats.deep_analysis_count} / {stats.plan_type === 'pro' ? '∞' : '1'}
+                                {deepLimit === 0
+                                    ? "Locked"
+                                    : `${stats.deep_analysis_count} / ${deepLimit}`
+                                }
                             </span>
                         </div>
                         <Progress
-                            value={stats.plan_type === 'pro' ? 0 : (stats.deep_analysis_count / 1) * 100}
-                            className="h-1.5 bg-muted"
+                            value={deepLimit === 0 ? 100 : (stats.deep_analysis_count / deepLimit) * 100}
+                            className={`h-1.5 ${deepLimit === 0 ? 'bg-muted opacity-50' : 'bg-muted'}`}
                         />
-                        {stats.plan_type !== 'pro' && stats.deep_analysis_count >= 1 && (
+                        {deepLimit === 0 && (
                             <p className="text-[10px] text-destructive mt-1">
-                                Limit reached. Upgrade to Pro for unlimited.
+                                Upgrade to Pro to unlock Deep Analysis.
+                            </p>
+                        )}
+                        {deepLimit > 0 && stats.deep_analysis_count >= deepLimit && (
+                            <p className="text-[10px] text-destructive mt-1">
+                                Daily limit reached. Resets tomorrow.
                             </p>
                         )}
                     </div>

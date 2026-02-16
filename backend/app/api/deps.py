@@ -79,12 +79,27 @@ def get_current_active_superuser(
 def get_current_premium_user(
     current_user: User = Depends(get_current_active_user),
 ) -> User:
-    # Check if premium logic (expiration check)
-    # Simple check for now
+    """Requires premium access (trial OR pro)."""
+    from datetime import datetime, timezone
+    # Auto-downgrade if premium expired
+    if current_user.premium_expiry and datetime.now(timezone.utc) > current_user.premium_expiry:
+        if current_user.plan_type != "pro":
+            current_user.is_premium = False
     if not current_user.is_premium:
         raise HTTPException(
             status_code=403,
             detail="Premium subscription required for this feature"
+        )
+    return current_user
+
+def get_current_pro_user(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Requires paid Pro subscription (not trial)."""
+    if current_user.plan_type != "pro":
+        raise HTTPException(
+            status_code=403,
+            detail="Pro subscription required. This feature is not available during the free trial."
         )
     return current_user
 

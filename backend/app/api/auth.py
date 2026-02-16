@@ -280,6 +280,12 @@ async def read_user_usage(
     from sqlalchemy import func
     from app.models.payment import AIUsageLog
     from datetime import datetime, timedelta, timezone
+    from app.core.plan_checker import check_trial_expiration, _get_deep_analysis_limit
+
+    # Ensure trial status is up to date
+    current_user = await check_trial_expiration(current_user, db)
+
+    plan = current_user.plan_type  # "free", "trial", or "pro"
 
     # Total tokens
     result = await db.execute(
@@ -304,29 +310,45 @@ async def read_user_usage(
 
     today = datetime.now(timezone.utc).date()
     
-    news_available = False
-    summary_available = False
-    
-    if current_user.is_premium:
-        news_available = current_user.refresh_tokens > 0
-        summary_available = current_user.refresh_tokens > 0
+    # Token limits per plan
+    if plan == "pro":
+        limit_daily = 10000
+    elif plan == "trial":
+        limit_daily = 10000
     else:
+        limit_daily = 1000
+
+    # News/summary refresh availability
+    if plan == "pro":
+        news_available = True
+        summary_available = True
+    elif plan == "trial":
+        news_available = True
+        summary_available = True
+    else:
+        # Free: 1 per day each
         news_available = not current_user.last_news_refresh_date or current_user.last_news_refresh_date.date() < today
         summary_available = not current_user.last_summary_refresh_date or current_user.last_summary_refresh_date.date() < today
+
+    # Deep analysis: reset count if day changed
+    deep_count = current_user.deep_analysis_count
+    if current_user.deep_analysis_last_reset and current_user.deep_analysis_last_reset.date() < today:
+        deep_count = 0
 
     return {
         "total_tokens": total_tokens,
         "daily_tokens": daily_tokens,
         "request_count": request_count,
-        "limit_daily": 10000 if current_user.is_premium else 1000,
+        "limit_daily": limit_daily,
         "refresh_tokens": current_user.refresh_tokens,
         "news_refresh_available": news_available,
         "summary_refresh_available": summary_available,
         
-        # New Fields
-        "plan_type": current_user.plan_type,
-        "deep_analysis_count": current_user.deep_analysis_count,
-        "trial_end_date": current_user.trial_end_date
+        "plan_type": plan,
+        "deep_analysis_count": deep_count,
+        "deep_analysis_limit": _get_deep_analysis_limit(plan),
+        "trial_end_date": current_user.trial_end_date,
+        "subscription_expiry": current_user.premium_expiry if plan == "pro" else None,
     }
 
 @router.delete("/me", status_code=200)

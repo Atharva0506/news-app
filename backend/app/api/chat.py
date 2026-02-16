@@ -30,7 +30,7 @@ class SavedChatOut(SavedChatBase):
 @router.get("/", response_model=List[SavedChatOut])
 async def list_saved_chats(
     db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_premium_user),
+    current_user: User = Depends(deps.get_current_pro_user),
     skip: int = 0,
     limit: int = 50
 ) -> Any:
@@ -50,7 +50,7 @@ async def list_saved_chats(
 async def get_saved_chat(
     chat_id: uuid.UUID,
     db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_premium_user)
+    current_user: User = Depends(deps.get_current_pro_user)
 ) -> Any:
     """
     Get a single saved chat by ID (Premium Only).
@@ -67,7 +67,7 @@ async def get_saved_chat(
 async def create_saved_chat(
     db: AsyncSession = Depends(deps.get_db),
     chat_in: SavedChatCreate = Body(...),
-    current_user: User = Depends(deps.get_current_premium_user)
+    current_user: User = Depends(deps.get_current_pro_user)
 ) -> Any:
     """
     Save a chat session (Premium Only).
@@ -86,7 +86,7 @@ async def create_saved_chat(
 async def delete_saved_chat(
     chat_id: uuid.UUID,
     db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_premium_user)
+    current_user: User = Depends(deps.get_current_pro_user)
 ) -> None:
     """
     Delete a saved chat (Premium Only).
