@@ -203,7 +203,7 @@ export default function Pricing() {
 
     } catch (error: any) {
       console.error("Payment Flow Error:", error);
-      if (error.message && error.message.includes("verify your email")) {
+      if (error.message && error.message.includes("verify your email") && import.meta.env.VITE_ENABLE_EMAIL_VERIFICATION !== 'false') {
         toast.error("Email verification required", {
           action: {
             label: "Resend Email",

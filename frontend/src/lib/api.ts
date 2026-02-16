@@ -152,6 +152,7 @@ export const api = {
       return res.json();
     }),
     resendVerification: () => fetchWithAuth("/auth/resend-verification", { method: "POST" }),
+    featureFlags: () => fetch(`${API_URL}/auth/feature-flags`).then(res => res.json()),
   },
   news: {
     getFeed: (filters?: { category?: string; sentiment?: string; search?: string; refresh?: boolean }) => {

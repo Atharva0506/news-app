@@ -5,15 +5,26 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY . .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Expose port
+EXPOSE 8000
+
+# Command to run the application
+# We use shell form to allow variable expansion if needed, but array form is safer.
+# Using standard uvicorn worker for production. 
+# For high traffic, consider gunicorn with uvicorn workers.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

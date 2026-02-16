@@ -1,14 +1,21 @@
 # AI News Aggregator (NewsAI)
 
-A next-generation news platform powered by multiple AI agents to aggregate, classify, summarize, and analyze news in real-time. Features a specialized dashboard with "Deep Analysis" streaming, AI Chat Assistant, and premium subscription tiers.
+👋 Hi there! Welcome to the repository.
 
-## 🚀 Features
+This is a next-generation news platform I built to demonstrate the power of **AI Agents** in aggregating, classifying, and summarizing news in real-time. It features a specialized dashboard with "Deep Analysis" streaming, an AI Chat Assistant, and premium subscription tiers.
+
+👉 **Live Demo:** [https://news-app-delta-mocha-27.vercel.app/](https://news-app-delta-mocha-27.vercel.app/)
+
+> [!NOTE]
+> I am currently using **Free Tier APIs** for both the LLM (Gemini) and the News data source. This means the application has certain rate limits. If you encounter issues or slow responses, it's likely due to these quotas. Thanks for understanding!
+
+## 🚀 Key Features
 
 -   **Smart News Feed**: Aggregates news from various sources with advanced filtering (Category, Sentiment, Search).
--   **Deep Analysis**: Uses a LangGraph-based multi-agent system (Collector -> Classifier -> Summarizer -> Bias Analyzer) to provide in-depth article insights. streaming results in real-time via Server-Sent Events (SSE).
--   **Daily Briefing**: auto-generated, cached daily summary of your feed.
+-   **Deep Analysis Agent**: Uses a **LangGraph** multi-agent system (Collector -> Classifier -> Summarizer -> Bias Analyzer) to provide in-depth article insights, streaming results in real-time via Server-Sent Events (SSE).
+-   **Daily Briefing**: Auto-generated, cached daily summary of your feed.
 -   **AI Chat Assistant**: Ask questions about news articles or your feed using RAG (Retrieval Augmented Generation).
--   **Premium Subscriptions**: Solana-based payment integration (Testnet) for upgrading to Pro plans.
+-   **Premium Subscriptions**: Solana-based payment integration (Devnet) for upgrading to Pro plans.
 -   **Authentication**: Secure JWT authentication with Access/Refresh token rotation and Google/GitHub OAuth support.
 
 ## 🛠️ Tech Stack
@@ -24,7 +31,9 @@ A next-generation news platform powered by multiple AI agents to aggregate, clas
 -   **Database**: PostgreSQL (SQLAlchemy Async), Redis (Caching)
 -   **Auth**: OAuth2 with Password Bearer (JWT)
 
-## 📦 Installation
+## 📦 Installation & Setup
+
+If you want to run this locally, follow these steps:
 
 ### Prerequisites
 -   Node.js (v18+)
@@ -51,19 +60,16 @@ A next-generation news platform powered by multiple AI agents to aggregate, clas
     ```
 
 4.  Configure Environment Variables:
-    Copy `.env.example` to `.env` and fill in your keys (Project assumes PostgreSQL is running on localhost:5432).
+    Copy `.env.example` to `.env` and fill in your keys.
     ```bash
     cp .env.example .env
     ```
 
-5.  Run Database Migrations (if using Alembic) or allow auto-init:
-    The app initializes DB tables on startup for development.
-
-6.  Start the Server:
+5.  Start the Server:
     ```bash
     uvicorn app.main:app --reload
     ```
-    API documentation available at `http://localhost:8000/docs`.
+    API docs: `http://localhost:8000/docs`
 
 ### Frontend Setup
 
@@ -75,21 +81,38 @@ A next-generation news platform powered by multiple AI agents to aggregate, clas
 2.  Install dependencies:
     ```bash
     npm install
+    # or
+    pnpm install
     ```
 
 3.  Start the Development Server:
     ```bash
     npm run dev
+    # or
+    pnpm dev
     ```
-    Access the app at `http://localhost:5173`.
+    Access the app at `http://localhost:5173`
 
-## 🧪 Testing
+## 🐳 Docker Setup
 
-Run backend tests:
-```bash
-cd backend
-pytest app/tests
-```
+Run the entire application (Frontend + Backend + Database) with a single command:
+
+1.  Ensure **Docker** and **Docker Compose** are installed.
+2.  Configure `backend/.env` (copy from `.env.example`).
+3.  Run:
+    ```bash
+    docker compose up --build
+    ```
+    - **Frontend**: `http://localhost:80`
+    - **Backend API**: `http://localhost:8000`
+    - **Database**: `localhost:5432`
+
+## 🤝 Support & Issues
+
+If you find a bug or have a suggestion, please feel free to:
+-   **Report an Issue**: [GitHub Issues](https://github.com/Atharva0506/news-app/issues)
+-   **Contact Me**: [atharvan.coder@gmail.com](mailto:atharvan.coder@gmail.com)
 
 ## 📝 License
-MIT
+
+This project is licensed under the **MIT License**. Feel free to use and modify it for your own projects!

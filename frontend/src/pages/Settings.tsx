@@ -178,30 +178,32 @@ export default function Settings() {
                                 <label className="text-sm font-medium">Email Address</label>
                                 <div className="space-y-2">
                                     <Input value={user?.email || ""} disabled className="bg-muted/50" />
-                                    {user?.is_verified ? (
-                                        <div className="flex items-center gap-2 text-sm text-green-600 bg-green-500/10 px-3 py-1.5 rounded-lg w-fit">
-                                            <Sparkles className="h-3 w-3" />
-                                            Verified
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-between gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                                            <span className="text-sm text-yellow-600 flex items-center gap-2">
-                                                <span className="h-2 w-2 rounded-full bg-yellow-500" />
-                                                Unverified
-                                            </span>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 text-xs border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10"
-                                                onClick={() => {
-                                                    api.auth.resendVerification()
-                                                        .then(() => toast.success("Verification email sent!"))
-                                                        .catch(() => toast.error("Failed to send email"));
-                                                }}
-                                            >
-                                                Resend
-                                            </Button>
-                                        </div>
+                                    {import.meta.env.VITE_ENABLE_EMAIL_VERIFICATION !== 'false' && (
+                                        user?.is_verified ? (
+                                            <div className="flex items-center gap-2 text-sm text-green-600 bg-green-500/10 px-3 py-1.5 rounded-lg w-fit">
+                                                <Sparkles className="h-3 w-3" />
+                                                Verified
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-between gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                                                <span className="text-sm text-yellow-600 flex items-center gap-2">
+                                                    <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                                                    Unverified
+                                                </span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 text-xs border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10"
+                                                    onClick={() => {
+                                                        api.auth.resendVerification()
+                                                            .then(() => toast.success("Verification email sent!"))
+                                                            .catch(() => toast.error("Failed to send email"));
+                                                    }}
+                                                >
+                                                    Resend
+                                                </Button>
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             </div>

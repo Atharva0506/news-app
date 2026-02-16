@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     nodePolyfills({
-      include: ["buffer", "process", "util", "stream", "events", "crypto"],
+      include: ["buffer", "process", "util", "stream", "events", "crypto", "vm"],
       globals: {
         Buffer: true,
         global: true,
@@ -29,6 +29,18 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'ui-libs': ['@radix-ui/react-dialog', '@radix-ui/react-slot', 'lucide-react', 'framer-motion', 'clsx', 'tailwind-merge'],
+          'solana-vendor': ['@solana/web3.js', '@solana/wallet-adapter-react', '@solana/wallet-adapter-base'],
+          'charts': ['recharts'],
+        },
+      },
     },
   },
 }));

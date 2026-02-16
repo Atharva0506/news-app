@@ -7,6 +7,7 @@ import { CTA } from "@/components/landing/CTA";
 import { Footer } from "@/components/landing/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
+import { WelcomeModal } from "@/components/landing/WelcomeModal";
 
 const Index = () => {
   const { user, isLoading } = useAuth();
@@ -26,6 +27,7 @@ const Index = () => {
       <TechStack />
       <CTA />
       <Footer />
+      <WelcomeModal />
     </div>
   );
 };

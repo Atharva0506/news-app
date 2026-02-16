@@ -14,7 +14,18 @@ from app.schemas.user import Token, UserCreate, User as UserSchema
 import secrets
 from datetime import timezone
 
+
 router = APIRouter()
+
+@router.get("/feature-flags")
+async def get_feature_flags() -> Any:
+    """
+    Get backend feature flags status
+    """
+    return {
+        "email_verification": settings.ENABLE_EMAIL_VERIFICATION,
+        "forgot_password": settings.ENABLE_FORGOT_PASSWORD
+    }
 
 @router.post("/verify-email")
 async def verify_email(
@@ -24,6 +35,9 @@ async def verify_email(
     """
     Verify email with token.
     """
+    if not settings.ENABLE_EMAIL_VERIFICATION:
+        raise HTTPException(status_code=400, detail="Email verification is disabled")
+
     result = await db.execute(select(User).where(User.verification_token == token))
     user = result.scalars().first()
     
@@ -45,6 +59,9 @@ async def resend_verification(
     """
     Resend verification email to current user.
     """
+    if not settings.ENABLE_EMAIL_VERIFICATION:
+        raise HTTPException(status_code=400, detail="Email verification is disabled")
+
     if current_user.is_verified:
         return {"message": "Email already verified"}
         
@@ -66,6 +83,9 @@ async def forgot_password(
     """
     Trigger password reset email.
     """
+    if not settings.ENABLE_FORGOT_PASSWORD:
+        raise HTTPException(status_code=400, detail="Forgot password feature is disabled")
+
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalars().first()
     
@@ -90,6 +110,9 @@ async def reset_password(
     """
     Reset password with token.
     """
+    if not settings.ENABLE_FORGOT_PASSWORD:
+        raise HTTPException(status_code=400, detail="Forgot password feature is disabled")
+
     result = await db.execute(select(User).where(User.reset_password_token == token))
     user = result.scalars().first()
     
@@ -202,11 +225,13 @@ async def register(
         hashed_password=security.get_password_hash(user_in.password),
         full_name=user_in.full_name,
         verification_token=verification_token,
-        is_verified=False,
+        is_verified=not settings.ENABLE_EMAIL_VERIFICATION, # Auto-verify if disabled
+
         
         # Trial Initialization
         plan_type="trial",
         trial_start_date=now,
+
         trial_end_date=trial_end,
         is_premium=True, # Enable Pro features during trial
         premium_expiry=trial_end,
@@ -216,6 +241,8 @@ async def register(
     )
     db.add(user)
     await db.commit()
+    await db.refresh(user) # Get ID after commit
+    
     # Eager load preferences to avoid MissingGreenlet error on Pydantic validation
     # user.preferences is not loaded by default and accessing it triggers lazy load which fails in async
     from sqlalchemy.orm import selectinload
@@ -224,7 +251,9 @@ async def register(
     )
     user = result.scalars().first()
     
-    background_tasks.add_task(EmailService.send_verification_email, user.email, verification_token)
+    if settings.ENABLE_EMAIL_VERIFICATION:
+        background_tasks.add_task(EmailService.send_verification_email, user.email, verification_token)
+
     
     return user
 

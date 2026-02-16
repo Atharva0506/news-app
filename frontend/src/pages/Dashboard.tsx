@@ -474,7 +474,7 @@ ${data.article.summary_detail || "N/A"}
             </div>
           ) : (
             <>
-              {user && !user.is_verified && (
+              {user && !user.is_verified && import.meta.env.VITE_ENABLE_EMAIL_VERIFICATION !== 'false' && (
                 <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />

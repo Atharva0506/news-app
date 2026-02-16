@@ -33,7 +33,7 @@ async def create_payment_intent(
     """
     Generate a payment intent and record it as PENDING
     """
-    if not current_user.is_verified:
+    if settings.ENABLE_EMAIL_VERIFICATION and not current_user.is_verified:
          raise HTTPException(
              status_code=403, 
              detail="Please verify your email address before upgrading to Pro."

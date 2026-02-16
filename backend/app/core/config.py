@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     # --- CORS / Security ---
     FRONTEND_ORIGIN: str = "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173"
 
+    # --- Feature Flags ---
+    ENABLE_EMAIL_VERIFICATION: bool = False
+    ENABLE_FORGOT_PASSWORD: bool = False
+
     # --- Email (Resend) ---
     RESEND_API_KEY: str = "re_123456789"  # Placeholder, will come from .env
     MAIL_FROM_NAME: str = "News App Support"

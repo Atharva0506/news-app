@@ -1,51 +1,45 @@
-# AI News Backend
+# Backend - AI News Aggregator
 
-A production-ready FastAPI backend for an AI-powered News Application.
+This is the backend service for the NewsAI application, built with **FastAPI**.
 
-## Features
-- **Authentication**: JWT (Email/Password)
-- **AI Agents**: Multi-agent system (Collector, Classifier, Summarizer) using LangGraph
-- **Payments**: Solana subscription system (Test & Real modes)
-- **News Ingestion**: Dual-mode ingestion (Live API or Local Mock)
+For full project documentation, architecture, and features, please refer to the [Root README](../README.md).
 
-## Quick Start
+## 📂 Structure
+- `app/api`: API route handlers
+- `app/core`: Configuration, security, email, and database logic
+- `app/models`: SQLAlchemy database models
+- `app/schemas`: Pydantic models for request/response validation
+- `app/services`: Business logic (AI Agents, News Fetching)
 
-### 1. Requirements
-- Docker & Docker Compose
-- Python 3.11+
+## 🛠️ Local Development
 
-### 2. Setup
+### Prerequisites
+- Python 3.10+
+- PostgreSQL
+- Redis (Optional)
+
+### Quick Start
+
+1.  **Install Dependencies**:
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # Windows: venv\Scripts\activate
+    pip install -r requirements.txt
+    ```
+
+2.  **Environment Setup**:
+    ```bash
+    cp .env.example .env
+    # Update .env with your keys
+    ```
+
+3.  **Run Server**:
+    ```bash
+    uvicorn app.main:app --reload
+    ```
+    API Docs: `http://localhost:8000/docs`
+
+## 🧪 Testing
 ```bash
-# Start Databases
-docker compose up -d db
-
-# Install Dependencies
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pip install "bcrypt<4.0.0"
-
-# Run Migrations
-alembic upgrade head
+pytest
 ```
-
-### 3. Running the App
-```bash
-uvicorn app.main:app --reload
-```
-Open [http://localhost:8000/docs](http://localhost:8000/docs) for API documentation.
-
-## Testing
-
-### Automated Tests
-Run the full test suite (Auth, News, Payments):
-```bash
-./run_tests.sh
-```
-
-### Manual Verification
-See [walkthrough.md](file:///home/atharva/.gemini/antigravity/brain/5891df3b-9a03-47f6-aff3-2655c5408c27/walkthrough.md) for detailed curl commands to manually verify the API endpoints.
-
-## Configuration
-- `NEWS_MODE`: Set to `TEST` (default) to use local mock data. Set to `LIVE` for real API.
-- `SOLANA_MODE`: Set to `TEST` (default) for simulated payments. Set to `REAL` for Devnet.
