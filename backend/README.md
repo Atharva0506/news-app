@@ -39,6 +39,8 @@ For full project documentation, architecture, and features, please refer to the 
     ```
     API Docs: `http://localhost:8000/docs`
 
+    > **Docker Note:** When running via Docker, database migrations are applied automatically on startup.
+
 ## 🧪 Testing
 ```bash
 pytest

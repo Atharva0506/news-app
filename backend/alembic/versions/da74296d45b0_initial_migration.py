@@ -71,13 +71,17 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_news_articles_url'), 'news_articles', ['url'], unique=True)
 
+    # Create transactionstatus enum safely
+    transaction_status = postgresql.ENUM('PENDING', 'COMPLETED', 'FAILED', name='transactionstatus', create_type=False)
+    transaction_status.create(op.get_bind(), checkfirst=True)
+
     op.create_table('payment_transactions',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('user_id', sa.Uuid(), nullable=False),
     sa.Column('amount', sa.Float(), nullable=False),
     sa.Column('currency', sa.String(), nullable=False),
     sa.Column('transaction_signature', sa.String(), nullable=False),
-    sa.Column('status', sa.Enum('PENDING', 'COMPLETED', 'FAILED', name='transactionstatus'), nullable=False),
+    sa.Column('status', transaction_status, nullable=False),
     sa.Column('is_test', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),

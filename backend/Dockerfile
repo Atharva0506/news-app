@@ -20,11 +20,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Expose port
 EXPOSE 8000
 
-# Command to run the application
-# We use shell form to allow variable expansion if needed, but array form is safer.
-# Using standard uvicorn worker for production. 
-# For high traffic, consider gunicorn with uvicorn workers.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./start.sh"]
