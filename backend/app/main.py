@@ -17,6 +17,10 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# GZip Compression
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # Set all CORS enabled origins
 app.add_middleware(
     CORSMiddleware,
@@ -44,7 +48,7 @@ from starlette.responses import JSONResponse
 logger = logging.getLogger("error_handler")
 
 @app.middleware("http")
-async def global_error_email_handler(request: Request, call_next):
+async def global_error_handler(request: Request, call_next):
     try:
         response = await call_next(request)
         return response
@@ -52,16 +56,8 @@ async def global_error_email_handler(request: Request, call_next):
         error_detail = traceback.format_exc()
         logger.error(f"Unhandled error on {request.method} {request.url.path}: {error_detail}")
         
-        # Send email alert in background (non-blocking)
-        try:
-            from app.core.email import EmailService
-            EmailService.send_error_alert(
-                error_message=str(exc),
-                endpoint=str(request.url.path),
-                method=request.method
-            )
-        except Exception:
-            logger.error("Failed to dispatch error alert email")
+        # Error alerting disabled as per user request
+        # Emails are not sent. Logs are available for debugging.
         
         return JSONResponse(
             status_code=500,

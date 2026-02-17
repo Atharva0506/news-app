@@ -16,15 +16,35 @@ api_keys = settings.GOOGLE_API_KEYS
 if not api_keys:
     api_keys = [settings.GOOGLE_API_KEY]
 
-llm_instances = [
-    ChatGoogleGenerativeAI(
-        model=settings.GEMINI_MODEL,
-        google_api_key=key,
-        temperature=0,
-        convert_system_message_to_human=True,
-        request_timeout=10
-    ) for key in api_keys
-]
+llm_instances = []
+for key in api_keys:
+    try:
+        llm = ChatGoogleGenerativeAI(
+            model=settings.GEMINI_MODEL,
+            google_api_key=key,
+            temperature=0,
+            convert_system_message_to_human=True,
+            request_timeout=10
+        )
+        llm_instances.append(llm)
+    except Exception as e:
+        logger.warning(f"Failed to init {settings.GEMINI_MODEL} with key ...{key[-5:]}: {e}. Falling back to gemini-1.5-flash")
+        try:
+             llm = ChatGoogleGenerativeAI(
+                model="gemini-1.5-flash",
+                google_api_key=key,
+                temperature=0,
+                convert_system_message_to_human=True,
+                request_timeout=10
+            )
+             llm_instances.append(llm)
+        except Exception as e2:
+            logger.error(f"Critical: Failed to init fallback model too: {e2}")
+
+if not llm_instances:
+    # If all failed, we can't proceed. But maybe we assume at least one works or we just leave list empty and fail later?
+    # Better to raise error here or log critical.
+    logger.critical("No LLM instances could be initialized.")
 
 current_llm_index = 0
 

@@ -17,27 +17,41 @@ class SupportRequest(BaseModel):
 class SupportResponse(BaseModel):
     response: str
 
+
+
 @router.post("/chat", response_model=SupportResponse)
 async def support_chat(
     request: SupportRequest,
-    current_user: Optional[User] = Depends(deps.get_current_active_user_optional), # Allow free/anon users? Maybe just auth users for now
+    current_user: Optional[User] = Depends(deps.get_current_active_user_optional),
 ):
     """
     Chat with the AI Support Agent.
     """
     from langchain_google_genai import ChatGoogleGenerativeAI
     from app.core.config import settings
-    import os
-
+    import random
+    
     try:
         if not settings.GOOGLE_API_KEYS:
              raise HTTPException(status_code=500, detail="AI Service not configured")
 
-        llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
-            google_api_key=settings.GOOGLE_API_KEYS[0],
-            temperature=0.3
-        )
+        # Basic rotation: Randomly select a key
+        api_key = random.choice(settings.GOOGLE_API_KEYS)
+
+        try:
+            llm = ChatGoogleGenerativeAI(
+                model=settings.GEMINI_MODEL,
+                google_api_key=api_key,
+                temperature=0.3
+            )
+        except Exception as e:
+            # Fallback if 2.5 is rejected by validation
+            print(f"Warning: Failed to instantiate {settings.GEMINI_MODEL}, falling back to gemini-1.5-flash. Error: {e}")
+            llm = ChatGoogleGenerativeAI(
+                model="gemini-1.5-flash",
+                google_api_key=api_key,
+                temperature=0.3
+            )
 
         
         # System Prompt

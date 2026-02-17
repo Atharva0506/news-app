@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, AlertCircle, Clock, TrendingUp, ExternalLink, Search, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface Article {
     id: string;
@@ -150,14 +151,10 @@ export function NewsFeed({
                     {/* Image Section - Stacked on mobile, Left on desktop */}
                     {article.image && (
                         <div className="shrink-0 w-full sm:w-48 md:w-64 h-48 sm:h-auto relative overflow-hidden bg-muted">
-                            <img
+                            <OptimizedImage
                                 src={article.image}
                                 alt={article.title}
-                                loading="lazy"
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                }}
                             />
                         </div>
                     )}

@@ -53,18 +53,13 @@ class LiveNewsProvider(NewsProvider):
                         continue
                         
                     response.raise_for_status()
-                    data = response.json()
-                    return data.get("news", [])
-                    
                 except Exception as e:
-                    print(f"Error calling Currents ({endpoint}): {e}")
-                     # Handle httpx specific errors if needed
-                    if isinstance(e, httpx.HTTPStatusError):
-                         if e.response.status_code in [429, 401]:
-                             self._rotate_key()
-                             continue
-                    # On other errors (connection, timeout), try next key? Or break?
-                    # Let's try next key just in case.
+                    print(f"Error calling Currents ({endpoint}) with key index {self.current_key_index}: {e}")
+                    # Rotate on any error to try next key/proxy
+                    self._rotate_key()
+                    continue
+                    # Rotate on any error to try next key/proxy
+                    self._rotate_key()
                     continue
             return []
 

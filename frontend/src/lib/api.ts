@@ -25,26 +25,29 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 
     if (!response.ok) {
       if (response.status === 429) {
-        // Try to parse retry delay from header or body if possible, but user asked for specific message structure.
-        // Google's 429 might have details in body.
+
         let retryMsg = "";
         try {
           const errJson = await response.clone().json();
-          // If retryDelay is in the error details (from previous logs it was parsed in backend but here we get the backend's HTTPException detail or the raw error if we didn't catch it?)
-          // We changed backend to raise HTTPException(429, detail="AI Usage Limit Reached...")
-          // But if we want to show "Try again in X seconds", we need to pass that info.
-          // For now, let's just use the generic message requested.
-          // "You’ve hit today’s free AI usage limit. Please try again later or upgrade to Pro."
+
         } catch (e) { }
 
         toast.error("You’ve hit today’s free AI usage limit. Please try again later or upgrade to Pro.", {
           description: "AI Limit Reached"
         });
-        // We can throw here or let it fall through to the error throw below?
-        // Throwing keeps control flow consistent.
+
         throw new ApiError(429, "AI Usage Limit Reached");
       }
       const errorData = await response.json().catch(() => ({}));
+
+      if (response.status >= 500) {
+        api.support.reportError({
+          error: errorData.detail || "Unknown 500 Error",
+          url: endpoint,
+          componentStack: "FetchWithAuth Automatic Report"
+        });
+      }
+
       throw new ApiError(
         response.status,
         errorData.detail || "An unexpected error occurred"
@@ -63,11 +66,10 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
         const refreshToken = localStorage.getItem("refresh_token");
         if (refreshToken) {
           try {
-            // Avoid infinite loop if refresh itself fails
             if (endpoint.includes("/refresh")) throw error;
 
-            // Call refresh endpoint directly using fetch to avoid circular dependency or complex recursion if I used api.auth.refresh logic excessively
-            // But actually I can use a simple fetch here.
+
+
             const refreshRes = await fetch(`${API_URL}/auth/refresh?refresh_token=${refreshToken}`, { method: "POST" });
 
             if (refreshRes.ok) {
@@ -75,7 +77,6 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
               localStorage.setItem("token", data.access_token);
               if (data.refresh_token) localStorage.setItem("refresh_token", data.refresh_token);
 
-              // Retry original request with new token
               const newHeaders = {
                 ...headers,
                 Authorization: `Bearer ${data.access_token}`
@@ -87,13 +88,11 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
               }
               return retryResponse.json();
             } else {
-              // Refresh failed
               localStorage.removeItem("token");
               localStorage.removeItem("refresh_token");
               localStorage.removeItem("has_onboarded");
             }
           } catch (refreshErr) {
-            // Refresh process failed
             localStorage.removeItem("token");
             localStorage.removeItem("refresh_token");
             localStorage.removeItem("has_onboarded");
@@ -201,7 +200,13 @@ export const api = {
     chat: (message: string, history: any[]) => fetchWithAuth("/support/chat", {
       method: "POST",
       body: JSON.stringify({ message, history })
-    })
+    }),
+    reportError: (data: { error: string; componentStack?: string; url?: string }) =>
+      fetch(`${API_URL}/support/report-error`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).catch(err => console.error("Failed to report error:", err))
   },
   chat: {
     list: () => fetchWithAuth("/chat/"),

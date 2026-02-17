@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     """
     
     # --- Project Metadata ---
-    PROJECT_NAME: str = "AI News Backend"
+    PROJECT_NAME: str = "News AI"
     API_V1_STR: str = "/api/v1"
     APP_ENV: str = "development"  # Options: development, production
     DEBUG: bool = True

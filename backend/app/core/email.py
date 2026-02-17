@@ -74,24 +74,4 @@ class EmailService:
         """
         return EmailService.send_email(to_email, subject, html_content)
 
-    @staticmethod
-    def send_error_alert(error_message: str, endpoint: str = "Unknown", method: str = ""):
-        """
-        Sends an error alert email to the admin.
-        """
-        from datetime import datetime
-        admin_email = "atharvan.coder@gmail.com"
-        subject = f"🚨 [{settings.PROJECT_NAME}] Backend Error Alert"
-        html_content = f"""
-        <h2 style="color: #dc3545;">Backend Error Alert</h2>
-        <table style="border-collapse: collapse; width: 100%;">
-            <tr><td style="padding: 8px; font-weight: bold;">Endpoint:</td><td style="padding: 8px;">{method} {endpoint}</td></tr>
-            <tr><td style="padding: 8px; font-weight: bold;">Time:</td><td style="padding: 8px;">{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</td></tr>
-            <tr><td style="padding: 8px; font-weight: bold;">Error:</td><td style="padding: 8px; color: #dc3545;">{error_message}</td></tr>
-        </table>
-        <p style="color: #6c757d; font-size: 12px;">This is an automated alert from the {settings.PROJECT_NAME} backend.</p>
-        """
-        try:
-            EmailService.send_email(admin_email, subject, html_content)
-        except Exception:
-            logger.error(f"Failed to send error alert email for: {error_message}")
+    # send_error_alert removed as per user request
