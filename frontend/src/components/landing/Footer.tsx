@@ -6,11 +6,11 @@ const footerLinks = {
     { label: "Features", href: "/" },
     { label: "Pricing", href: "/pricing" },
     { label: "Dashboard", href: "/dashboard" },
-    { label: "API", href: "/" },
   ],
   Company: [
     { label: "About Me", href: "/about" },
     { label: "Portfolio", href: "https://atharva-naik-portfolio.vercel.app/" },
+    { label: "Building NewsAI (Blog)", href: "https://atharva-naik-portfolio.vercel.app/posts/news-ai" },
     { label: "Contact: atharvn.coder@gmail.com", href: "mailto:atharvn.coder@gmail.com" },
   ],
   Legal: [
@@ -81,7 +81,7 @@ export function Footer() {
             © {new Date().getFullYear()} NewsAI. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
-            Made with ❤️ for informed readers
+            Thank you for using NewsAI 💖
           </p>
         </div>
       </div>

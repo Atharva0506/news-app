@@ -72,6 +72,14 @@ export function Hero() {
               <Play className="mr-2 h-4 w-4" />
               View Demo
             </Button>
+            <a
+              href="https://atharva-naik-portfolio.vercel.app/posts/news-ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors ml-2"
+            >
+              Read Case Study →
+            </a>
           </motion.div>
 
           <VideoModal
