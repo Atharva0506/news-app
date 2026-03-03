@@ -12,7 +12,6 @@ from app.services.currents import currents_service
 router = APIRouter()
 
 @router.get("/feed", response_model=List[NewsSchema])
-@router.get("/feed", response_model=List[NewsSchema])
 async def get_news_feed(
     db: AsyncSession = Depends(deps.get_db),
     limit: int = 5,

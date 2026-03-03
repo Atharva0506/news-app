@@ -53,12 +53,10 @@ class LiveNewsProvider(NewsProvider):
                         continue
                         
                     response.raise_for_status()
+                    data = response.json()
+                    return data.get("news", [])
                 except Exception as e:
                     print(f"Error calling Currents ({endpoint}) with key index {self.current_key_index}: {e}")
-                    # Rotate on any error to try next key/proxy
-                    self._rotate_key()
-                    continue
-                    # Rotate on any error to try next key/proxy
                     self._rotate_key()
                     continue
             return []

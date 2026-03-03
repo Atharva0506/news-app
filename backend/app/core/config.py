@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     PRO_PLAN_PRICE_SOL: float = 0.05
 
     # --- CORS / Security ---
-    FRONTEND_ORIGIN: str = "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173"
+    FRONTEND_ORIGIN: str = "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,https://newsai.atharvanaik.me,https://news-app-delta-mocha-27.vercel.app"
 
     # --- Feature Flags ---
     ENABLE_EMAIL_VERIFICATION: bool = False
