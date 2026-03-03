@@ -23,7 +23,7 @@ COPY . .
 # Make start script executable
 RUN chmod +x start.sh
 
-# Expose port
-EXPOSE 8000
+# Expose port (Render uses 10000 by default)
+EXPOSE 10000
 
 CMD ["./start.sh"]

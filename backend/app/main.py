@@ -69,7 +69,11 @@ app.include_router(onboarding.router, prefix=f"{settings.API_V1_STR}/onboarding"
 app.include_router(chat.router, prefix=f"{settings.API_V1_STR}/chat", tags=["chat"])
 app.include_router(support.router, prefix=f"{settings.API_V1_STR}/support", tags=["support"])
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"message": "AI News Backend API"}
+
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health_check():
+    return {"status": "ok"}
 
