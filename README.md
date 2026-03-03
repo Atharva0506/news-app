@@ -4,7 +4,8 @@
 
 This is a next-generation news platform I built to demonstrate the power of **AI Agents** in aggregating, classifying, and summarizing news in real-time. It features a specialized dashboard with "Deep Analysis" streaming, an AI Chat Assistant, and premium subscription tiers.
 
-👉 **Live Demo:** [https://news-app-delta-mocha-27.vercel.app/](https://news-app-delta-mocha-27.vercel.app/)
+👉 **Live Demo:** [https://newsai.atharvanaik.me/](https://newsai.atharvanaik.me/)
+👉 **Blog Post:** [https://atharvanaik.me/posts/news-ai](https://atharvanaik.me/posts/news-ai)
 
 > [!NOTE]
 > I am currently using **Free Tier APIs** for both the LLM (Gemini) and the News data source. This means the application has certain rate limits. If you encounter issues or slow responses, it's likely due to these quotas. Thanks for understanding!
