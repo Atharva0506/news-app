@@ -73,7 +73,7 @@ export function Hero() {
               View Demo
             </Button>
             <a
-              href="https://atharva-naik-portfolio.vercel.app/posts/news-ai"
+              href="https://atharvanaik.me/posts/news-ai"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors ml-2"

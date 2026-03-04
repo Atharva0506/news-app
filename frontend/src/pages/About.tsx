@@ -9,7 +9,7 @@ export default function About() {
         {
             icon: Globe,
             label: "Portfolio",
-            href: "https://atharva-naik-portfolio.vercel.app/",
+            href: "https://atharvanaik.me/",
             color: "text-purple-500 bg-purple-500/10"
         },
         {
@@ -81,7 +81,7 @@ export default function About() {
 
                     <div className="pt-8">
                         <Button asChild variant="outline" size="lg">
-                            <a href="https://atharva-naik-portfolio.vercel.app/" target="_blank" rel="noopener noreferrer">
+                            <a href="https://atharvanaik.me/" target="_blank" rel="noopener noreferrer">
                                 View Full Portfolio
                             </a>
                         </Button>

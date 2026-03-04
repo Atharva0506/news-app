@@ -74,4 +74,4 @@ class EmailService:
         """
         return EmailService.send_email(to_email, subject, html_content)
 
-    # send_error_alert removed as per user request
+   
