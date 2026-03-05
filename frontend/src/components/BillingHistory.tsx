@@ -42,19 +42,19 @@ export function BillingHistory() {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <History className="h-5 w-5" />
+            <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <History className="h-4 w-4 text-accent" />
                     Billing History
                 </CardTitle>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="flex justify-center p-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent"></div>
                     </div>
                 ) : transactions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">No payment history found.</p>
+                    <p className="text-center text-sm text-muted-foreground py-4">No payment history found.</p>
                 ) : (
                     <div className="rounded-md border">
                         <table className="w-full text-sm text-left">

@@ -26,9 +26,9 @@ export function FeedFilters({
   const { user } = useAuth();
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 mb-6">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4">
       <Select value={category} onValueChange={onCategoryChange}>
-        <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+        <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs bg-secondary/50 border-0">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
         <SelectContent>
@@ -45,7 +45,7 @@ export function FeedFilters({
       </Select>
 
       <Select value={sentiment} onValueChange={onSentimentChange}>
-        <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+        <SelectTrigger className="w-full sm:w-[130px] h-8 text-xs bg-secondary/50 border-0">
           <SelectValue placeholder="Sentiment" />
         </SelectTrigger>
         <SelectContent>
@@ -58,12 +58,13 @@ export function FeedFilters({
 
       {user && !user.is_premium && (
         <Button
-          className="ml-auto bg-accent hover:bg-accent/90 text-accent-foreground h-9 text-sm"
+          size="sm"
+          className="ml-auto bg-accent hover:bg-accent/90 text-accent-foreground h-8 text-xs font-medium"
           asChild
         >
-          <Link to="/pricing" className="flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Upgrade to Pro</span>
+          <Link to="/pricing" className="flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3" />
+            Upgrade
           </Link>
         </Button>
       )}

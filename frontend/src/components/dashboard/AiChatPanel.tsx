@@ -243,39 +243,39 @@ ${data.article.summary_detail || "N/A"}
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col">
+      <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col border-l border-border">
         <SheetTitle className="sr-only">AI Assistant</SheetTitle>
 
         {/* Header */}
-        <div className="p-4 border-b border-border">
+        <div className="px-4 py-3 border-b border-border bg-background">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-accent" />
+            <div className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Sparkles className="h-3.5 w-3.5 text-accent" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">AI Assistant</h3>
-                <p className="text-xs text-muted-foreground">
+                <h3 className="font-semibold text-[13px] leading-tight">AI Assistant</h3>
+                <p className="text-2xs text-muted-foreground">
                   Ask anything about the news
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {chatMessages.length > 0 && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-7 w-7"
                   onClick={handleShareAnalysis}
                   title="Share analysis"
                 >
-                  <Share2 className="h-4 w-4" />
+                  <Share2 className="h-3.5 w-3.5" />
                 </Button>
               )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 disabled={chatMessages.length === 0 || isSavingChat}
                 title={
                   user?.is_premium
@@ -285,11 +285,11 @@ ${data.article.summary_detail || "N/A"}
                 onClick={handleSaveChat}
               >
                 {isSavingChat ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : user?.is_premium ? (
-                  <Bookmark className="h-4 w-4" />
+                  <Bookmark className="h-3.5 w-3.5" />
                 ) : (
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Lock className="h-3 w-3 text-muted-foreground" />
                 )}
               </Button>
             </div>
@@ -298,20 +298,20 @@ ${data.article.summary_detail || "N/A"}
 
         {/* Selected article context */}
         {selectedArticle && (
-          <div className="p-4 border-b border-border bg-secondary/30 flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <div className="overflow-hidden">
-                <p className="text-xs text-muted-foreground mb-0.5">
-                  Discussing:
+          <div className="px-4 py-3 border-b border-border bg-secondary/30">
+            <div className="flex justify-between items-start gap-2">
+              <div className="min-w-0">
+                <p className="text-2xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">
+                  Discussing
                 </p>
-                <p className="text-sm font-medium line-clamp-1">
+                <p className="text-[13px] font-medium line-clamp-1">
                   {selectedArticle.title}
                 </p>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs h-7"
+                className="text-xs h-6 px-2 shrink-0"
                 onClick={() => onArticleChange(null)}
               >
                 Clear
@@ -320,12 +320,12 @@ ${data.article.summary_detail || "N/A"}
             <Button
               variant="outline"
               size="sm"
-              className="w-full gap-2 text-xs h-8"
+              className="w-full gap-1.5 text-xs h-7 mt-2"
               onClick={handleProcessArticle}
               disabled={isAiLoading || !user?.is_premium}
             >
               <Sparkles className="h-3 w-3 text-accent" />
-              {user?.is_premium ? "Run Deep Analysis" : "Deep Analysis (Premium)"}
+              {user?.is_premium ? "Deep Analysis" : "Deep Analysis (Premium)"}
             </Button>
           </div>
         )}
@@ -363,17 +363,22 @@ ${data.article.summary_detail || "N/A"}
         )}
 
         {/* Messages */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4" ref={scrollRef}>
+        <ScrollArea className="flex-1 px-4 py-3">
+          <div className="space-y-3" ref={scrollRef}>
             {chatMessages.length === 0 ? (
-              <div className="text-center text-muted-foreground mt-10">
-                <Sparkles className="h-8 w-8 mx-auto mb-3 text-accent/30" />
-                <p className="text-sm">
-                  Ask a question about your feed or a specific article.
+              <div className="text-center text-muted-foreground mt-12">
+                <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                  <Sparkles className="h-5 w-5 text-accent/40" />
+                </div>
+                <p className="text-sm font-medium mb-1">
+                  Ask about your feed
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  Select an article or ask a general question.
                 </p>
                 {!user?.is_premium && (
-                  <p className="text-xs mt-2 text-accent">
-                    Upgrade to Premium to chat!
+                  <p className="text-xs mt-3 text-accent font-medium">
+                    Upgrade to Pro to chat
                   </p>
                 )}
               </div>
@@ -386,13 +391,13 @@ ${data.article.summary_detail || "N/A"}
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                    className={`max-w-[85%] rounded-lg px-3 py-2 text-[13px] leading-relaxed ${
                       msg.role === "user"
                         ? "bg-accent text-accent-foreground"
-                        : "bg-muted"
+                        : "bg-secondary/80"
                     }`}
                   >
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                   </div>
@@ -400,16 +405,16 @@ ${data.article.summary_detail || "N/A"}
               ))
             )}
             {isAiLoading && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                AI is thinking...
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="h-3.5 w-3.5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+                Thinking...
               </div>
             )}
           </div>
         </ScrollArea>
 
         {/* Input */}
-        <div className="p-4 border-t border-border mt-auto">
+        <div className="p-3 border-t border-border mt-auto bg-background">
           <div className="flex gap-2">
             <Input
               placeholder={
@@ -419,15 +424,15 @@ ${data.article.summary_detail || "N/A"}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAskAi()}
               disabled={!user?.is_premium || isAiLoading}
-              className="flex-1 h-9 text-sm"
+              className="flex-1 h-8 text-sm bg-secondary/50 border-0"
             />
             <Button
               onClick={handleAskAi}
               disabled={!user?.is_premium || isAiLoading}
               size="sm"
-              className="bg-accent hover:bg-accent/90 text-accent-foreground h-9"
+              className="bg-accent hover:bg-accent/90 text-accent-foreground h-8 px-3"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
@@ -438,6 +443,7 @@ ${data.article.summary_detail || "N/A"}
         onOpenChange={setShareModalOpen}
         shareUrl={shareUrl}
         title={shareTitle}
+        messages={chatMessages}
       />
     </Sheet>
   );

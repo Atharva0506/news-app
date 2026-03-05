@@ -52,34 +52,34 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 12 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5 },
+    transition: { duration: 0.35 },
   },
 };
 
 export function Features() {
   return (
-    <section className="py-24 bg-background">
+    <section className="py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.4 }}
+          className="text-center mb-12"
         >
-          <span className="text-sm font-medium text-accent uppercase tracking-wider">
+          <span className="text-xs font-medium text-accent uppercase tracking-wider">
             Features
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold mt-3 mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mt-2 mb-3">
             Everything you need to stay informed
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Our platform combines cutting-edge AI with thoughtful design to transform how you consume news.
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+            Cutting-edge AI with thoughtful design to transform how you consume news.
           </p>
         </motion.div>
 
@@ -89,19 +89,19 @@ export function Features() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
           {features.map((feature, index) => (
             <motion.div
               key={index}
               variants={itemVariants}
-              className="group relative p-6 rounded-lg bg-card border border-border hover:border-accent/20 transition-all duration-300"
+              className="group relative p-5 rounded-lg bg-card border border-border hover:border-accent/20 transition-all duration-200"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 mb-4 group-hover:bg-accent/20 transition-colors">
-                <feature.icon className="h-6 w-6 text-accent" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 mb-3 group-hover:bg-accent/15 transition-colors">
+                <feature.icon className="h-4 w-4 text-accent" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <h3 className="text-[15px] font-semibold mb-1.5">{feature.title}</h3>
+              <p className="text-muted-foreground text-[13px] leading-relaxed">
                 {feature.description}
               </p>
             </motion.div>

@@ -64,18 +64,18 @@ export function SupportChat() {
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={{ opacity: 0, y: 12, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="absolute bottom-16 right-0 w-80 sm:w-96 bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col max-h-[500px]"
+                        exit={{ opacity: 0, y: 12, scale: 0.97 }}
+                        className="absolute bottom-14 right-0 w-72 sm:w-80 bg-card border border-border rounded-lg shadow-lg overflow-hidden flex flex-col max-h-[450px]"
                     >
-                        <div className="p-4 bg-accent/10 border-b border-border flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <Bot className="h-5 w-5 text-accent" />
-                                <span className="font-semibold">NewsAI Support</span>
+                        <div className="px-3 py-2.5 bg-accent/10 border-b border-border flex justify-between items-center">
+                            <div className="flex items-center gap-1.5">
+                                <Bot className="h-4 w-4 text-accent" />
+                                <span className="text-sm font-semibold">NewsAI Support</span>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(false)}>
-                                <X className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
+                                <X className="h-3.5 w-3.5" />
                             </Button>
                         </div>
 
@@ -127,9 +127,9 @@ export function SupportChat() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(!isOpen)}
-                className="h-12 w-12 rounded-full bg-accent text-accent-foreground shadow-lg flex items-center justify-center hover:bg-accent/90 transition-colors"
+                className="h-10 w-10 rounded-full bg-accent text-accent-foreground shadow-lg flex items-center justify-center hover:bg-accent/90 transition-colors"
             >
-                {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+                {isOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
             </motion.button>
         </div>
     );

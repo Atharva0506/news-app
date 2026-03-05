@@ -19,7 +19,7 @@ const navItems = [
   { icon: Newspaper, label: "My Feed", href: "/dashboard/feed" },
   { icon: Compass, label: "Explore", href: "/explore" },
   { icon: MessageSquareDashed, label: "Saved Chats", href: "/dashboard/saved" },
-  { icon: History, label: "Billing History", href: "/dashboard/billing" },
+  { icon: History, label: "Billing", href: "/dashboard/billing" },
   { icon: SettingsIcon, label: "Settings", href: "/dashboard/settings" },
 ];
 
@@ -37,11 +37,11 @@ export function DashboardSidebar({ collapsed, mobile = false }: DashboardSidebar
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border shrink-0">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent shadow-sm shadow-accent/20 shrink-0 transition-transform group-hover:scale-105">
-            <Sparkles className="h-4.5 w-4.5 text-accent-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent shrink-0 transition-transform duration-200 group-hover:scale-[1.04]">
+            <Sparkles className="h-4 w-4 text-accent-foreground" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+            <span className="text-base font-bold tracking-tight">
               NewsAI
             </span>
           )}
@@ -49,7 +49,7 @@ export function DashboardSidebar({ collapsed, mobile = false }: DashboardSidebar
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto no-scrollbar">
+      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive =
             item.href === "/explore"
@@ -59,16 +59,17 @@ export function DashboardSidebar({ collapsed, mobile = false }: DashboardSidebar
             <Link
               key={item.label}
               to={item.href}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+              className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
                 isActive
-                  ? "bg-accent/15 text-accent font-semibold shadow-sm shadow-accent/5"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/5"
+                  ? "bg-accent/10 text-accent"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
               }`}
             >
               <item.icon
-                className={`h-[18px] w-[18px] shrink-0 transition-colors ${
-                  isActive ? "text-accent" : "text-muted-foreground group-hover:text-accent/70"
+                className={`h-4 w-4 shrink-0 transition-colors duration-150 ${
+                  isActive ? "text-accent" : "text-muted-foreground group-hover:text-foreground"
                 }`}
+                strokeWidth={isActive ? 2.2 : 1.8}
               />
               {!collapsed && <span>{item.label}</span>}
               {isActive && !collapsed && (
@@ -89,18 +90,18 @@ export function DashboardSidebar({ collapsed, mobile = false }: DashboardSidebar
       {/* User Section */}
       <div className="p-3 border-t border-sidebar-border mt-auto shrink-0">
         {user ? (
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center shrink-0 border border-accent/10">
-              <span className="text-sm font-semibold text-accent">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+              <span className="text-xs font-semibold text-accent">
                 {(user.full_name || user.email || "U").charAt(0).toUpperCase()}
               </span>
             </div>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
+                <p className="text-[13px] font-medium truncate leading-tight">
                   {user.full_name || user.email}
                 </p>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-0.5">
                   <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${
                     user.is_premium ? "text-accent" : "text-muted-foreground"
                   }`}>
@@ -110,7 +111,7 @@ export function DashboardSidebar({ collapsed, mobile = false }: DashboardSidebar
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     onClick={logout}
                     title="Logout"
                   >
@@ -121,11 +122,9 @@ export function DashboardSidebar({ collapsed, mobile = false }: DashboardSidebar
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/login">Login</Link>
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" asChild className="w-full">
+            <Link to="/login">Login</Link>
+          </Button>
         )}
       </div>
     </div>

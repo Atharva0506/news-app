@@ -22,11 +22,14 @@
   z-index: 1;
 }
 
-/* Feedly-Inspired Design System — Clean, Readable, Professional */
+/* ========================================================================
+   Modern SaaS Design System — Clean, Readable, Professional
+   Inspired by Stripe / Linear / Vercel / Notion
+   ======================================================================== */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 99%;
     --foreground: 224 71% 4%;
 
     --card: 0 0% 100%;
@@ -54,14 +57,16 @@
     --input: 220 13% 91%;
     --ring: 160 84% 39%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
-    /* Clean tokens — flat, no glow */
+    /* Clean design tokens */
     --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(152 76% 36%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(220 14% 97%) 0%, hsl(0 0% 100%) 100%);
     --gradient-card: none;
-    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-    --shadow-glow: 0 1px 3px 0 rgb(0 0 0 / 0.06);
+    --shadow-soft: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+    --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 4px 6px -1px rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 4px 6px -2px rgb(0 0 0 / 0.05), 0 10px 15px -3px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 0 1px rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.06);
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 224 71% 4%;
@@ -72,7 +77,6 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 160 84% 39%;
 
-    /* Feedly-specific extras */
     --success: 160 84% 39%;
     --warning: 38 92% 50%;
     --info: 217 91% 60%;
@@ -110,8 +114,10 @@
     --gradient-primary: linear-gradient(135deg, hsl(160 73% 47%) 0%, hsl(152 68% 42%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(224 47% 6%) 0%, hsl(224 71% 4%) 100%);
     --gradient-card: none;
-    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.2);
-    --shadow-glow: 0 1px 3px 0 rgb(0 0 0 / 0.2);
+    --shadow-soft: 0 1px 2px 0 rgb(0 0 0 / 0.15), 0 1px 3px 0 rgb(0 0 0 / 0.2);
+    --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.2), 0 4px 6px -1px rgb(0 0 0 / 0.15);
+    --shadow-lg: 0 4px 6px -2px rgb(0 0 0 / 0.2), 0 10px 15px -3px rgb(0 0 0 / 0.25);
+    --shadow-glow: 0 0 0 1px rgb(255 255 255 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.2);
 
     --sidebar-background: 223 47% 7%;
     --sidebar-foreground: 210 40% 98%;
@@ -133,23 +139,73 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    letter-spacing: -0.011em;
+    line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight font-semibold;
+    line-height: 1.2;
+  }
+
+  h1 { letter-spacing: -0.03em; }
+  h2 { letter-spacing: -0.025em; }
+  h3 { letter-spacing: -0.02em; }
+
+  /* Custom scrollbar — subtle, modern */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.35);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+  }
+
+  /* Focused elements — accessible ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring/40 ring-offset-2 ring-offset-background;
+    border-radius: var(--radius);
   }
 
   /* Fix for Chrome Autofill in Dark Mode */
   input:-webkit-autofill,
-  input:-webkit-autofill:hover, 
-  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 30px hsl(var(--background)) inset !important;
     -webkit-text-fill-color: hsl(var(--foreground)) !important;
     transition: background-color 5000s ease-in-out 0s;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: hsl(var(--accent) / 0.2);
+    color: hsl(var(--foreground));
   }
 }
 
@@ -171,11 +227,45 @@
     box-shadow: var(--shadow-soft);
   }
 
+  .shadow-raised {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-lg);
+  }
+
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
 
   .glass {
     @apply backdrop-blur-xl bg-background/80 border border-border/50;
+  }
+
+  /* Smooth content transitions */
+  .animate-in {
+    animation: fadeInUp 0.3s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Hover lift effect for cards */
+  .hover-lift {
+    @apply transition-all duration-200;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
   }
 }

@@ -61,17 +61,22 @@ export function FeedSummary() {
 
   if (loading && !summary)
     return (
-      <div className="text-sm text-muted-foreground animate-pulse">
-        Generating your daily briefing...
+      <div className="p-4 rounded-lg border border-border bg-card">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          Generating your daily briefing...
+        </div>
       </div>
     );
   if (!summary && !loading) return null;
 
   return (
-    <div className="p-4 rounded-lg bg-accent/5 border border-accent/10 relative group">
-      <div className="flex justify-between items-start mb-2">
+    <div className="p-4 rounded-lg border border-border bg-card relative group">
+      <div className="flex justify-between items-center mb-3">
         <h3 className="flex items-center gap-2 font-semibold text-sm">
-          <Sparkles className="h-4 w-4 text-accent" />
+          <div className="h-6 w-6 rounded-md bg-accent/10 flex items-center justify-center">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+          </div>
           Daily Briefing
         </h3>
         <TooltipProvider>
@@ -81,7 +86,7 @@ export function FeedSummary() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => generateSummary(true)}
                   disabled={
                     loading ||
@@ -91,28 +96,26 @@ export function FeedSummary() {
                   }
                 >
                   <RefreshCw
-                    className={`h-3 w-3 ${loading ? "animate-spin" : ""}`}
+                    className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
                   />
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {user?.is_premium
-                  ? "Unlimited Refresh (Premium)"
-                  : user &&
-                    !user.is_premium &&
-                    isSameDay(user.last_summary_refresh_date)
-                  ? "Upgrade to Pro to refresh multiple times."
-                  : "Refresh Briefing"}
-              </p>
+            <TooltipContent side="bottom" className="text-xs">
+              {user?.is_premium
+                ? "Refresh briefing"
+                : user &&
+                  !user.is_premium &&
+                  isSameDay(user.last_summary_refresh_date)
+                ? "Upgrade to Pro for unlimited refreshes"
+                : "Refresh briefing"}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
-      <div className="text-sm leading-relaxed text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
+      <div className="text-sm leading-relaxed text-muted-foreground prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
         {loading ? (
-          "Refreshing..."
+          <span className="animate-pulse-soft">Refreshing...</span>
         ) : (
           <ReactMarkdown>{summary || ""}</ReactMarkdown>
         )}

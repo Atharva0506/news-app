@@ -24,16 +24,16 @@ const technologies: { name: string; icon: LucideIcon }[] = [
 
 export function TechStack() {
   return (
-    <section className="py-16 bg-background border-y border-border">
+    <section className="py-10 bg-background border-y border-border/50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          transition={{ duration: 0.4 }}
+          className="text-center mb-6"
         >
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Built with the best tools in the industry
           </p>
         </motion.div>
@@ -42,8 +42,8 @@ export function TechStack() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-wrap justify-center items-center gap-8 md:gap-12"
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="flex flex-wrap justify-center items-center gap-6 md:gap-10"
         >
           {technologies.map((tech, index) => {
             const Icon = tech.icon;
@@ -51,10 +51,10 @@ export function TechStack() {
             return (
               <div
                 key={index}
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-sm font-medium">{tech.name}</span>
+                <Icon className="w-4 h-4" />
+                <span className="text-xs font-medium">{tech.name}</span>
               </div>
             );
           })}

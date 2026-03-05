@@ -9,6 +9,9 @@ import { WalletContextProvider } from "@/context/WalletContextProvider"; // Corr
 import { SupportChat } from "@/components/SupportChat";
 import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
+import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
+import Privacy from "./pages/Privacy";
 
 // Lazy Load Pages
 const Index = lazy(() => import("./pages/Index"));
@@ -132,6 +135,9 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/faq" element={<FAQ />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/cookies" element={<Cookies />} />
                   <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
                   <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
                   <Route

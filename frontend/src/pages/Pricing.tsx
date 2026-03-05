@@ -222,23 +222,23 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="pt-32 pb-24">
+      <section className="pt-28 pb-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-12"
+            transition={{ duration: 0.4 }}
+            className="text-center mb-10"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-6">
-              <Sparkles className="h-4 w-4 text-accent" />
-              <span className="text-sm font-medium text-accent">Simple Pricing</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/8 border border-accent/15 mb-5">
+              <Sparkles className="h-3 w-3 text-accent" />
+              <span className="text-xs font-medium text-accent">Simple Pricing</span>
             </span>
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3">
               Choose your plan
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-6">
+            <p className="text-sm text-muted-foreground max-w-lg mx-auto mb-5">
               Start free and scale as you grow. No hidden fees, cancel anytime.
             </p>
 
@@ -269,42 +269,42 @@ export default function Pricing() {
           </motion.div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {plans.map((plan, index) => (
               <motion.div
                 key={plan.name}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                className={`relative p-8 rounded-lg border ${plan.popular
+                transition={{ duration: 0.35, delay: 0.15 + index * 0.08 }}
+                className={`relative p-6 rounded-lg border ${plan.popular
                   ? 'border-accent bg-card shadow-md'
-                  : 'border-border bg-card shadow-sm'
+                  : 'border-border bg-card'
                   }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-medium">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
                       Most Popular
                     </span>
                   </div>
                 )}
 
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                  <p className="text-sm text-muted-foreground">{plan.description}</p>
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
+                  <p className="text-xs text-muted-foreground">{plan.description}</p>
                 </div>
 
-                <div className="mb-8">
-                  <span className="text-5xl font-bold">
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">
                     {plan.displayPrice}
                   </span>
-                  <span className="text-muted-foreground ml-2">/month</span>
+                  <span className="text-sm text-muted-foreground ml-1">/month</span>
                 </div>
 
                 <Button
-                  className={`w-full mb-8 h-12 text-base ${plan.popular
+                  className={`w-full mb-6 h-10 text-sm ${plan.popular
                     ? 'bg-accent hover:bg-accent/90 text-accent-foreground'
-                    : 'h-12'
+                    : ''
                     }`}
                   variant={plan.popular ? "default" : "outline"}
                   onClick={() => handleSubscribe(plan)}
@@ -322,7 +322,7 @@ export default function Pricing() {
                     </>
                   ) : plan.id === 'pro' && isProActive ? (
                     <>
-                      <Check className="mr-2 h-5 w-5" />
+                      <Check className="mr-1.5 h-4 w-4" />
                       Currently Subscribed
                     </>
                   ) : (
@@ -330,21 +330,21 @@ export default function Pricing() {
                   )}
                 </Button>
 
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                      <span className="text-sm">{feature}</span>
+                    <li key={i} className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                      <span className="text-[13px]">{feature}</span>
                     </li>
                   ))}
                   {/* @ts-ignore */}
                   {plan.missing_features?.map((feature, i) => (
-                    <li key={`missing-${i}`} className="flex items-start gap-3 text-muted-foreground/50">
-                      <div className="h-5 w-5 flex items-center justify-center shrink-0 mt-0.5">
-                        <span className="block w-4 h-px bg-current rotate-45 absolute"></span>
-                        <span className="block w-4 h-px bg-current -rotate-45 absolute"></span>
+                    <li key={`missing-${i}`} className="flex items-start gap-2 text-muted-foreground/50">
+                      <div className="h-4 w-4 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="block w-3 h-px bg-current rotate-45 absolute"></span>
+                        <span className="block w-3 h-px bg-current -rotate-45 absolute"></span>
                       </div>
-                      <span className="text-sm line-through">{feature}</span>
+                      <span className="text-[13px] line-through">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -354,12 +354,12 @@ export default function Pricing() {
 
           {/* FAQ Teaser */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="text-center mt-16"
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="text-center mt-12"
           >
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Have questions?{" "}
               <a href="/faq" className="text-accent hover:underline">
                 Check our FAQ

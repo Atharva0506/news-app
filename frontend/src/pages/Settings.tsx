@@ -125,34 +125,28 @@ export default function Settings() {
         }
     };
 
-    const categories = ["Technology", "Finance", "Environment", "Politics", "Business"];
+    const categories = ["technology", "business", "science", "health", "politics", "entertainment", "world", "general"];
 
     return (
-        <div className="min-h-screen bg-gradient-hero p-4 md:p-8">
-            {/* Background decoration */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-            </div>
-
-            <div className="max-w-4xl mx-auto relative z-10 space-y-8">
+        <div className="min-h-screen p-4 md:p-8">
+            <div className="max-w-3xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-                        <p className="text-muted-foreground mt-1">Manage your account and preferences.</p>
+                        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+                        <p className="text-sm text-muted-foreground mt-0.5">Manage your account and preferences.</p>
                     </div>
                 </div>
 
-                <div className="grid gap-8">
+                <div className="grid gap-6">
                     {/* Account Section */}
-                    <div className="bg-card border border-border rounded-xl p-6 shadow-soft space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                                <User className="h-5 w-5 text-accent" />
+                    <div className="bg-card border border-border rounded-lg p-5 shadow-soft space-y-5">
+                        <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-md bg-accent/10 flex items-center justify-center">
+                                <User className="h-4 w-4 text-accent" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-semibold">Account Information</h2>
-                                <p className="text-sm text-muted-foreground">Manage your personal details</p>
+                                <h2 className="text-[15px] font-semibold">Account Information</h2>
+                                <p className="text-xs text-muted-foreground">Manage your personal details</p>
                             </div>
                         </div>
 
@@ -215,15 +209,15 @@ export default function Settings() {
                     </div>
 
                     {/* Subscription Section */}
-                    <div className="bg-card border border-border rounded-xl p-6 shadow-soft space-y-6">
-                        <div className="flex items-center justify-between flex-wrap gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                                    <CreditCard className="h-5 w-5 text-accent" />
+                    <div className="bg-card border border-border rounded-lg p-5 shadow-soft space-y-5">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="h-8 w-8 rounded-md bg-accent/10 flex items-center justify-center">
+                                    <CreditCard className="h-4 w-4 text-accent" />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h2 className="text-lg font-semibold">Subscription Plan</h2>
+                                        <h2 className="text-[15px] font-semibold">Subscription Plan</h2>
                                         {user?.is_premium ? (
                                             <Badge className="bg-accent text-accent-foreground hover:bg-accent/80">PRO</Badge>
                                         ) : (
@@ -246,14 +240,14 @@ export default function Settings() {
                     </div>
 
                     {/* Preferences Section */}
-                    <div className="bg-card border border-border rounded-xl p-6 shadow-soft space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                                <Sparkles className="h-5 w-5 text-accent" />
+                    <div className="bg-card border border-border rounded-lg p-5 shadow-soft space-y-5">
+                        <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-md bg-accent/10 flex items-center justify-center">
+                                <Sparkles className="h-4 w-4 text-accent" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-semibold">Feed Preferences</h2>
-                                <p className="text-sm text-muted-foreground">Customize your AI news feed</p>
+                                <h2 className="text-[15px] font-semibold">Feed Preferences</h2>
+                                <p className="text-xs text-muted-foreground">Customize your AI news feed</p>
                             </div>
                         </div>
 
@@ -394,13 +388,13 @@ export default function Settings() {
                             : null;
 
                         return (
-                            <div className="border border-destructive/20 bg-destructive/5 rounded-xl p-6">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <Trash2 className="h-5 w-5 text-destructive" />
-                                    <h2 className="text-lg font-semibold text-destructive">Danger Zone</h2>
+                            <div className="border border-destructive/20 bg-destructive/5 rounded-lg p-5">
+                                <div className="flex items-center gap-2.5 mb-3">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <h2 className="text-[15px] font-semibold text-destructive">Danger Zone</h2>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
                                     <div>
                                         <p className="font-medium text-destructive-foreground/90">Delete Account</p>
                                         <p className="text-sm text-muted-foreground">

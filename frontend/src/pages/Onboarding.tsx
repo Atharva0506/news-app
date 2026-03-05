@@ -83,50 +83,50 @@ export default function Onboarding() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
             {/* Background decoration */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px]" />
+                <div className="absolute bottom-1/3 right-1/4 w-[300px] h-[300px] bg-accent/3 rounded-full blur-[100px]" />
             </div>
 
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.4 }}
                 className="w-full max-w-lg relative z-10"
             >
                 {/* Logo */}
-                <div className="flex items-center justify-center gap-2 mb-8">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
-                        <Sparkles className="h-5 w-5 text-accent-foreground" />
+                <div className="flex items-center justify-center gap-2 mb-6">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+                        <Sparkles className="h-4 w-4 text-accent-foreground" />
                     </div>
-                    <span className="text-2xl font-bold">NewsAI</span>
+                    <span className="text-lg font-bold">NewsAI</span>
                 </div>
 
                 {/* Card */}
-                <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
-                    <div className="text-center mb-6">
-                        <h1 className="text-2xl font-bold mb-2">Personalize Your Feed</h1>
-                        <p className="text-muted-foreground text-sm">
+                <div className="bg-card border border-border rounded-lg p-6 shadow-soft">
+                    <div className="text-center mb-5">
+                        <h1 className="text-xl font-bold mb-1">Personalize Your Feed</h1>
+                        <p className="text-muted-foreground text-[13px]">
                             Let's set up your perfect news experience
                         </p>
                     </div>
 
                     {/* Step Indicator */}
-                    <div className="flex items-center justify-center gap-2 mb-8">
+                    <div className="flex items-center justify-center gap-2 mb-6">
                         {steps.map((s, i) => (
                             <div key={i} className="flex items-center gap-2">
                                 <div
-                                    className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold transition-all duration-300 ${step > i + 1
+                                    className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold transition-all duration-200 ${step > i + 1
                                             ? "bg-accent text-accent-foreground"
                                             : step === i + 1
                                                 ? "bg-accent text-accent-foreground ring-2 ring-accent/30 ring-offset-2 ring-offset-card"
                                                 : "bg-muted text-muted-foreground"
                                         }`}
                                 >
-                                    {step > i + 1 ? <Check className="h-4 w-4" /> : i + 1}
+                                    {step > i + 1 ? <Check className="h-3.5 w-3.5" /> : i + 1}
                                 </div>
                                 {i < steps.length - 1 && (
-                                    <div className={`w-12 h-0.5 transition-colors duration-300 ${step > i + 1 ? "bg-accent" : "bg-muted"}`} />
+                                    <div className={`w-10 h-0.5 transition-colors duration-200 ${step > i + 1 ? "bg-accent" : "bg-muted"}`} />
                                 )}
                             </div>
                         ))}
@@ -256,12 +256,12 @@ export default function Onboarding() {
                     </AnimatePresence>
 
                     {/* Footer */}
-                    <div className="flex justify-between mt-8">
+                    <div className="flex justify-between mt-6">
                         <Button
                             variant="outline"
                             onClick={() => setStep(s => Math.max(1, s - 1))}
                             disabled={step === 1 || loading}
-                            className="h-11"
+                            className="h-9 text-sm"
                         >
                             Back
                         </Button>
@@ -270,17 +270,17 @@ export default function Onboarding() {
                             <Button
                                 onClick={() => setStep(s => Math.min(3, s + 1))}
                                 disabled={(step === 2 && selectedCategories.length === 0)}
-                                className="h-11 bg-accent hover:bg-accent/90 text-accent-foreground"
+                                className="h-9 text-sm bg-accent hover:bg-accent/90 text-accent-foreground"
                             >
-                                Next <ArrowRight className="ml-2 w-4 h-4" />
+                                Next <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
                             </Button>
                         ) : (
                             <Button
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                className="h-11 bg-accent hover:bg-accent/90 text-accent-foreground"
+                                className="h-9 text-sm bg-accent hover:bg-accent/90 text-accent-foreground"
                             >
-                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                                {loading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1.5 h-3.5 w-3.5" />}
                                 Get Started
                             </Button>
                         )}
