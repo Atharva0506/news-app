@@ -1,7 +1,10 @@
+import logging
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+logger = logging.getLogger("app.api.onboarding")
 
 from app.api import deps
 from app.models.user import User
@@ -94,12 +97,12 @@ async def submit_onboarding(
          try:
              await generate_daily_for_user(uid, db_session, force_refresh=True)
          except Exception as e:
-             print(f"Initial feed generation failed: {e}")
+             logger.warning("Initial feed generation failed during onboarding", exc_info=e)
 
     # Awaiting it directly to ensure data is ready when they land on Dashboard
     try:
         await generate_daily_for_user(current_user.id, db, force_refresh=True, is_initial_setup=True)
     except Exception as e:
-        print(f"Initial feed generation failed (non-critical): {e}")
+        logger.warning("Initial feed generation failed (non-critical)", exc_info=e)
     
     return current_user

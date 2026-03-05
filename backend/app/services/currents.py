@@ -1,5 +1,6 @@
 import httpx
 import json
+import logging
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
@@ -8,6 +9,8 @@ from sqlalchemy.future import select
 
 from app.core.config import settings
 from app.models.news import NewsArticle, NewsCategory
+
+logger = logging.getLogger("app.services.currents")
 
 class NewsProvider(ABC):
     @abstractmethod
@@ -32,7 +35,7 @@ class LiveNewsProvider(NewsProvider):
         
     def _rotate_key(self):
         self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
-        print(f"Rotating to Currents API key index {self.current_key_index}")
+        logger.warning("Rotating to Currents API key index %d", self.current_key_index)
 
     async def _fetch_from_api(self, endpoint: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
@@ -48,7 +51,7 @@ class LiveNewsProvider(NewsProvider):
                     )
                     
                     if response.status_code in [401, 429]:
-                        print(f"Currents API Error {response.status_code} with key index {self.current_key_index}. Rotating...")
+                        logger.warning("Currents API error %d with key index %d, rotating", response.status_code, self.current_key_index)
                         self._rotate_key()
                         continue
                         
@@ -56,7 +59,7 @@ class LiveNewsProvider(NewsProvider):
                     data = response.json()
                     return data.get("news", [])
                 except Exception as e:
-                    print(f"Error calling Currents ({endpoint}) with key index {self.current_key_index}: {e}")
+                    logger.error("Error calling Currents (%s) with key index %d", endpoint, self.current_key_index, exc_info=e)
                     self._rotate_key()
                     continue
             return []
@@ -95,25 +98,25 @@ class TestNewsProvider(NewsProvider):
     async def _load_mock_data(self) -> List[Dict[str, Any]]:
         try:
             if not os.path.exists(self.file_path):
-                print(f"Mock file not found: {self.file_path}")
+                logger.warning("Mock file not found: %s", self.file_path)
                 return []
                 
             with open(self.file_path, "r") as f:
                 data = json.load(f)
                 return data.get("news", [])
         except Exception as e:
-            print(f"Error loading mock news: {e}")
+            logger.error("Error loading mock news", exc_info=e)
             return []
             
     async def fetch_latest_news(self, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
-        print(f"Fetching news in TEST mode from {self.file_path}")
+        logger.debug("Fetching news in TEST mode from %s", self.file_path)
         all_news = await self._load_mock_data()
         if category:
             all_news = [n for n in all_news if category.lower() in [c.lower() for c in n.get("category", [])]]
         return all_news[:5] # Apply limit
         
     async def fetch_search_news(self, keywords: str, language: str = "en", country: str = "us", type_: int = 1, category: Optional[str] = None) -> List[Dict[str, Any]]:
-        print(f"Searching news in TEST mode from {self.file_path}")
+        logger.debug("Searching news in TEST mode from %s", self.file_path)
         all_news = await self._load_mock_data()
         filtered = [
             n for n in all_news 

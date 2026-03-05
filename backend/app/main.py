@@ -5,14 +5,18 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
-from app.api import auth, news, payments, ai
+from app.core.logging_config import setup_logging
+from app.core.cache import cache
+from app.api import auth, news, payments, ai, preferences, chat, support, onboarding
 
 import logging
 import traceback
 from starlette.responses import JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 
-logger = logging.getLogger("error_handler")
+# Initialize structured logging before anything else
+setup_logging()
+logger = logging.getLogger("app.main")
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 
@@ -62,8 +66,6 @@ app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["aut
 app.include_router(payments.router, prefix=f"{settings.API_V1_STR}/payments", tags=["payments"])
 app.include_router(news.router, prefix=f"{settings.API_V1_STR}/news", tags=["news"])
 app.include_router(ai.router, prefix=f"{settings.API_V1_STR}/ai", tags=["ai"])
-
-from app.api import preferences, chat, support, onboarding
 app.include_router(preferences.router, prefix=f"{settings.API_V1_STR}/preferences", tags=["preferences"])
 app.include_router(onboarding.router, prefix=f"{settings.API_V1_STR}/onboarding", tags=["onboarding"])
 app.include_router(chat.router, prefix=f"{settings.API_V1_STR}/chat", tags=["chat"])
@@ -75,5 +77,9 @@ async def root():
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok"}
+    cache_ok = await cache.health_check()
+    return {
+        "status": "ok",
+        "cache": "connected" if cache_ok else "unavailable",
+    }
 

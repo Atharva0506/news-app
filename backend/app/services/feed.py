@@ -1,9 +1,12 @@
+import logging
 from datetime import datetime, timedelta, timezone
 import uuid
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
+
+logger = logging.getLogger("app.services.feed")
 
 from app.models.user import User
 from app.models.news import NewsArticle, UserPreference
@@ -102,7 +105,7 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
                     if isinstance(res, list):
                         raw_news.extend(res)
     except Exception as e:
-        print(f"Feed generation error: {e}")
+        logger.error("Feed generation error", exc_info=e)
         return []
 
     # Deduplicate and Sort

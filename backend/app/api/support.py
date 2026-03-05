@@ -1,9 +1,11 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from app.api import deps
 from app.models.user import User
 
+logger = logging.getLogger("app.api.support")
 router = APIRouter()
 
 class SupportMessage(BaseModel):
@@ -46,7 +48,7 @@ async def support_chat(
             )
         except Exception as e:
             # Fallback if 2.5 is rejected by validation
-            print(f"Warning: Failed to instantiate {settings.GEMINI_MODEL}, falling back to gemini-1.5-flash. Error: {e}")
+            logger.warning("Failed to instantiate %s, falling back to gemini-1.5-flash", settings.GEMINI_MODEL, exc_info=e)
             llm = ChatGoogleGenerativeAI(
                 model="gemini-1.5-flash",
                 google_api_key=api_key,
@@ -106,5 +108,5 @@ async def support_chat(
         return {"response": response.content}
 
     except Exception as e:
-        print(f"Support Chat Error: {e}")
+        logger.error("Support chat failed", exc_info=e)
         raise HTTPException(status_code=500, detail="Failed to get support response")

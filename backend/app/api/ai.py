@@ -1,27 +1,30 @@
+import logging
+import json
+import asyncio
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Response, Body
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import desc
+from sqlalchemy import desc, func
+from pydantic import BaseModel
+
 from app.api import deps
 from app.core.config import settings
+from app.core.cache import cache
 from app.models.user import User
-# from app.models.news import NewsArticle # Removed persistence dependency
-from app.models.news import UserPreference, NewsCategory # Kept for prefs
+from app.models.news import UserPreference, NewsCategory
 from app.models.daily_cache import UserDailyCache
 from app.models.payment import AIUsageLog
 from app.services.ai_agents.graph import news_graph
 from app.services.ai_agents.nodes import call_llm_with_rotation
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from sqlalchemy import func
-import json
-import asyncio
+from app.core.plan_checker import assert_deep_analysis_access, increment_deep_analysis_usage
 
+logger = logging.getLogger("app.api.ai")
 router = APIRouter()
 
-from pydantic import BaseModel
 class ArticleContext(BaseModel):
     id: str
     title: str
@@ -31,20 +34,31 @@ class ArticleContext(BaseModel):
     published_at: Optional[str] = None
     url: Optional[str] = None
 
-from app.core.plan_checker import assert_deep_analysis_access, increment_deep_analysis_usage
-
 @router.post("/process")
 async def process_article(
     article: ArticleContext,
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user)
 ) -> Any:
-    import asyncio
     
     if not article.content and not article.description:
         raise HTTPException(status_code=400, detail="Article content or description is required for analysis.")
     
     await assert_deep_analysis_access(current_user, db)
+
+    # Check cache first — avoid re-analyzing the same article
+    cache_key = f"analysis:{article.id}"
+    cached_result = await cache.get(cache_key)
+    if cached_result:
+        logger.info("Cache HIT for article %s", article.id)
+        # Still need to count usage even from cache
+        await increment_deep_analysis_usage(current_user, db)
+        await db.commit()
+
+        async def cached_stream():
+            yield f"data: {json.dumps({'status': 'starting', 'message': 'Loading cached analysis...'})}\n\n"
+            yield f"data: {json.dumps({'status': 'complete', 'article': cached_result})}\n\n"
+        return StreamingResponse(cached_stream(), media_type="text/event-stream")
 
     async def event_generator():
         initial_state = {
@@ -94,6 +108,11 @@ async def process_article(
                 "bias_score": accumulated_state.get("bias_score"),
                 "bias_explanation": accumulated_state.get("bias_explanation")
             }
+
+            # Cache the result for 1 hour
+            await cache.set(cache_key, final_data, ttl=3600)
+            logger.info("Cached analysis for article %s", article.id)
+
             yield f"data: {json.dumps({'status': 'complete', 'article': final_data})}\n\n"
             
         except Exception as e:

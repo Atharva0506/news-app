@@ -25,11 +25,30 @@ services:
     environment:
       - POSTGRES_SERVER=db
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/news_db
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./backend:/app
+    networks:
+      - app-network
+
+  # --- Redis (Caching) ---
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - app-network
 
@@ -59,3 +78,4 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:

@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import uuid
 from typing import Optional, Dict
 from solana.rpc.async_api import AsyncClient
@@ -6,6 +7,8 @@ from solders.pubkey import Pubkey
 from solders.signature import Signature
 
 from app.core.config import settings
+
+logger = logging.getLogger("app.core.solana")
 
 class SolanaService:
     def __init__(self):
@@ -53,7 +56,7 @@ class SolanaService:
                      if response.value:
                          break
                 except Exception as e:
-                    print(f"Retry {attempt} failed: {e}")
+                    logger.warning("Solana tx fetch retry %d failed", attempt, exc_info=e)
                     pass
                 
                 if attempt < max_retries - 1:
@@ -66,8 +69,8 @@ class SolanaService:
             
             # DEBUG: Print structure to logs
             try:
-                print(f"DEBUG TX INFO TYPE: {type(tx_info)}")
-                print(f"DEBUG TX INFO DIR: {dir(tx_info)}")
+                logger.debug("TX INFO TYPE: %s", type(tx_info))
+                logger.debug("TX INFO DIR: %s", dir(tx_info))
             except:
                 pass
 
@@ -157,7 +160,7 @@ class SolanaService:
                 return {"success": False, "message": f"Insufficient amount. Received {received_sol} SOL, expected {amount_sol} SOL"}
                 
         except Exception as e:
-            print(f"Solana Verification Error: {e}")
+            logger.error("Solana verification failed", exc_info=e)
             import traceback
             traceback.print_exc()
             return {"success": False, "message": f"Verification error: {str(e)}"}

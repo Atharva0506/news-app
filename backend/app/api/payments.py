@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,7 +9,9 @@ from app.api import deps
 from app.core.solana import solana_service
 from app.models.user import User
 from app.models.payment import PaymentTransaction, Subscription, TransactionStatus
-from app.schemas.payment import PaymentIntentResponse, PaymentIntentCreate, PaymentVerify, PaymentTransaction as TransactionSchema
+from app.schemas.payment import PaymentIntentResponse, PaymentIntentCreate, PaymentVerify, PaymentCancel, PaymentTransaction as TransactionSchema
+
+logger = logging.getLogger("app.api.payments")
 
 router = APIRouter()
 
@@ -70,7 +73,7 @@ async def create_payment_intent(
             mode=intent["mode"]
         )
     except Exception as e:
-        print(f"Error creating payment intent: {e}")
+        logger.error("Failed to create payment intent", exc_info=e)
         # Return a clean error to the frontend
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -140,7 +143,6 @@ async def verify_payment(
     
     return tx
 
-from app.schemas.payment import PaymentCancel
 
 @router.post("/cancel", response_model=TransactionSchema)
 async def cancel_payment(

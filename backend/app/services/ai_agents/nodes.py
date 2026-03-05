@@ -110,7 +110,7 @@ async def collector_node(state: AgentState) -> Dict[str, Any]:
         )
         return {"quality_score": result.get("quality_score", 0.5)}
     except Exception as e:
-        print(f"Collector Error: {e}")
+        logger.error("Collector node failed", exc_info=e)
         return {"quality_score": 0.5}
 
 async def classifier_node(state: AgentState) -> Dict[str, Any]:
@@ -142,7 +142,7 @@ async def classifier_node(state: AgentState) -> Dict[str, Any]:
             "tags": result.get("tags", [])
         }
     except Exception as e:
-        print(f"Classifier Error: {e}")
+        logger.error("Classifier node failed", exc_info=e)
         return {"category": "General", "sentiment": "Neutral", "tags": []}
 
 async def summarizer_node(state: AgentState) -> Dict[str, Any]:
@@ -172,7 +172,7 @@ async def summarizer_node(state: AgentState) -> Dict[str, Any]:
             "summary_detail": result.get("summary_detail", state.get("content", "")[:500] + "...")
         }
     except Exception as e:
-        print(f"Summarizer Error: {e}")
+        logger.error("Summarizer node failed", exc_info=e)
         fallback = state.get("content", "")[:200] + "..."
         return {"summary_short": "Summary unavailable.", "summary_detail": fallback}
 
@@ -206,5 +206,5 @@ async def bias_node(state: AgentState) -> Dict[str, Any]:
             "bias_explanation": result.get("bias_explanation", "Neutral consideration.")
         }
     except Exception as e:
-        print(f"Bias Node Error: {e}")
+        logger.error("Bias analysis node failed", exc_info=e)
         return {"bias_score": 0.0, "bias_explanation": "Analysis unavailable."}
