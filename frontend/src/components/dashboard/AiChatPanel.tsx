@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { api, API_URL } from "@/lib/api";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { ShareModal } from "@/components/dashboard/ShareModal";
 
 interface Article {
   id: string;
@@ -53,6 +54,9 @@ export function AiChatPanel({
   const [chatInput, setChatInput] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isSavingChat, setIsSavingChat] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareTitle, setShareTitle] = useState("");
   const [aiProcessStatus, setAiProcessStatus] = useState<{
     status: string;
     agent?: string;
@@ -228,9 +232,10 @@ ${data.article.summary_detail || "N/A"}
         article_url: selectedArticle.url,
         analysis_json: { messages: chatMessages, summary: analysis },
       });
-      const shareUrl = `${window.location.origin}/share/${res.id}`;
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("Share link copied to clipboard!");
+      const url = `${window.location.origin}/share/${res.id}`;
+      setShareUrl(url);
+      setShareTitle(selectedArticle.title);
+      setShareModalOpen(true);
     } catch {
       toast.error("Failed to create share link");
     }
@@ -427,6 +432,13 @@ ${data.article.summary_detail || "N/A"}
           </div>
         </div>
       </SheetContent>
+
+      <ShareModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        shareUrl={shareUrl}
+        title={shareTitle}
+      />
     </Sheet>
   );
 }

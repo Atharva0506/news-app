@@ -41,17 +41,16 @@ async def submit_onboarding(
         pass
 
     # 2. Validate Limits
-    # Free users: max 3 keywords
-    MAX_KEYWORDS_FREE = 3
-    MAX_KEYWORDS_PRO = 5
+    # Plan limits
+    MAX_CATEGORIES_FREE = 3
+    MAX_CATEGORIES_PRO = 5
 
-    limit = MAX_KEYWORDS_PRO if current_user.is_premium else MAX_KEYWORDS_FREE
+    cat_limit = MAX_CATEGORIES_PRO if current_user.is_premium else MAX_CATEGORIES_FREE
 
-    # We check both categories and keywords to be safe, though requirements highlighted keywords
-    if len(prefs_in.favorite_keywords) > limit:
+    if len(prefs_in.favorite_categories) > cat_limit:
         raise HTTPException(
             status_code=400,
-            detail=f"Plan limit exceeded: You can select up to {limit} keywords."
+            detail=f"Plan limit exceeded: You can select up to {cat_limit} categories."
         )
 
     # 3. Save Preferences

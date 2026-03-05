@@ -7,10 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Check, ArrowRight, Sparkles, Globe, Tags, FileText } from "lucide-react";
+import {
+    Loader2, Check, ArrowRight, Sparkles, Globe, LayoutGrid, FileText,
+    Cpu, Briefcase, FlaskConical, Heart, Landmark, Clapperboard, Earth, Newspaper
+} from "lucide-react";
+
+const AVAILABLE_CATEGORIES = [
+    { id: "technology", label: "Technology", icon: Cpu },
+    { id: "business", label: "Business", icon: Briefcase },
+    { id: "science", label: "Science", icon: FlaskConical },
+    { id: "health", label: "Health", icon: Heart },
+    { id: "politics", label: "Politics", icon: Landmark },
+    { id: "entertainment", label: "Entertainment", icon: Clapperboard },
+    { id: "world", label: "World", icon: Earth },
+    { id: "general", label: "General", icon: Newspaper },
+];
 
 export default function Onboarding() {
     const { user, refreshProfile } = useAuth();
@@ -21,35 +33,23 @@ export default function Onboarding() {
     // Form State
     const [language, setLanguage] = useState("en");
     const [country, setCountry] = useState("us");
-    const [keywords, setKeywords] = useState<string[]>([]);
-    const [keywordInput, setKeywordInput] = useState("");
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [summaryStyle, setSummaryStyle] = useState("short");
 
     // Limits
-    const MAX_KEYWORDS = user?.is_premium ? 5 : 3;
+    const MAX_CATEGORIES = user?.is_premium ? 5 : 3;
 
-    const handleAddKeyword = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            if (!keywordInput.trim()) return;
-
-            if (keywords.length >= MAX_KEYWORDS) {
-                toast.error(`Free plan is limited to ${MAX_KEYWORDS} keywords. Upgrade to Pro for more.`);
-                return;
+    const toggleCategory = (catId: string) => {
+        setSelectedCategories((prev) => {
+            if (prev.includes(catId)) {
+                return prev.filter((c) => c !== catId);
             }
-
-            if (keywords.includes(keywordInput.trim())) {
-                setKeywordInput("");
-                return;
+            if (prev.length >= MAX_CATEGORIES) {
+                toast.error(`You can select up to ${MAX_CATEGORIES} categories. ${!user?.is_premium ? "Upgrade to Pro for more." : ""}`);
+                return prev;
             }
-
-            setKeywords([...keywords, keywordInput.trim()]);
-            setKeywordInput("");
-        }
-    };
-
-    const removeKeyword = (kw: string) => {
-        setKeywords(keywords.filter(k => k !== kw));
+            return [...prev, catId];
+        });
     };
 
     const handleSubmit = async () => {
@@ -59,8 +59,8 @@ export default function Onboarding() {
                 language,
                 country,
                 content_type: "news",
-                favorite_categories: [],
-                favorite_keywords: keywords,
+                favorite_categories: selectedCategories,
+                favorite_keywords: [],
                 summary_style: summaryStyle
             });
 
@@ -76,7 +76,7 @@ export default function Onboarding() {
 
     const steps = [
         { icon: Globe, label: "Language & Region" },
-        { icon: Tags, label: "Topics" },
+        { icon: LayoutGrid, label: "Categories" },
         { icon: FileText, label: "Summary Style" },
     ];
 
@@ -186,37 +186,33 @@ export default function Onboarding() {
                                 className="space-y-4"
                             >
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium">What topics interest you?</Label>
+                                    <Label className="text-sm font-medium">Pick your favorite categories</Label>
                                     <p className="text-xs text-muted-foreground">
-                                        Press Enter to add. Max {MAX_KEYWORDS} keywords.
+                                        Select up to {MAX_CATEGORIES} categories to personalize your feed.
                                     </p>
-                                    <Input
-                                        value={keywordInput}
-                                        onChange={(e) => setKeywordInput(e.target.value)}
-                                        onKeyDown={handleAddKeyword}
-                                        placeholder="e.g. Technology, Crypto, AI"
-                                        disabled={keywords.length >= MAX_KEYWORDS}
-                                        className="h-11 bg-background"
-                                    />
-                                    <div className="flex flex-wrap gap-2 mt-3">
-                                        {keywords.map((kw) => (
-                                            <Badge
-                                                key={kw}
-                                                variant="secondary"
-                                                className="px-3 py-1.5 flex items-center gap-1.5 bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 transition-colors"
-                                            >
-                                                {kw}
-                                                <span
-                                                    className="cursor-pointer ml-1 hover:text-destructive transition-colors"
-                                                    onClick={() => removeKeyword(kw)}
+                                    <div className="grid grid-cols-2 gap-2 mt-3">
+                                        {AVAILABLE_CATEGORIES.map((cat) => {
+                                            const isSelected = selectedCategories.includes(cat.id);
+                                            return (
+                                                <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    onClick={() => toggleCategory(cat.id)}
+                                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                                        isSelected
+                                                            ? "border-accent bg-accent/10 text-accent ring-1 ring-accent/30"
+                                                            : "border-border hover:border-accent/30 hover:bg-accent/5 text-foreground"
+                                                    }`}
                                                 >
-                                                    &times;
-                                                </span>
-                                            </Badge>
-                                        ))}
+                                                    <cat.icon className={`h-4 w-4 shrink-0 ${isSelected ? "text-accent" : "text-muted-foreground"}`} />
+                                                    <span>{cat.label}</span>
+                                                    {isSelected && <Check className="h-3.5 w-3.5 ml-auto text-accent" />}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
-                                    {keywords.length === 0 && (
-                                        <p className="text-xs text-amber-500">Please add at least one topic to continue.</p>
+                                    {selectedCategories.length === 0 && (
+                                        <p className="text-xs text-amber-500 mt-2">Select at least one category to continue.</p>
                                     )}
                                 </div>
                             </motion.div>
@@ -273,7 +269,7 @@ export default function Onboarding() {
                         {step < 3 ? (
                             <Button
                                 onClick={() => setStep(s => Math.min(3, s + 1))}
-                                disabled={(step === 2 && keywords.length === 0)}
+                                disabled={(step === 2 && selectedCategories.length === 0)}
                                 className="h-11 bg-accent hover:bg-accent/90 text-accent-foreground"
                             >
                                 Next <ArrowRight className="ml-2 w-4 h-4" />
