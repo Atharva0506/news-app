@@ -31,7 +31,7 @@ async def test_login_user(client: AsyncClient):
             "password": "password123"
         }
     )
-    
+
     response = await client.post(
         "/api/v1/auth/login",
         data={

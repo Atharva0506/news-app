@@ -32,7 +32,7 @@ async def support_chat(
     from langchain_google_genai import ChatGoogleGenerativeAI
     from app.core.config import settings
     import random
-    
+
     try:
         if not settings.GOOGLE_API_KEYS:
              raise HTTPException(status_code=500, detail="AI Service not configured")
@@ -55,7 +55,7 @@ async def support_chat(
                 temperature=0.3
             )
 
-        
+
         # System Prompt
         system_prompt = """You are the official AI Support Agent for NewsAI, a next-generation AI-powered news aggregator platform.
         
@@ -97,14 +97,14 @@ async def support_chat(
         messages = [
             ("system", system_prompt)
         ]
-        
+
         for msg in request.history[-5:]: # Keep last 5 messages for context
             messages.append((msg.role, msg.content))
-            
+
         messages.append(("user", request.message))
 
         response = llm.invoke(messages)
-        
+
         return {"response": response.content}
 
     except Exception as e:

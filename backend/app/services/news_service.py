@@ -1,7 +1,7 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import desc, or_, and_
+from sqlalchemy import desc
 from datetime import datetime, timezone
 import logging
 
@@ -18,20 +18,20 @@ class NewsService:
         name = name.lower().strip()
         result = await db.execute(select(NewsCategory).where(NewsCategory.name == name))
         category = result.scalars().first()
-        
+
         if not category:
             category = NewsCategory(name=name)
             db.add(category)
             await db.commit()
             await db.refresh(category)
-            
+
         return category
 
     async def fetch_and_store_news(self, db: AsyncSession, user_prefs: Optional[UserPreference] = None) -> int:
         try:
             lang = user_prefs.language if user_prefs else "en"
             country = user_prefs.country if user_prefs else "us"
-            
+
             category_filter = None
             if user_prefs and user_prefs.favorite_categories:
                 category_filter = user_prefs.favorite_categories[0]
@@ -41,7 +41,7 @@ class NewsService:
                 country=country,
                 category=category_filter
             )
-            
+
             new_count = 0
             for item in raw_news:
                 url = item.get("url")
@@ -57,12 +57,12 @@ class NewsService:
                 if cat_list:
                     cat_name = cat_list[0]
                     category_obj = await self.get_or_create_category(db, cat_name)
-                
+
                 pub_date = datetime.now(timezone.utc)
                 if item.get("published"):
-                     try: 
+                     try:
                          pub_date = datetime.strptime(item.get("published"), "%Y-%m-%d %H:%M:%S %z")
-                     except: 
+                     except:
                          pass
 
                 article = NewsArticle(
@@ -78,7 +78,7 @@ class NewsService:
                 )
                 db.add(article)
                 new_count += 1
-            
+
             await db.commit()
             return new_count
 
@@ -87,28 +87,28 @@ class NewsService:
             return 0
 
     async def get_user_feed_from_db(
-        self, 
-        db: AsyncSession, 
-        user_prefs: Optional[UserPreference], 
+        self,
+        db: AsyncSession,
+        user_prefs: Optional[UserPreference],
         category: Optional[str] = None,
         sentiment: Optional[str] = None,
         search: Optional[str] = None,
-        limit: int = 10, 
+        limit: int = 10,
         offset: int = 0
     ) -> List[NewsArticle]:
         query = select(NewsArticle).order_by(desc(NewsArticle.published_at))
-        
+
         if search:
             query = query.where(NewsArticle.title.ilike(f"%{search}%"))
 
         if category and category.lower() != "all categories":
             query = query.where(NewsArticle.tags.contains([category]))
-        
+
         if sentiment and sentiment.lower() != "all":
             query = query.where(NewsArticle.sentiment == sentiment.lower())
 
         query = query.offset(offset).limit(limit)
-        
+
         result = await db.execute(query)
         return result.scalars().all()
 

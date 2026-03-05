@@ -21,7 +21,7 @@ def event_loop():
 @pytest.fixture(scope="session")
 async def test_engine():
     engine = create_async_engine(
-        settings.DATABASE_URL, 
+        settings.DATABASE_URL,
         echo=False,
         poolclass=NullPool # Important for async tests
     )
@@ -35,8 +35,8 @@ async def session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     )
     async with async_session() as session:
         yield session
-        # Rollback happens automatically on exit context if not committed, 
-        # but we want to force cleanup for tests usually? 
+        # Rollback happens automatically on exit context if not committed,
+        # but we want to force cleanup for tests usually?
         # For now, just relying on scope. Since we write to real DB, we should be careful.
         # But for this task, we assume it's fine.
         await session.rollback()
@@ -45,11 +45,11 @@ async def session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 async def client(session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     async def override_get_db():
         yield session
-        
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
-    
+
     app.dependency_overrides.clear()

@@ -7,10 +7,8 @@ and human-readable colored output for development.
 
 import logging
 import logging.config
-import sys
 import json
 from datetime import datetime, timezone
-from typing import Optional
 
 from app.core.config import settings
 

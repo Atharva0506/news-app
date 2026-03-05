@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     Loads configuration from environment variables.
     Sensitive keys (API keys, Secrets) are read from .env file.
     """
-    
+
     # --- Project Metadata ---
     PROJECT_NAME: str = "News AI"
     API_V1_STR: str = "/api/v1"
@@ -73,24 +73,24 @@ class Settings(BaseSettings):
             # Force asyncpg driver if not specified
             if url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
                 url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-            
+
             # Fix sslmode argument for asyncpg
             if "sslmode=" in url:
                  url = url.replace("sslmode=", "ssl=")
-            
+
             # Remove channel_binding if present (not supported by asyncpg connect)
             if "channel_binding=" in url:
                 url = url.replace("&channel_binding=prefer", "").replace("?channel_binding=prefer", "")
                 url = url.replace("&channel_binding=require", "").replace("?channel_binding=require", "")
-            
+
             return url
-        
+
         if self.POSTGRES_SERVER and self.POSTGRES_USER and self.POSTGRES_PASSWORD:
             return (
                 f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
                 f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
             )
-        
+
         return ""
 
     @property
@@ -102,7 +102,7 @@ class Settings(BaseSettings):
     def CURRENTS_API_KEYS(self) -> List[str]:
         """Returns a list of Currents API keys from a comma-separated string."""
         return [key.strip() for key in self.CURRENTS_API_KEY.split(",") if key.strip()]
-        
+
     @property
     def CORS_ORIGINS(self) -> List[str]:
         """Returns a list of allowed CORS origins."""
@@ -110,8 +110,8 @@ class Settings(BaseSettings):
 
     # Pydantic Config
     model_config = SettingsConfigDict(
-        env_file=".env", 
-        case_sensitive=True, 
+        env_file=".env",
+        case_sensitive=True,
         extra="ignore"
     )
 

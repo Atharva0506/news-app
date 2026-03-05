@@ -1,6 +1,6 @@
 from typing import Optional, List
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, Integer, ForeignKey, text
+from sqlalchemy import String, Boolean, DateTime, Integer, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 import uuid
@@ -17,16 +17,16 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    
+
     # Premium features
     is_premium: Mapped[bool] = mapped_column(Boolean, default=False)
     premium_expiry: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
+
     # Plan & Trial
     plan_type: Mapped[str] = mapped_column(String, default="free", server_default=text("'free'"))  # free, trial, pro
     trial_start_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     trial_end_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
+
     # Usage Limits
     deep_analysis_count: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
     deep_analysis_last_reset: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -35,7 +35,7 @@ class User(Base):
     refresh_tokens: Mapped[int] = mapped_column(Integer, default=0)
     last_news_refresh_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     last_summary_refresh_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
+
     # Onboarding Status
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
 

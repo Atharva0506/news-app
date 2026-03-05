@@ -27,7 +27,7 @@ class EmailService:
                 {html_content}
                 """
                 to_email = settings.TEST_EMAIL_RECIPIENT
-                
+
             r = resend.Emails.send({
                 "from": f"{settings.MAIL_FROM_NAME} <{settings.MAIL_FROM_EMAIL}>",
                 "to": to_email,
@@ -46,7 +46,7 @@ class EmailService:
         """
         # TODO: Move URL construction to a utility or config
         verify_url = f"{settings.FRONTEND_ORIGIN.split(',')[0]}/verify-email?token={token}"
-        
+
         subject = "Verify your email address"
         html_content = f"""
         <h1>Welcome to {settings.PROJECT_NAME}!</h1>
@@ -63,7 +63,7 @@ class EmailService:
         Sends a password reset email.
         """
         reset_url = f"{settings.FRONTEND_ORIGIN.split(',')[0]}/reset-password?token={token}"
-        
+
         subject = "Reset your password"
         html_content = f"""
         <h1>Password Reset Request</h1>
@@ -74,4 +74,4 @@ class EmailService:
         """
         return EmailService.send_email(to_email, subject, html_content)
 
-   
+

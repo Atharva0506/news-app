@@ -31,7 +31,7 @@ class News(NewsBase):
 class NewsCategory(BaseModel):
     id: int
     name: str
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class UserPreferenceBase(BaseModel):
@@ -48,5 +48,5 @@ class UserPreferenceUpdate(UserPreferenceBase):
 class UserPreference(UserPreferenceBase):
     id: UUID
     user_id: UUID
-    
+
     model_config = ConfigDict(from_attributes=True)

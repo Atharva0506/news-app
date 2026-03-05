@@ -1,9 +1,7 @@
-import hashlib
 import logging
 import uuid
-from typing import Optional, Dict
+from typing import Dict
 from solana.rpc.async_api import AsyncClient
-from solders.pubkey import Pubkey
 from solders.signature import Signature
 
 from app.core.config import settings
@@ -33,7 +31,7 @@ class SolanaService:
         """
         if not signature.startswith("TEST-"):
              return {"success": False, "message": "Invalid test signature format"}
-        
+
         # In a real test scenario, we might verify the hash matches expected params
         # For now, we assume if it starts with TEST- it is valid for simulation
         # In production test mode, you'd store the expected hash in DB and compare.
@@ -43,13 +41,13 @@ class SolanaService:
         try:
             # Convert string signature to Signature object
             sig = Signature.from_string(signature)
-            
+
             # Fetch transaction details with retry
             import asyncio
             import json
             max_retries = 10
             response = None
-            
+
             for attempt in range(max_retries):
                 try:
                      response = await self.rpc_client.get_transaction(sig, max_supported_transaction_version=0)
@@ -58,15 +56,15 @@ class SolanaService:
                 except Exception as e:
                     logger.warning("Solana tx fetch retry %d failed", attempt, exc_info=e)
                     pass
-                
+
                 if attempt < max_retries - 1:
                     await asyncio.sleep(2) # Wait 2 seconds before retry
-            
+
             if not response or not response.value:
                 return {"success": False, "message": "Transaction not found on chain after retries"}
-            
+
             tx_info = response.value
-            
+
             # DEBUG: Print structure to logs
             try:
                 logger.debug("TX INFO TYPE: %s", type(tx_info))
@@ -77,18 +75,18 @@ class SolanaService:
             # Robustly access meta and transaction
             # In some solders versions, it might be via .meta or ["meta"] if it's a dict (unlikely for object)
             # Or json parsing
-            
+
             meta = None
             transaction = None
-            
+
             if hasattr(tx_info, "meta"):
                 meta = tx_info.meta
             elif hasattr(tx_info, "result") and hasattr(tx_info.result, "meta"): # Sometimes wrapped
                 meta = tx_info.result.meta
-                
+
             if hasattr(tx_info, "transaction"):
                 transaction = tx_info.transaction
-            
+
             # Convert to JSON/Dict if direct access fails or for easier parsing
             if meta is None:
                 # Try converting to json string then dict as fallback
@@ -101,7 +99,7 @@ class SolanaService:
 
             if not meta:
                 return {"success": False, "message": "Transaction metadata missing"}
-            
+
             # Check for error
             # If meta is a dict now (from json)
             if isinstance(meta, dict):
@@ -121,7 +119,7 @@ class SolanaService:
                 return {"success": False, "message": "Merchant wallet not configured"}
 
             merchant_pubkey_str = self.merchant_wallet
-            
+
             # Find account index
             # If transaction is dict
             account_keys = []
@@ -141,7 +139,7 @@ class SolanaService:
                 if key == merchant_pubkey_str:
                     merchant_index = idx
                     break
-            
+
             if merchant_index == -1:
                  return {"success": False, "message": "Merchant wallet not involved in transaction"}
 
@@ -150,15 +148,15 @@ class SolanaService:
 
             pre_balance = pre_balances[merchant_index]
             post_balance = post_balances[merchant_index]
-            
+
             received_lamports = post_balance - pre_balance
             received_sol = received_lamports / 1_000_000_000
-            
-            if received_sol >= amount_sol - 0.000005: 
+
+            if received_sol >= amount_sol - 0.000005:
                 return {"success": True, "message": "Transaction verified"}
             else:
                 return {"success": False, "message": f"Insufficient amount. Received {received_sol} SOL, expected {amount_sol} SOL"}
-                
+
         except Exception as e:
             logger.error("Solana verification failed", exc_info=e)
             import traceback

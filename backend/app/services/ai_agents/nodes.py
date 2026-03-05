@@ -1,10 +1,9 @@
-import os
 import logging
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
+from langchain_core.output_parsers import JsonOutputParser
 
 from app.core.config import settings
 from app.services.ai_agents.state import AgentState
@@ -62,27 +61,27 @@ async def call_llm_with_rotation(prompt, parser, input_data, config=None):
     Invokes chain with rotation on 429/Quota errors.
     """
     global current_llm_index
-    
+
     max_attempts = len(llm_instances) * 2
-    
+
     for attempt in range(max_attempts):
         try:
             current_llm = get_current_llm()
             chain = prompt | current_llm | parser
-            
+
             return await chain.ainvoke(input_data, config=config)
-            
+
         except Exception as e:
             msg = str(e)
             if "429" in msg or "ResourceExhausted" in msg or "quota" in msg.lower():
                 logger.warning(f"Gemini 429/Quota error (Key Index {current_llm_index}): {msg}")
                 rotate_llm()
                 # Optional: Add small backoff even when rotating to be safe?
-                await asyncio.sleep(0.5) 
+                await asyncio.sleep(0.5)
                 continue
             else:
                 raise e
-    
+
     raise HTTPException(
         status_code=429,
         detail="AI Usage Limit Reached. Please try again later."
@@ -103,7 +102,7 @@ async def collector_node(state: AgentState) -> Dict[str, Any]:
     )
     try:
         result = await call_llm_with_rotation(
-            prompt, 
+            prompt,
             JsonOutputParser(),
             {"title": state["title"], "content": state["content"]},
             config={"timeout": 10}
@@ -182,7 +181,7 @@ async def bias_node(state: AgentState) -> Dict[str, Any]:
     """
     if not state.get("is_premium"):
         return {"bias_score": None, "bias_explanation": "Premium feature"}
-        
+
     prompt = ChatPromptTemplate.from_template(
         """
         Analyze the political or sensational bias of this article.

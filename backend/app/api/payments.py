@@ -38,7 +38,7 @@ async def create_payment_intent(
     """
     if settings.ENABLE_EMAIL_VERIFICATION and not current_user.is_verified:
          raise HTTPException(
-             status_code=403, 
+             status_code=403,
              detail="Please verify your email address before upgrading to Pro."
          )
 
@@ -49,10 +49,10 @@ async def create_payment_intent(
                 status_code=400,
                 detail="You already have an active Pro subscription. Please wait until it expires before renewing."
             )
-         
+
     try:
         intent = await solana_service.generate_payment_intent(current_user.id, payload.amount)
-        
+
         # Create PENDING transaction record
         tx = PaymentTransaction(
             user_id=current_user.id,
@@ -65,7 +65,7 @@ async def create_payment_intent(
         db.add(tx)
         await db.commit()
         await db.refresh(tx)
-        
+
         return PaymentIntentResponse(
             payment_id=tx.id,
             address=intent["address"],
@@ -92,35 +92,35 @@ async def verify_payment(
     # Find the pending transaction
     result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.id == payload.payment_id))
     tx = result.scalars().first()
-    
+
     if not tx:
         raise HTTPException(status_code=404, detail="Payment transaction not found")
-        
+
     if tx.status == TransactionStatus.COMPLETED:
         return tx # Already verified
-        
+
     if tx.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     # Verify with Solana Service
     verification = await solana_service.verify_transaction(payload.transaction_signature, payload.amount)
-    
+
     if not verification["success"]:
-        # Log failure reason if possible? 
+        # Log failure reason if possible?
         # For now, just raise error, but frontend might try again.
         # If it's a hard failure, we could mark as FAILED.
         raise HTTPException(status_code=400, detail=verification["message"])
-    
+
     # Update Transaction
     tx.transaction_signature = payload.transaction_signature
     tx.sender_address = payload.sender_address
     tx.status = TransactionStatus.COMPLETED
-    
+
     db.add(tx)
-    
+
     # Create Subscription
     expiry = datetime.utcnow() + timedelta(days=30)
-    
+
     subscription = Subscription(
         user_id=current_user.id,
         end_date=expiry,
@@ -128,7 +128,7 @@ async def verify_payment(
         transaction_id=tx.id
     )
     db.add(subscription)
-    
+
     # Update User Premium Status
     current_user.is_premium = True
     current_user.premium_expiry = expiry
@@ -137,10 +137,10 @@ async def verify_payment(
     current_user.trial_start_date = None
     current_user.trial_end_date = None
     db.add(current_user)
-    
+
     await db.commit()
     await db.refresh(tx)
-    
+
     return tx
 
 
@@ -155,21 +155,21 @@ async def cancel_payment(
     """
     result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.id == payload.payment_id))
     tx = result.scalars().first()
-    
+
     if not tx:
         raise HTTPException(status_code=404, detail="Payment transaction not found")
-        
+
     if tx.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-        
+
     if tx.status == TransactionStatus.COMPLETED:
          raise HTTPException(status_code=400, detail="Cannot cancel completed transaction")
-         
+
     tx.status = TransactionStatus.CANCELLED
     db.add(tx)
     await db.commit()
     await db.refresh(tx)
-    
+
     return tx
 
 @router.get("/status", response_model=TransactionSchema)
@@ -188,15 +188,15 @@ async def check_transaction_status(
         result = await db.execute(select(PaymentTransaction).where(PaymentTransaction.transaction_signature == signature))
     else:
         raise HTTPException(status_code=400, detail="Provide signature or payment_id")
-        
+
     tx = result.scalars().first()
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction not found")
-    
+
     # Check ownership
     if tx.user_id != current_user.id:
          raise HTTPException(status_code=403, detail="Not authorized")
-         
+
     return tx
 
 @router.get("/history", response_model=list[TransactionSchema])

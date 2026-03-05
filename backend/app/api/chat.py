@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -24,7 +24,7 @@ class SavedChatOut(SavedChatBase):
     id: uuid.UUID
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 @router.get("/", response_model=List[SavedChatOut])
@@ -93,10 +93,10 @@ async def delete_saved_chat(
     """
     result = await db.execute(select(SavedChat).where(SavedChat.id == chat_id, SavedChat.user_id == current_user.id))
     saved_chat = result.scalars().first()
-    
+
     if not saved_chat:
         raise HTTPException(status_code=404, detail="Chat not found")
-        
+
     await db.delete(saved_chat)
     await db.commit()
     return None

@@ -41,7 +41,7 @@ async def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    
+
     # In Pydantic v2/SQLAlchemy, get might not work with Async. Use select.
     # Note: user_id is the subject.
     from sqlalchemy.orm import selectinload
@@ -51,7 +51,7 @@ async def get_current_user(
         .where(User.id == token_data.sub)
     )
     user = result.scalars().first()
-    
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -116,10 +116,10 @@ async def get_current_user_optional(
         token_data = TokenPayload(**payload)
     except (JWTError, ValidationError):
         return None
-    
+
     if token_data.sub is None:
         return None
-        
+
     result = await db.execute(select(User).where(User.id == token_data.sub))
     user = result.scalars().first()
     return user

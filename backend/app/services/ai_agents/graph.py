@@ -9,20 +9,20 @@ from app.services.ai_agents.nodes import (
 
 def create_news_processing_graph():
     workflow = StateGraph(AgentState)
-    
+
     # Add nodes
     workflow.add_node("collector", collector_node)
     workflow.add_node("classifier", classifier_node)
     workflow.add_node("summarizer", summarizer_node)
     workflow.add_node("bias", bias_node)
-    
+
     def check_quality(state: AgentState):
         if state["quality_score"] < 0.3:
             return END
         return "classifier"
 
     workflow.set_entry_point("collector")
-    
+
     workflow.add_conditional_edges(
         "collector",
         check_quality,
@@ -31,13 +31,13 @@ def create_news_processing_graph():
             "classifier": "classifier"
         }
     )
-    
+
     workflow.add_edge("classifier", "summarizer")
-    
+
     workflow.add_edge("summarizer", "bias")
-    
+
     workflow.add_edge("bias", END)
-    
+
     return workflow.compile()
 
 news_graph = create_news_processing_graph()

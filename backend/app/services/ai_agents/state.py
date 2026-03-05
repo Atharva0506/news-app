@@ -1,5 +1,4 @@
-from typing import List, Optional, TypedDict, Annotated
-import operator
+from typing import List, Optional, TypedDict
 
 class AgentState(TypedDict):
     # Input
@@ -7,7 +6,7 @@ class AgentState(TypedDict):
     title: str
     content: str
     is_premium: bool
-    
+
     # Processed Data
     category: Optional[str]
     sentiment: Optional[str]
@@ -16,7 +15,7 @@ class AgentState(TypedDict):
     summary_detail: Optional[str]
     bias_score: Optional[float]
     bias_explanation: Optional[str]
-    
+
     # Flow Control
     quality_score: float
     is_duplicate: bool

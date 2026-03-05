@@ -1,6 +1,5 @@
 import pytest
 from httpx import AsyncClient
-from app.main import app
 from app.core.config import settings
 
 @pytest.mark.asyncio
@@ -16,7 +15,7 @@ async def test_usage_stats(client: AsyncClient):
             "full_name": "Usage Test"
         }
     )
-    
+
     # Login
     login_res = await client.post(
         "/api/v1/auth/login",

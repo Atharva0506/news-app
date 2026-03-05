@@ -40,10 +40,10 @@ async def verify_email(
 
     result = await db.execute(select(User).where(User.verification_token == token))
     user = result.scalars().first()
-    
+
     if not user:
         raise HTTPException(status_code=400, detail="Invalid verification token")
-        
+
     user.is_verified = True
     user.verification_token = None
     db.add(user)
@@ -64,13 +64,13 @@ async def resend_verification(
 
     if current_user.is_verified:
         return {"message": "Email already verified"}
-        
+
     # Generate new token
     verification_token = secrets.token_urlsafe(32)
     current_user.verification_token = verification_token
     db.add(current_user)
     await db.commit()
-    
+
     background_tasks.add_task(EmailService.send_verification_email, current_user.email, verification_token)
     return {"message": "Verification email sent"}
 
@@ -88,16 +88,16 @@ async def forgot_password(
 
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalars().first()
-    
+
     if user:
         token = secrets.token_urlsafe(32)
         user.reset_password_token = token
         user.reset_password_expires = datetime.now() + timedelta(hours=1)
         db.add(user)
         await db.commit()
-        
+
         background_tasks.add_task(EmailService.send_password_reset_email, user.email, token)
-        
+
     # Always return success to prevent email enumeration
     return {"message": "If an account exists, a reset link has been sent."}
 
@@ -115,19 +115,19 @@ async def reset_password(
 
     result = await db.execute(select(User).where(User.reset_password_token == token))
     user = result.scalars().first()
-    
+
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
-        
+
     if user.reset_password_expires and datetime.now(user.reset_password_expires.tzinfo) > user.reset_password_expires:
          raise HTTPException(status_code=400, detail="Token expired")
-         
+
     user.hashed_password = security.get_password_hash(new_password)
     user.reset_password_token = None
     user.reset_password_expires = None
     db.add(user)
     await db.commit()
-    
+
     return {"message": "Password reset successfully"}
 
 @router.post("/login", response_model=Token)
@@ -140,12 +140,12 @@ async def login_access_token(
     """
     result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalars().first()
-    
+
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-        
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": security.create_access_token(
@@ -178,13 +178,13 @@ async def refresh_token(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-        
+
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
-    
+
     if not user or not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-        
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     new_refresh_token = security.create_refresh_token(user.id)
     return {
@@ -192,7 +192,7 @@ async def refresh_token(
             user.id, expires_delta=access_token_expires
         ),
         "token_type": "bearer",
-        "refresh_token": new_refresh_token 
+        "refresh_token": new_refresh_token
     }
 
 @router.post("/register", response_model=UserSchema)
@@ -212,14 +212,14 @@ async def register(
             status_code=400,
             detail="The user with this username already exists in the system",
         )
-        
+
     verification_token = secrets.token_urlsafe(32)
-    
+
     # Initialize logic for 3-Day Free Trial
     now = datetime.now(timezone.utc)
     trial_days = 3
     trial_end = now + timedelta(days=trial_days)
-    
+
     user = User(
         email=user_in.email,
         hashed_password=security.get_password_hash(user_in.password),
@@ -227,7 +227,7 @@ async def register(
         verification_token=verification_token,
         is_verified=not settings.ENABLE_EMAIL_VERIFICATION, # Auto-verify if disabled
 
-        
+
         # Trial Initialization
         plan_type="trial",
         trial_start_date=now,
@@ -235,14 +235,14 @@ async def register(
         trial_end_date=trial_end,
         is_premium=True, # Enable Pro features during trial
         premium_expiry=trial_end,
-        
+
         # Limits
         deep_analysis_count=0
     )
     db.add(user)
     await db.commit()
     await db.refresh(user) # Get ID after commit
-    
+
     # Eager load preferences to avoid MissingGreenlet error on Pydantic validation
     # user.preferences is not loaded by default and accessing it triggers lazy load which fails in async
     from sqlalchemy.orm import selectinload
@@ -250,11 +250,11 @@ async def register(
         select(User).options(selectinload(User.preferences)).where(User.id == user.id)
     )
     user = result.scalars().first()
-    
+
     if settings.ENABLE_EMAIL_VERIFICATION:
         background_tasks.add_task(EmailService.send_verification_email, user.email, verification_token)
 
-    
+
     return user
 
 @router.get("/me", response_model=UserSchema)
@@ -291,11 +291,11 @@ async def update_user_me(
             current_user.hashed_password = hashed_password
         if "full_name" in user_in:
             current_user.full_name = user_in["full_name"]
-        
+
         db.add(current_user)
         await db.commit()
         await db.refresh(current_user)
-    
+
     return current_user
 
 @router.get("/me/usage", response_model=dict)
@@ -330,7 +330,7 @@ async def read_user_usage(
         .where(AIUsageLog.created_at >= yesterday)
     )
     daily_tokens = result_daily.scalar() or 0
-    
+
     # Request count (total interactions)
     result_count = await db.execute(
         select(func.count(AIUsageLog.id)).where(AIUsageLog.user_id == current_user.id)
@@ -338,7 +338,7 @@ async def read_user_usage(
     request_count = result_count.scalar() or 0
 
     today = datetime.now(timezone.utc).date()
-    
+
     # Token limits per plan
     if plan == "pro":
         limit_daily = 10000
@@ -372,7 +372,7 @@ async def read_user_usage(
         "refresh_tokens": current_user.refresh_tokens,
         "news_refresh_available": news_available,
         "summary_refresh_available": summary_available,
-        
+
         "plan_type": plan,
         "deep_analysis_count": deep_count,
         "deep_analysis_limit": _get_deep_analysis_limit(plan),

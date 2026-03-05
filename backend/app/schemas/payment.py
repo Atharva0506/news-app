@@ -32,5 +32,5 @@ class PaymentTransaction(BaseModel):
     status: TransactionStatus
     plan: Optional[str] = "pro"
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)

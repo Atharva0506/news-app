@@ -20,14 +20,14 @@ async def get_user_preferences(
     """
     result = await db.execute(select(UserPreference).where(UserPreference.user_id == current_user.id))
     prefs = result.scalars().first()
-    
+
     if not prefs:
         # Create default
         prefs = UserPreference(user_id=current_user.id, favorite_categories=[], favorite_keywords=[])
         db.add(prefs)
         await db.commit()
         await db.refresh(prefs)
-        
+
     return prefs
 
 @router.put("/me", response_model=UserPreferenceSchema)
@@ -41,17 +41,17 @@ async def update_user_preferences(
     """
     result = await db.execute(select(UserPreference).where(UserPreference.user_id == current_user.id))
     prefs = result.scalars().first()
-    
+
     if not prefs:
         prefs = UserPreference(user_id=current_user.id)
         db.add(prefs)
-    
+
     # Limit Enforcement
     max_categories = 5 if current_user.is_premium else 1
-    
+
     if len(prefs_in.favorite_categories) > max_categories:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"{'Pro' if current_user.is_premium else 'Free'} plan limit: {max_categories} categories. Please upgrade or remove categories."
         )
 
@@ -62,7 +62,7 @@ async def update_user_preferences(
     prefs.favorite_categories = prefs_in.favorite_categories
     prefs.favorite_keywords = prefs_in.favorite_keywords
     prefs.summary_style = prefs_in.summary_style
-    
+
     db.add(prefs)
     await db.commit()
     await db.refresh(prefs)
