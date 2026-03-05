@@ -1,15 +1,15 @@
-# Backend - AI News Aggregator
+# Backend — AI News Aggregator
 
-This is the backend service for the NewsAI application, built with **FastAPI**.
+The backend service for NewsAI, built with **FastAPI, LangGraph, and Google Gemini 2.5 Flash**.
 
-For full project documentation, architecture, and features, please refer to the [Root README](../README.md).
+For full project documentation, architecture, and features, see the [Root README](../README.md).
 
 ## 📂 Structure
-- `app/api`: API route handlers
-- `app/core`: Configuration, security, email, and database logic
-- `app/models`: SQLAlchemy database models
-- `app/schemas`: Pydantic models for request/response validation
-- `app/services`: Business logic (AI Agents, News Fetching)
+- `app/api` — API route handlers (auth, news, ai, payments, chat, support, share, onboarding)
+- `app/core` — Configuration, security, email, caching, and plan management
+- `app/models` — SQLAlchemy database models
+- `app/schemas` — Pydantic request/response schemas
+- `app/services` — Business logic (AI agents, news fetching, feed aggregation)
 
 ## 🛠️ Local Development
 

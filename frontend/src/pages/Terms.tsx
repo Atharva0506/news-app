@@ -5,38 +5,74 @@ export default function Terms() {
     return (
         <div className="min-h-screen bg-background flex flex-col">
             <Navbar />
-            <main className="flex-grow pt-32 pb-20 px-4 container mx-auto max-w-4xl">
-                <h1 className="text-4xl font-bold mb-8">Terms of Service</h1>
-                <div className="prose prose-invert max-w-none space-y-6 text-muted-foreground">
-                    <p className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-500 font-medium">
+            <main className="flex-grow pt-28 pb-20 px-4 container mx-auto max-w-3xl">
+                <h1 className="text-3xl font-bold mb-2 text-foreground">Terms of Service</h1>
+                <p className="text-sm text-muted-foreground mb-8">Last updated: June 2025</p>
+
+                <div className="prose dark:prose-invert max-w-none space-y-8 text-muted-foreground text-sm leading-relaxed">
+                    <p className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-600 dark:text-yellow-500 text-[13px] font-medium">
                         Note: This project is built for learning and demo purposes.
                     </p>
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground mb-4">1. Acceptance of Terms</h2>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">1. Acceptance of Terms</h2>
                         <p>
-                            By accessing or using our website, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site.
+                            By accessing or using NewsAI, you agree to be bound by these Terms of Service. If you do not agree, you may not use the service. We reserve the right to update these terms at any time.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground mb-4">2. Use License</h2>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">2. Account & Access</h2>
                         <p>
-                            Permission is granted to temporarily download one copy of the materials (information or software) on NewsAI's website for personal, non-commercial transitory viewing only.
+                            You may browse the public Explore page without an account. To access personalized features — including the AI Chat Assistant, Deep Analysis, Daily Briefing, and saved preferences — you must create an account with a valid email address.
+                        </p>
+                        <p className="mt-2">
+                            You are responsible for maintaining the security of your account credentials. We offer email verification and password reset functionality to help protect your account.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground mb-4">3. Disclaimer</h2>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">3. Subscription Plans</h2>
                         <p>
-                            The materials on NewsAI's website are provided on an 'as is' basis. NewsAI makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
+                            NewsAI offers a Free tier (with a 3-day Pro trial) and a Pro plan with higher usage limits and premium features such as bias analysis and saved chats. Plan limits include daily analysis requests, chat messages, and token usage.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground mb-4">4. Blockchain Transactions</h2>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">4. Blockchain Payments</h2>
                         <p>
-                            Transactions on the Solana network are irreversible. You acknowledge that NewsAI has no control over the Solana network and cannot reverse or refund transactions once confirmed on the blockchain, except as explicitly provided in our refund policy (if any).
+                            Subscription payments are processed on the Solana blockchain (Devnet for demo, Mainnet for production). Transactions are irreversible once confirmed on-chain. NewsAI cannot reverse, refund, or modify blockchain transactions. You are responsible for ensuring the correct wallet and amount before confirming any transaction.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">5. AI-Generated Content</h2>
+                        <p>
+                            News summaries, analysis, chat responses, and support answers are generated by AI (Google Gemini). This content is provided for informational purposes only and may contain inaccuracies. NewsAI does not guarantee the accuracy, completeness, or timeliness of AI-generated content.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">6. Disclaimer</h2>
+                        <p>
+                            NewsAI is provided on an "as is" basis without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, or non-infringement. We do not warrant uninterrupted or error-free access to the service.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">7. Account Deletion</h2>
+                        <p>
+                            You may delete your account at any time from Settings. Deleted accounts enter a 7-day recovery period, during which you can restore your account by contacting support. After 7 days, all personal data is permanently removed.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">8. Contact</h2>
+                        <p>
+                            For questions about these terms, contact us at{" "}
+                            <a href="mailto:atharvan.coder@gmail.com" className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                                atharvan.coder@gmail.com
+                            </a>.
                         </p>
                     </section>
                 </div>

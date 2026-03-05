@@ -8,30 +8,29 @@
 ![Solana](https://img.shields.io/badge/Solana-Payments-9945FF?logo=solana)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-👋 Hi there! Welcome to the repository.
-
-This is a next-generation news platform I built to demonstrate the power of **AI Agents** in aggregating, classifying, and summarizing news in real-time. It features a specialized dashboard with "Deep Analysis" streaming, an AI Chat Assistant, and premium subscription tiers.
+A next-generation AI-powered news platform that aggregates, classifies, and summarizes news in real-time using a multi-agent LangGraph pipeline. Features a polished, production-grade dashboard with deep analysis streaming, an AI Chat Assistant, social sharing, personalized onboarding, and premium subscription tiers via Solana payments.
 
 👉 **Live Demo:** [https://newsai.atharvanaik.me/](https://newsai.atharvanaik.me/)
 👉 **Blog Post:** [https://atharvanaik.me/posts/news-ai](https://atharvanaik.me/posts/news-ai)
 
 > [!NOTE]
-> I am currently using **Free Tier APIs** for both the LLM (Gemini) and the News data source. This means the application has certain rate limits. If you encounter issues or slow responses, it's likely due to these quotas. Thanks for understanding!
+> This app uses **Free Tier APIs** for the LLM (Google Gemini) and news data (RSS + GDELT). You may encounter rate limits or slow responses during peak usage. Thanks for understanding!
 
 ## 🏗️ Architecture
 
 ```mermaid
 graph TB
     subgraph Client["Frontend — React + Vite"]
-        UI[Shadcn UI + Framer Motion]
+        UI[Shadcn UI + Tailwind + Framer Motion]
         Auth_FE[Auth Context]
         Wallet[Solana Wallet Adapter]
         SSE[SSE Stream Consumer]
+        PWA[PWA — Offline Support]
     end
 
     subgraph API["Backend — FastAPI"]
         direction TB
-        Routes[API Routes<br/>auth · news · ai · payments · chat · support]
+        Routes[API Routes<br/>auth · news · ai · payments · chat · support · share · onboarding]
         Middleware[Middleware Stack<br/>CORS → Error Handler → GZip]
         RateLimit[Rate Limiter — SlowAPI]
     end
@@ -44,14 +43,14 @@ graph TB
     end
 
     subgraph Data["Data Layer"]
-        PG[(PostgreSQL<br/>Users · Articles · Payments)]
+        PG[(PostgreSQL — Neon<br/>Users · Articles · Payments · Shares)]
         Redis[(Redis<br/>Cache — Optional)]
         Alembic[Alembic Migrations]
     end
 
     subgraph External["External Services"]
-        Gemini[Google Gemini Pro]
-        Currents[Currents API<br/>News Data]
+        Gemini[Google Gemini 2.5 Flash]
+        RSS[RSS Feeds + GDELT<br/>News Data]
         Solana[Solana Devnet<br/>Payments]
         Resend[Resend<br/>Email]
     end
@@ -64,7 +63,7 @@ graph TB
     Routes --> PG
     Routes --> Redis
     AI --> Gemini
-    Routes --> Currents
+    Routes --> RSS
     Routes --> Solana
     Routes --> Resend
     Alembic --> PG
@@ -72,107 +71,102 @@ graph TB
 
 ## 🚀 Key Features
 
--   **Smart News Feed**: Aggregates news from various sources with advanced filtering (Category, Sentiment, Search).
--   **Deep Analysis Agent**: Uses a **LangGraph** multi-agent system (Collector -> Classifier -> Summarizer -> Bias Analyzer) to provide in-depth article insights, streaming results in real-time via Server-Sent Events (SSE).
--   **Daily Briefing**: Auto-generated, cached daily summary of your feed.
--   **AI Chat Assistant**: Ask questions about news articles or your feed using RAG (Retrieval Augmented Generation).
--   **Premium Subscriptions**: Solana-based payment integration (Devnet) for upgrading to Pro plans.
--   **Authentication**: Secure JWT authentication with Access/Refresh token rotation and Google/GitHub OAuth support.
+### News & AI
+- **Smart News Feed** — Aggregates news from RSS feeds and GDELT with category, sentiment, and keyword filtering.
+- **Deep Analysis Agent** — Multi-agent LangGraph pipeline (Collector → Classifier → Summarizer → Bias Analyzer) streams insights via SSE.
+- **Daily Briefing** — Auto-generated, cached daily summary of your personalized feed.
+- **AI Chat Assistant** — Ask questions about articles or your feed using context-aware conversations.
+
+### User Experience
+- **Production-Grade UI** — Clean, minimal design inspired by Stripe, Linear, and Vercel. Dark/light mode, custom scrollbars, micro-animations.
+- **Personalized Onboarding** — 3-step setup: language/region → favorite categories → summary style preference.
+- **Social Sharing** — ChatGPT-style share modal with conversation preview and platform buttons (Copy Link, X, LinkedIn, Reddit, WhatsApp).
+- **Saved Chats** — Save and revisit AI conversations (Pro plan).
+- **Public Explore Page** — Browse latest news without an account.
+- **PWA Support** — Installable, offline-ready progressive web app.
+
+### Payments & Auth
+- **Solana Payments** — On-chain subscription via Phantom/Solflare wallets (Devnet or Mainnet).
+- **Tiered Plans** — Free (with 3-day Pro trial), Pro with higher limits and advanced features.
+- **Secure Auth** — JWT with access/refresh token rotation, email verification, password reset.
+- **Account Management** — Edit profile, change password, soft-delete with 7-day recovery.
+
+### Developer
+- **AI Support Bot** — Floating chat widget powered by Gemini for user support.
+- **Usage Tracking** — Real-time token and request usage with plan-based limits.
+- **Billing History** — Full payment transaction log with Solana explorer links.
 
 ## 🛠️ Tech Stack
 
 ### Frontend
--   **Framework**: React (Vite)
--   **Styling**: Tailwind CSS, Shadcn UI, Framer Motion
--   **State/API**: Context API, Custom Hooks, Fetch API (with Interceptors)
+| Technology | Purpose |
+|---|---|
+| React 18 + Vite 5 | Framework & build tool |
+| Tailwind CSS 3.4 | Utility-first styling |
+| Shadcn/ui | 50+ accessible components |
+| Framer Motion | Animations & transitions |
+| TanStack Query | Data fetching & caching |
+| Solana Wallet Adapter | Blockchain wallet integration |
+| vite-plugin-pwa | Progressive Web App |
 
 ### Backend
--   **Framework**: FastAPI (Python)
--   **AI/LLM**: LangChain, LangGraph, Google Gemini Pro
--   **Database**: PostgreSQL (SQLAlchemy Async), Redis (Caching)
--   **Auth**: OAuth2 with Password Bearer (JWT)
+| Technology | Purpose |
+|---|---|
+| FastAPI (Python 3.11) | Async API framework |
+| LangChain + LangGraph | Multi-agent AI pipeline |
+| Google Gemini 2.5 Flash | LLM for analysis & chat |
+| PostgreSQL (Neon) | Primary database |
+| SQLAlchemy (Async) | ORM with Alembic migrations |
+| Redis | Optional caching layer |
+| SlowAPI | Rate limiting |
+| Resend | Transactional email |
 
 ## 📦 Installation & Setup
 
-If you want to run this locally, follow these steps:
-
 ### Prerequisites
--   Node.js (v18+)
--   Python (v3.10+)
--   PostgreSQL
--   Redis (Optional, for production caching)
+- Node.js (v18+) & pnpm
+- Python (v3.10+)
+- PostgreSQL
+- Redis (Optional, for production caching)
 
 ### Backend Setup
 
-1.  Navigate to the backend directory:
-    ```bash
-    cd backend
-    ```
-
-2.  Create and activate a virtual environment:
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
-
-3.  Install dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  Configure Environment Variables:
-    Copy `.env.example` to `.env` and fill in your keys.
-    ```bash
-    cp .env.example .env
-    ```
-
-5.  Start the Server:
-    ```bash
-    uvicorn app.main:app --reload
-    ```
-    API docs: `http://localhost:8000/docs`
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env      # Fill in your API keys
+uvicorn app.main:app --reload
+```
+API docs: `http://localhost:8000/docs`
 
 ### Frontend Setup
 
-1.  Navigate to the frontend directory:
-    ```bash
-    cd frontend
-    ```
-
-2.  Install dependencies:
-    ```bash
-    npm install
-    # or
-    pnpm install
-    ```
-
-3.  Start the Development Server:
-    ```bash
-    npm run dev
-    # or
-    pnpm dev
-    ```
-    Access the app at `http://localhost:5173`
+```bash
+cd frontend
+pnpm install
+cp .env.example .env      # Update if needed
+pnpm dev
+```
+Access at `http://localhost:5173`
 
 ## 🐳 Docker Setup
 
-Run the entire application (Frontend + Backend + Database) with a single command:
+Run the full stack with one command:
 
-1.  Ensure **Docker** and **Docker Compose** are installed.
-2.  Configure `backend/.env` (copy from `.env.example`).
-3.  Run:
-    ```bash
-    docker compose up --build
-    ```
-    - **Frontend**: `http://localhost:80`
-    - **Backend API**: `http://localhost:8000`
-    - **Database**: `localhost:5432`
+```bash
+# Configure backend/.env first
+docker compose up --build
+```
+- **Frontend**: `http://localhost:80`
+- **Backend API**: `http://localhost:8000`
+- **Database**: `localhost:5432`
 
 ## 🤝 Support & Issues
 
-If you find a bug or have a suggestion, please feel free to:
--   **Report an Issue**: [GitHub Issues](https://github.com/Atharva0506/news-app/issues)
--   **Contact Me**: [atharvan.coder@gmail.com](mailto:atharvan.coder@gmail.com)
+- **Report an Issue**: [GitHub Issues](https://github.com/Atharva0506/news-app/issues)
+- **Contact Me**: [atharvan.coder@gmail.com](mailto:atharvan.coder@gmail.com)
 
 ## 📝 License
 

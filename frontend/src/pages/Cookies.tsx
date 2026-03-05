@@ -5,37 +5,54 @@ export default function Cookies() {
     return (
         <div className="min-h-screen bg-background flex flex-col">
             <Navbar />
-            <main className="flex-grow pt-32 pb-20 px-4 container mx-auto max-w-4xl">
-                <h1 className="text-4xl font-bold mb-8">Cookie Policy</h1>
-                <div className="prose prose-invert max-w-none space-y-6 text-muted-foreground">
-                    <p className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-500 font-medium">
+            <main className="flex-grow pt-28 pb-20 px-4 container mx-auto max-w-3xl">
+                <h1 className="text-3xl font-bold mb-2 text-foreground">Cookie Policy</h1>
+                <p className="text-sm text-muted-foreground mb-8">Last updated: June 2025</p>
+
+                <div className="prose dark:prose-invert max-w-none space-y-8 text-muted-foreground text-sm leading-relaxed">
+                    <p className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-600 dark:text-yellow-500 text-[13px] font-medium">
                         Note: This project is built for learning and demo purposes.
                     </p>
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground mb-4">1. What Are Cookies</h2>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">1. What Are Cookies</h2>
                         <p>
-                            Cookies are small data files that are placed on your computer or mobile device when you visit a website. Cookies are widely used by website owners in order to make their websites work, or to work more efficiently, as well as to provide reporting information.
+                            Cookies are small data files placed on your device when you visit a website. They help websites function properly, improve user experience, and provide analytics information to site owners.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground mb-4">2. How We Use Cookies</h2>
-                        <p>
-                            We use cookies for the following purposes:
-                        </p>
-                        <ul className="list-disc pl-6 space-y-2 mt-2">
-                            <li>To enable certain functions of the Service</li>
-                            <li>To provide analytics</li>
-                            <li>To store your preferences (such as Light/Dark mode)</li>
-                            <li>To enable advertisements delivery, including behavioral advertising</li>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">2. Cookies We Use</h2>
+                        <p>We use the following types of cookies and local storage:</p>
+                        <ul className="list-disc pl-6 space-y-1.5 mt-2">
+                            <li><strong>Authentication tokens</strong> — Stored in localStorage to keep you signed in across sessions.</li>
+                            <li><strong>Theme preference</strong> — Your dark/light mode choice is saved in localStorage.</li>
+                            <li><strong>Onboarding state</strong> — Tracks whether you've completed the initial setup flow.</li>
+                            <li><strong>Analytics</strong> — Basic, anonymous usage data to help us improve the platform.</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground mb-4">3. Your Choices</h2>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">3. Third-Party Cookies</h2>
                         <p>
-                            If you'd like to delete cookies or instruct your web browser to delete or refuse cookies, please visit the help pages of your web browser. Please note, however, that if you delete cookies or refuse to accept them, you might not be able to use all of the features we offer, you may not be able to store your preferences, and some of our pages might not display properly.
+                            We do not use third-party advertising cookies. Some external services we integrate with (such as Google Gemini and Solana wallet providers) may set their own cookies. Please refer to their privacy policies for details.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">4. Managing Cookies</h2>
+                        <p>
+                            You can clear cookies and local storage through your browser settings at any time. Note that clearing authentication tokens will sign you out, and clearing theme preferences will reset your display settings.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xl font-semibold text-foreground mb-3">5. Contact</h2>
+                        <p>
+                            If you have questions about our use of cookies, please contact us at{" "}
+                            <a href="mailto:atharvan.coder@gmail.com" className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                                atharvan.coder@gmail.com
+                            </a>.
                         </p>
                     </section>
                 </div>
