@@ -215,6 +215,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ title, messages })
     }),
+    update: (id: string, title: string, messages: any[]) => fetchWithAuth(`/chat/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ title, messages })
+    }),
     delete: (id: string) => fetchWithAuth(`/chat/${id}`, { method: "DELETE" })
   },
   explore: {

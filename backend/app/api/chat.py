@@ -82,6 +82,30 @@ async def create_saved_chat(
     await db.refresh(saved_chat)
     return saved_chat
 
+@router.put("/{chat_id}", response_model=SavedChatOut)
+async def update_saved_chat(
+    chat_id: uuid.UUID,
+    chat_in: SavedChatCreate = Body(...),
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_pro_user),
+) -> Any:
+    """
+    Update an existing saved chat (Premium Only).
+    """
+    result = await db.execute(
+        select(SavedChat).where(SavedChat.id == chat_id, SavedChat.user_id == current_user.id)
+    )
+    saved_chat = result.scalars().first()
+    if not saved_chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    saved_chat.title = chat_in.title
+    saved_chat.messages = chat_in.messages
+    await db.commit()
+    await db.refresh(saved_chat)
+    return saved_chat
+
+
 @router.delete("/{chat_id}", status_code=204)
 async def delete_saved_chat(
     chat_id: uuid.UUID,

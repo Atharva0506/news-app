@@ -10,7 +10,7 @@ interface SharedData {
   id: string;
   article_title: string;
   article_url: string;
-  analysis_json: {
+  analysis: {
     messages?: { role: string; content: string }[];
     summary?: string;
   };
@@ -56,9 +56,9 @@ export default function SharedAnalysis() {
   }
 
   const aiMessages =
-    data.analysis_json.messages?.filter((m) => m.role === "ai") || [];
+    data.analysis.messages?.filter((m) => m.role === "ai") || [];
   const userMessages =
-    data.analysis_json.messages?.filter((m) => m.role === "user") || [];
+    data.analysis.messages?.filter((m) => m.role === "user") || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,7 +115,7 @@ export default function SharedAnalysis() {
 
         {/* Analysis content */}
         <div className="space-y-4">
-          {data.analysis_json.messages?.map((msg, i) => (
+          {data.analysis.messages?.map((msg, i) => (
             <div
               key={i}
               className={`rounded-lg p-4 ${

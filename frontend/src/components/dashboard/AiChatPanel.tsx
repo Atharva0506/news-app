@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Send, Bookmark, Lock, Loader2, Share2 } from "lucide-react";
+import { Sparkles, Send, Bookmark, Lock, Loader2, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -54,6 +54,7 @@ export function AiChatPanel({
   const [chatInput, setChatInput] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isSavingChat, setIsSavingChat] = useState(false);
+  const [savedChatId, setSavedChatId] = useState<string | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [shareTitle, setShareTitle] = useState("");
@@ -63,6 +64,11 @@ export function AiChatPanel({
     message: string;
   } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Reset savedChatId when article changes (new conversation context)
+  useEffect(() => {
+    setSavedChatId(null);
+  }, [selectedArticle?.id]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -209,8 +215,17 @@ ${data.article.summary_detail || "N/A"}
         ? firstUserMsg.content.slice(0, 60) +
           (firstUserMsg.content.length > 60 ? "..." : "")
         : "AI Chat";
-      await api.chat.create(title, chatMessages);
-      toast.success("Chat saved successfully!");
+
+      if (savedChatId) {
+        // Update existing saved chat
+        await api.chat.update(savedChatId, title, chatMessages);
+        toast.success("Chat updated!");
+      } else {
+        // Create new saved chat
+        const res = await api.chat.create(title, chatMessages);
+        setSavedChatId(res.id);
+        toast.success("Chat saved!");
+      }
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : "Failed to save chat";
@@ -221,20 +236,22 @@ ${data.article.summary_detail || "N/A"}
   };
 
   const handleShareAnalysis = async () => {
-    if (!selectedArticle || chatMessages.length === 0) return;
+    if (chatMessages.length === 0) return;
     try {
       const analysis = chatMessages
         .filter((m) => m.role === "ai")
         .map((m) => m.content)
         .join("\n\n");
+      const articleTitle = selectedArticle?.title || "AI Chat";
+      const articleUrl = selectedArticle?.url || window.location.origin;
       const res = await api.share.create({
-        article_title: selectedArticle.title,
-        article_url: selectedArticle.url,
+        article_title: articleTitle,
+        article_url: articleUrl,
         analysis_json: { messages: chatMessages, summary: analysis },
       });
       const url = `${window.location.origin}/share/${res.id}`;
       setShareUrl(url);
-      setShareTitle(selectedArticle.title);
+      setShareTitle(articleTitle);
       setShareModalOpen(true);
     } catch {
       toast.error("Failed to create share link");
@@ -243,7 +260,7 @@ ${data.article.summary_detail || "N/A"}
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col border-l border-border">
+      <SheetContent hideClose className="w-full sm:max-w-lg p-0 flex flex-col border-l border-border">
         <SheetTitle className="sr-only">AI Assistant</SheetTitle>
 
         {/* Header */}
@@ -279,7 +296,7 @@ ${data.article.summary_detail || "N/A"}
                 disabled={chatMessages.length === 0 || isSavingChat}
                 title={
                   user?.is_premium
-                    ? "Save chat"
+                    ? savedChatId ? "Update saved chat" : "Save chat"
                     : "Pro feature — Upgrade to save chats"
                 }
                 onClick={handleSaveChat}
@@ -287,10 +304,19 @@ ${data.article.summary_detail || "N/A"}
                 {isSavingChat ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : user?.is_premium ? (
-                  <Bookmark className="h-3.5 w-3.5" />
+                  <Bookmark className={`h-3.5 w-3.5 ${savedChatId ? "fill-current" : ""}`} />
                 ) : (
                   <Lock className="h-3 w-3 text-muted-foreground" />
                 )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => onOpenChange(false)}
+                title="Close"
+              >
+                <X className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
