@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 
 interface ExploreArticle {
@@ -43,6 +44,7 @@ export default function Explore() {
   const [articles, setArticles] = useState<ExploreArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchArticles();
@@ -76,12 +78,21 @@ export default function Explore() {
             </Link>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground h-8 text-xs" asChild>
-                <Link to="/signup">
-                  Sign up free
-                  <ArrowRight className="ml-1 h-3 w-3" />
-                </Link>
-              </Button>
+              {user ? (
+                <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground h-8 text-xs" asChild>
+                  <Link to="/dashboard">
+                    Dashboard
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground h-8 text-xs" asChild>
+                  <Link to="/signup">
+                    Sign up free
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -230,18 +241,20 @@ export default function Explore() {
           </div>
         )}
 
-        {/* CTA */}
-        <div className="mt-12 text-center py-10 rounded-lg border border-dashed border-border">
-          <Sparkles className="h-8 w-8 mx-auto mb-3 text-accent/40" />
-          <h3 className="font-semibold mb-1">Want AI-powered analysis?</h3>
-          <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-            Sign up to get personalized feeds, AI summaries, bias detection, and
-            deep article analysis.
-          </p>
-          <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
-            <Link to="/signup">Get started free</Link>
-          </Button>
-        </div>
+        {/* CTA — only show for unauthenticated users */}
+        {!user && (
+          <div className="mt-12 text-center py-10 rounded-lg border border-dashed border-border">
+            <Sparkles className="h-8 w-8 mx-auto mb-3 text-accent/40" />
+            <h3 className="font-semibold mb-1">Want AI-powered analysis?</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+              Sign up to get personalized feeds, AI summaries, bias detection, and
+              deep article analysis.
+            </p>
+            <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
+              <Link to="/signup">Get started free</Link>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

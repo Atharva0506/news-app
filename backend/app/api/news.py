@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -11,7 +11,7 @@ router = APIRouter()
 @router.get("/feed", response_model=List[NewsSchema])
 async def get_news_feed(
     db: AsyncSession = Depends(deps.get_db),
-    limit: int = 5,
+    limit: int = 50,
     offset: int = 0,
     refresh: bool = False,
     category: Optional[str] = None,
@@ -19,29 +19,38 @@ async def get_news_feed(
     search: Optional[str] = None,
     current_user: Any = Depends(deps.get_current_active_user)
 ) -> Any:
-    from app.models.news import UserPreference
-    from app.services.news_service import news_service
+    """
+    Returns the user's daily news feed.
+    Uses the RSS + GDELT aggregator with DB-level caching (UserDailyCache).
+    """
+    from app.services.feed import generate_daily_for_user
 
-    prefs_result = await db.execute(select(UserPreference).where(UserPreference.user_id == current_user.id))
-    prefs = prefs_result.scalars().first()
+    try:
+        articles = await generate_daily_for_user(
+            user_id=current_user.id,
+            db=db,
+            force_refresh=refresh,
+        )
+    except Exception as e:
+        msg = str(e)
+        if "limit" in msg.lower():
+            raise HTTPException(status_code=403, detail=msg)
+        raise HTTPException(status_code=500, detail="Failed to generate feed")
 
-    if refresh:
-        await news_service.fetch_and_store_news(db, prefs)
+    # Apply client-side filters on top of cached feed
+    if category and category.lower() not in ("all", "all categories"):
+        articles = [
+            a for a in articles
+            if category.lower() in [t.lower() for t in (a.tags or a.category or [])]
+        ]
 
-    articles = await news_service.get_user_feed_from_db(
-        db,
-        prefs,
-        limit=limit,
-        offset=offset,
-        category=category,
-        sentiment=sentiment,
-        search=search
-    )
+    if sentiment and sentiment.lower() not in ("all", "all-sentiment"):
+        articles = [a for a in articles if a.sentiment and a.sentiment.lower() == sentiment.lower()]
 
-    if not articles and not refresh and not category and not search:
-         await news_service.fetch_and_store_news(db, prefs)
-         articles = await news_service.get_user_feed_from_db(db, prefs, limit=limit, offset=offset)
+    if search:
+        q = search.lower()
+        articles = [a for a in articles if q in (a.title or "").lower() or q in (a.description or "").lower()]
 
-    return articles
+    return articles[offset : offset + limit]
 
 

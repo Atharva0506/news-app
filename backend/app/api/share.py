@@ -22,7 +22,7 @@ router = APIRouter()
 class ShareCreate(BaseModel):
     article_title: str
     article_url: str
-    analysis: dict  # The full analysis JSON blob
+    analysis_json: dict  # The full analysis JSON blob
 
 
 class ShareResponse(BaseModel):
@@ -44,7 +44,7 @@ async def create_share(
     shared = SharedAnalysis(
         article_title=payload.article_title,
         article_url=payload.article_url,
-        analysis_json=payload.analysis,
+        analysis_json=payload.analysis_json,
     )
     db.add(shared)
     await db.commit()

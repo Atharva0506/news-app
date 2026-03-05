@@ -23,7 +23,7 @@ for key in api_keys:
             google_api_key=key,
             temperature=0,
             convert_system_message_to_human=True,
-            request_timeout=10
+            request_timeout=30
         )
         llm_instances.append(llm)
     except Exception as e:
@@ -34,7 +34,7 @@ for key in api_keys:
                 google_api_key=key,
                 temperature=0,
                 convert_system_message_to_human=True,
-                request_timeout=10
+                request_timeout=30
             )
              llm_instances.append(llm)
         except Exception as e2:

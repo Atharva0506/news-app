@@ -11,7 +11,6 @@ from app.models.user import User
 from app.models.news import UserPreference
 from app.models.daily_cache import UserDailyCache
 from app.schemas.news import News as NewsSchema
-from app.services.currents import currents_service
 from app.services.providers.aggregator import news_aggregator
 
 async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_refresh: bool = False, is_initial_setup: bool = False) -> List[NewsSchema]:
@@ -88,7 +87,7 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
     max_cats = 5 if user.is_premium else 1
     preferred_categories = preferred_categories[:max_cats]
 
-    # Fetch Logic — use multi-source aggregator (RSS + GDELT), fallback to Currents
+    # Fetch Logic — use multi-source aggregator (RSS + GDELT)
     try:
         import asyncio
 
@@ -107,30 +106,8 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
                 if isinstance(res, list):
                     aggregated.extend(res)
 
-        # Fallback to Currents if aggregator returned nothing
         if not aggregated:
-            logger.info("Aggregator returned 0 articles, falling back to Currents API")
-            raw_news = await currents_service.fetch_latest_news(language=lang, country=country, type_=type_int)
-            for item in raw_news:
-                pub_date = datetime.now(timezone.utc)
-                if item.get("published"):
-                    try:
-                        pub_date = datetime.strptime(item.get("published"), "%Y-%m-%d %H:%M:%S %z")
-                    except Exception:
-                        pass
-                aggregated.append(
-                    __import__("app.services.providers", fromlist=["ArticleResult"]).ArticleResult(
-                        title=item.get("title", "No Title"),
-                        url=item.get("url", "#"),
-                        description=item.get("description", ""),
-                        image=item.get("image"),
-                        published_at=pub_date,
-                        author=item.get("author", "Unknown"),
-                        source_name="Currents",
-                        category=", ".join(item.get("category", [])),
-                        tags=item.get("category", []),
-                    )
-                )
+            logger.warning("Aggregator returned 0 articles for user %s", user_id)
     except Exception as e:
         logger.error("Feed generation error", exc_info=e)
         return []

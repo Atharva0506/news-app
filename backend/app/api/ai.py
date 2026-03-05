@@ -138,56 +138,71 @@ async def ask_ai(
 
     context_text = request.context
 
-    from app.models.news import NewsArticle
-    if request.article_id:
-        result = await db.execute(select(NewsArticle).where(NewsArticle.id == request.article_id))
-        article = result.scalars().first()
-        if article:
-            context_text = f"Title: {article.title}\nDescription: {article.description}\nContent: {article.content or ''}"
-            context_text = context_text[:2000]
+    # If a specific article is selected, its context is provided by the frontend.
+    # No need to look up NewsArticle in DB — the frontend passes title/description/content directly.
 
+    # If no context and no article — build context from user's cached daily feed
     if not context_text and not request.article_id:
-        import re
-        keywords = [w for w in re.split(r'\W+', request.question) if len(w) > 4]
+        # Try UserDailyCache first (always populated by our feed flow)
+        cache_result = await db.execute(
+            select(UserDailyCache).where(UserDailyCache.user_id == current_user.id)
+        )
+        cache_entry = cache_result.scalars().first()
 
-        query = select(NewsArticle).order_by(desc(NewsArticle.published_at)).limit(10)
+        feed_articles = []
+        if cache_entry and cache_entry.news_feed:
+            feed_articles = cache_entry.news_feed  # list of dicts
 
-        if keywords:
-            from sqlalchemy import or_
-            filters = [NewsArticle.title.ilike(f"%{kw}%") for kw in keywords]
-            query = query.where(or_(*filters))
+        if not feed_articles:
+            # Fallback: fetch live from aggregator
+            from app.services.providers.aggregator import news_aggregator
+            live_articles = await news_aggregator.fetch_feed(limit=10, use_cache=True)
+            feed_articles = [{"title": a.title, "description": a.description} for a in live_articles]
 
-        result = await db.execute(query)
-        articles = result.scalars().all()
-
-        if not articles and keywords:
-             fallback_query = select(NewsArticle).order_by(desc(NewsArticle.published_at)).limit(10)
-             result = await db.execute(fallback_query)
-             articles = result.scalars().all()
-
-        if not articles:
+        if not feed_articles:
             return {"answer": "No articles found in your feed yet. Please refresh your news feed first, then try asking again."}
 
-        if articles:
-            context_text = "Here are some relevant articles found in our database:\n\n"
-            for art in articles:
-                content_snippet = art.content if art.content else art.description
-                if content_snippet and len(content_snippet) > 500:
-                    content_snippet = content_snippet[:500] + "..."
+        # Keyword match against cached feed for relevance
+        import re
+        keywords = [w.lower() for w in re.split(r'\W+', request.question) if len(w) > 3]
 
-                context_text += f"- Title: {art.title}\n  Summary: {art.description}\n  Content: {content_snippet}\n\n"
+        def relevance_score(art: dict) -> int:
+            text = f"{art.get('title', '')} {art.get('description', '')}".lower()
+            return sum(1 for kw in keywords if kw in text)
+
+        if keywords:
+            scored = sorted(feed_articles, key=relevance_score, reverse=True)
+            # Take top matches (relevance > 0), fallback to most recent
+            relevant = [a for a in scored if relevance_score(a) > 0][:8]
+            if not relevant:
+                relevant = feed_articles[:8]
+        else:
+            relevant = feed_articles[:8]
+
+        context_text = "Here are recent news articles from the user's feed:\n\n"
+        for art in relevant:
+            title = art.get("title", "")
+            desc = art.get("description", "")
+            if desc and len(desc) > 400:
+                desc = desc[:400] + "..."
+            context_text += f"- Title: {title}\n  Summary: {desc}\n\n"
 
     prompt = ChatPromptTemplate.from_template(
-        """
-        You are a helpful AI news assistant.
-        Answer the user's question based strictly on the provided context if relevant.
-        If the answer is not in the context, say "I couldn't find that in the article."
-        
-        Context:
-        {context}
-        
-        Question: {question}
-        """
+        """You are a helpful and knowledgeable AI news assistant for NewsAI.
+You have access to the user's current news feed as context.
+
+When the user asks about news, current events, or general knowledge topics:
+- Answer based on the provided context if relevant articles exist.
+- If the context doesn't cover their exact question but you have general knowledge, provide a helpful answer and mention that the specific topic wasn't in their current feed.
+- Provide insightful, well-structured responses.
+
+When the user asks about a specific article they've selected:
+- Answer strictly based on the article's content.
+
+Context:
+{context}
+
+Question: {question}"""
     )
 
     try:
@@ -279,7 +294,7 @@ async def summarize_feed(
         await _update_daily_cache(db, current_user, response_data)
         return response_data
 
-    from app.services.currents import currents_service
+    from app.services.providers.aggregator import news_aggregator
 
     prefs = await db.execute(select(UserPreference).where(UserPreference.user_id == current_user.id))
     prefs = prefs.scalars().first()
@@ -289,16 +304,15 @@ async def summarize_feed(
         category = prefs.favorite_categories[0]
 
     try:
-        articles = await currents_service.fetch_latest_news(category=category)
-        articles = articles[:5]
+        articles = await news_aggregator.fetch_feed(category=category, limit=8, use_cache=True)
 
         if not articles:
-            return {"summary": "No news in your feed."}
+            return {"summary": "No news in your feed yet. Try refreshing your feed first."}
 
-        combined_content = "\n\n".join([f"Title: {a.get('title')}\nSummary: {a.get('description')}" for a in articles])
+        combined_content = "\n\n".join([f"Title: {a.title}\nSummary: {a.description}" for a in articles[:6]])
 
         prompt = ChatPromptTemplate.from_template(
-            "Summarize the following latest news highlights into a single cohesive daily briefing paragraph.\n\nNews:\n{news}"
+            "Summarize the following latest news highlights into a single cohesive daily briefing paragraph (3-5 sentences).\n\nNews:\n{news}"
         )
 
         summary_text = await call_llm_with_rotation(
@@ -346,6 +360,11 @@ def handle_ai_error(e: Exception) -> tuple[int, dict]:
         return 429, {
             "error_code": "AI_RATE_LIMIT",
             "message": "AI limit reached. Please try again later."
+        }
+    if "deadline_exceeded" in msg.lower() or "504" in msg or "timed out" in msg.lower() or "timeout" in msg.lower():
+        return 504, {
+            "error_code": "AI_TIMEOUT",
+            "message": "AI request timed out. Please try again."
         }
     if "recitation" in msg.lower() or "safety" in msg.lower():
          return 400, {
