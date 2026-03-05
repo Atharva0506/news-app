@@ -12,7 +12,7 @@ export function CTA() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-card border border-border p-8 md:p-16 text-center"
+          className="relative overflow-hidden rounded-lg bg-card border border-border p-8 md:p-16 text-center"
         >
           {/* Background decoration */}
           <div className="absolute inset-0 overflow-hidden">

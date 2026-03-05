@@ -60,7 +60,7 @@ export default function Signup() {
         </Link>
 
         {/* Card */}
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-soft">
+        <div className="bg-card border border-border rounded-lg p-8 shadow-soft">
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold mb-2">Create your account</h1>
             <p className="text-muted-foreground text-sm">

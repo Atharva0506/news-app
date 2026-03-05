@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -24,6 +25,35 @@ export default defineConfig(({ mode }) => ({
         process: true,
       },
       protocolImports: true,
+    }),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.ico", "robots.txt"],
+      manifest: {
+        name: "NewsAI — AI-Powered News Reader",
+        short_name: "NewsAI",
+        description: "AI-powered news intelligence with summaries, bias detection, and personalized feeds.",
+        theme_color: "#10B981",
+        background_color: "#030712",
+        display: "standalone",
+        scope: "/",
+        start_url: "/",
+        icons: [
+          { src: "/pwa-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
+          { src: "/pwa-512x512.svg", sizes: "512x512", type: "image/svg+xml" },
+          { src: "/pwa-512x512.svg", sizes: "512x512", type: "image/svg+xml", purpose: "maskable" },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\/api\/v1\/explore\//,
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "explore-api", expiration: { maxEntries: 50, maxAgeSeconds: 60 * 15 } },
+          },
+        ],
+      },
     }),
   ],
   resolve: {

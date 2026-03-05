@@ -58,7 +58,7 @@ export function Hero() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link to="/signup">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-glow animate-pulse-glow h-12 px-8 text-base">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-8 text-base">
                 Get Started Free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

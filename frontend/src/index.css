@@ -22,29 +22,29 @@
   z-index: 1;
 }
 
-/* AI News Platform Design System */
+/* Feedly-Inspired Design System — Clean, Readable, Professional */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --foreground: 224 71% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 71% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 224 71% 4%;
 
-    --primary: 222 47% 11%;
+    --primary: 224 71% 4%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary-foreground: 224 71% 4%;
 
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 38 92% 50%;
+    --accent: 160 84% 39%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -52,70 +52,79 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 38 92% 50%;
+    --ring: 160 84% 39%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(25 95% 53%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(220 14% 96%) 0%, hsl(0 0% 100%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 14% 98%) 100%);
-    --shadow-soft: 0 4px 24px -2px hsl(222 47% 11% / 0.08);
-    --shadow-glow: 0 0 40px -10px hsl(38 92% 50% / 0.3);
+    /* Clean tokens — flat, no glow */
+    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(152 76% 36%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(220 14% 97%) 0%, hsl(0 0% 100%) 100%);
+    --gradient-card: none;
+    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow-glow: 0 1px 3px 0 rgb(0 0 0 / 0.06);
 
-    --sidebar-background: 220 14% 98%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 38 92% 50%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 224 71% 4%;
+    --sidebar-primary: 160 84% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 94%;
-    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 224 71% 4%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-ring: 160 84% 39%;
+
+    /* Feedly-specific extras */
+    --success: 160 84% 39%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 60%;
   }
 
   .dark {
-    --background: 222 47% 6%;
+    --background: 224 71% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 8%;
+    --card: 223 47% 7%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 8%;
+    --popover: 223 47% 7%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
+    --primary-foreground: 224 71% 4%;
 
-    --secondary: 222 30% 14%;
+    --secondary: 223 30% 12%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 30% 14%;
-    --muted-foreground: 220 9% 60%;
+    --muted: 223 30% 12%;
+    --muted-foreground: 220 9% 55%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 160 73% 47%;
+    --accent-foreground: 224 71% 4%;
 
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 18%;
-    --ring: 38 92% 50%;
+    --border: 223 30% 16%;
+    --input: 223 30% 16%;
+    --ring: 160 73% 47%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(25 95% 53%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 6%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(222 47% 10%) 0%, hsl(222 47% 8%) 100%);
-    --shadow-soft: 0 4px 24px -2px hsl(0 0% 0% / 0.3);
-    --shadow-glow: 0 0 40px -10px hsl(38 92% 50% / 0.4);
+    --gradient-primary: linear-gradient(135deg, hsl(160 73% 47%) 0%, hsl(152 68% 42%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(224 47% 6%) 0%, hsl(224 71% 4%) 100%);
+    --gradient-card: none;
+    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.2);
+    --shadow-glow: 0 1px 3px 0 rgb(0 0 0 / 0.2);
 
-    --sidebar-background: 222 47% 8%;
+    --sidebar-background: 223 47% 7%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 30% 14%;
+    --sidebar-primary: 160 73% 47%;
+    --sidebar-primary-foreground: 224 71% 4%;
+    --sidebar-accent: 223 30% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-border: 223 30% 16%;
+    --sidebar-ring: 160 73% 47%;
+
+    --success: 160 73% 47%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 60%;
   }
 }
 

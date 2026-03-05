@@ -67,7 +67,7 @@ export function SupportChat() {
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="absolute bottom-16 right-0 w-80 sm:w-96 bg-card border border-border rounded-xl shadow-glow overflow-hidden flex flex-col max-h-[500px]"
+                        className="absolute bottom-16 right-0 w-80 sm:w-96 bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col max-h-[500px]"
                     >
                         <div className="p-4 bg-accent/10 border-b border-border flex justify-between items-center">
                             <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 """
 Optional Redis Caching Layer
 
-Falls back gracefully to an in-memory no-op cache when Redis is unavailable,
+Falls back gracefully to an in-memory TTL cache when Redis is unavailable,
 so the application works identically in development without Redis installed.
 
 Usage:
@@ -19,6 +19,8 @@ Usage:
 
 import json
 import logging
+import time
+from collections import OrderedDict
 from typing import Any, Optional
 
 logger = logging.getLogger("app.core.cache")
@@ -73,20 +75,45 @@ class RedisCache:
             return False
 
 
-class NoOpCache:
-    """In-memory no-op fallback when Redis is not configured."""
+class InMemoryCache:
+    """In-memory LRU cache with per-key TTL. Used when Redis is unavailable."""
+
+    def __init__(self, max_size: int = 500):
+        self._store: OrderedDict[str, tuple] = OrderedDict()  # key → (value, expires_at)
+        self._max_size = max_size
+
+    def _evict_expired(self):
+        now = time.time()
+        expired = [k for k, (_, exp) in self._store.items() if exp <= now]
+        for k in expired:
+            del self._store[k]
 
     async def get(self, key: str) -> Optional[Any]:
-        return None
+        entry = self._store.get(key)
+        if entry is None:
+            return None
+        value, expires_at = entry
+        if time.time() >= expires_at:
+            del self._store[key]
+            return None
+        # Move to end (LRU)
+        self._store.move_to_end(key)
+        return value
 
     async def set(self, key: str, value: Any, ttl: int = 3600) -> bool:
-        return False
+        self._evict_expired()
+        # Enforce max size
+        while len(self._store) >= self._max_size:
+            self._store.popitem(last=False)  # Remove oldest
+        self._store[key] = (value, time.time() + ttl)
+        return True
 
     async def delete(self, key: str) -> bool:
-        return False
+        self._store.pop(key, None)
+        return True
 
     async def health_check(self) -> bool:
-        return False
+        return True
 
 
 def _create_cache():
@@ -102,11 +129,11 @@ def _create_cache():
         try:
             return RedisCache(redis_url)
         except Exception as e:
-            logger.warning("Failed to initialize Redis, falling back to NoOpCache: %s", e)
-            return NoOpCache()
+            logger.warning("Failed to initialize Redis, falling back to InMemoryCache: %s", e)
+            return InMemoryCache()
     else:
-        logger.info("REDIS_URL not set — using NoOpCache (no caching)")
-        return NoOpCache()
+        logger.info("REDIS_URL not set — using InMemoryCache (LRU, max 500 keys)")
+        return InMemoryCache()
 
 
 cache = _create_cache()

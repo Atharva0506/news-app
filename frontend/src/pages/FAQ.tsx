@@ -96,7 +96,7 @@ export default function FAQ() {
                         ))}
                     </div>
 
-                    <div className="mt-16 text-center bg-card border border-border rounded-2xl p-8">
+                    <div className="mt-16 text-center bg-card border border-border rounded-lg p-8">
                         <h3 className="text-xl font-semibold mb-2">Still have questions?</h3>
                         <p className="text-muted-foreground mb-6">
                             Can't find the answer you're looking for? Please check our documentation or contact our support team.

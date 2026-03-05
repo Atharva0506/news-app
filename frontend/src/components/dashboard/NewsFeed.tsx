@@ -101,7 +101,7 @@ export function NewsFeed({
         return (
             <div className="grid gap-4 md:gap-6">
                 {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="p-6 rounded-2xl border border-border bg-card">
+                    <div key={i} className="p-5 rounded-lg border border-border bg-card">
                         <Skeleton className="h-6 w-3/4 mb-3" />
                         <Skeleton className="h-4 w-full mb-2" />
                         <Skeleton className="h-4 w-5/6 mb-4" />
@@ -113,7 +113,7 @@ export function NewsFeed({
 
     if (articles.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-border bg-card/50">
+            <div className="flex flex-col items-center justify-center p-12 text-center rounded-lg border border-dashed border-border bg-card/50">
                 <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
                     <Search className="h-6 w-6 text-muted-foreground" />
                 </div>
@@ -142,10 +142,10 @@ export function NewsFeed({
             {articles.map((article, index) => (
                 <motion.article
                     key={article.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                    className="group rounded-2xl border border-border bg-card hover:border-accent/30 transition-all shadow-soft hover:shadow-glow cursor-pointer overflow-hidden flex flex-col sm:flex-row"
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="group rounded-lg border border-border bg-card hover:border-accent/30 transition-all cursor-pointer overflow-hidden flex flex-col sm:flex-row"
                     onClick={() => onSelectArticle(article)}
                 >
                     {/* Image Section - Stacked on mobile, Left on desktop */}
@@ -159,7 +159,7 @@ export function NewsFeed({
                         </div>
                     )}
 
-                    <div className="flex flex-col flex-1 p-5 md:p-6">
+                    <div className="flex flex-col flex-1 p-4 md:p-5">
                         <div className="flex items-start justify-between gap-4 mb-2">
                             <h2 className="text-lg font-semibold leading-tight group-hover:text-accent transition-colors line-clamp-2">
                                 {article.title}

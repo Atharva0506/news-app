@@ -32,8 +32,9 @@ class Settings(BaseSettings):
     # --- AI Services ---
     GOOGLE_API_KEY: str
     GEMINI_MODEL: str = "gemini-2.5-flash"
-    CURRENTS_API_KEY: str
+    CURRENTS_API_KEY: str = ""
     NEWS_MODE: str = "TEST"
+    NEWS_SOURCES: str = "rss,gdelt"  # comma-separated: rss,gdelt,currents
 
     # --- Blockchain / Payments (Solana) ---
     SOLANA_MODE: str = "TEST"  # TEST or REAL
@@ -45,7 +46,7 @@ class Settings(BaseSettings):
     # --- CORS / Security ---
     FRONTEND_ORIGIN: str = "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,https://newsai.atharvanaik.me,https://news-app-delta-mocha-27.vercel.app"
 
-    # --- Redis (Optional — falls back to NoOpCache if not set) ---
+    # --- Redis (Optional — falls back to InMemoryCache if not set) ---
     REDIS_URL: Optional[str] = None
 
     # --- Feature Flags ---

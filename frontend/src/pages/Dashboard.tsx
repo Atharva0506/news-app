@@ -1,699 +1,156 @@
-import { useState, useRef, useEffect } from "react";
-import {
-  Home, Newspaper, Settings as SettingsIcon, User, Sparkles, Search,
-  Menu, ChevronLeft, ChevronRight, Send, History, MessageSquareDashed,
-  Bookmark, Lock, Loader2
-} from "lucide-react";
-import SavedChatsList from "@/components/SavedChatsList";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
-import { UsageStats } from "@/components/dashboard/UsageStats";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { FeedSummary } from "@/components/dashboard/FeedSummary";
+import { FeedFilters } from "@/components/dashboard/FeedFilters";
 import { NewsFeed } from "@/components/dashboard/NewsFeed";
+import { AiChatPanel } from "@/components/dashboard/AiChatPanel";
+import SavedChatsList from "@/components/SavedChatsList";
 import Settings from "@/pages/Settings";
 import BillingHistoryPage from "@/pages/BillingHistoryPage";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
-
-const isSameDay = (d1?: string) => {
-  if (!d1) return false;
-  const date1 = new Date(d1);
-  const now = new Date();
-
-  // Check if it's the same UTC day
-  return date1.getUTCFullYear() === now.getUTCFullYear() &&
-    date1.getUTCMonth() === now.getUTCMonth() &&
-    date1.getUTCDate() === now.getUTCDate();
-}
-
-const getTimeUntilNextReset = () => {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setUTCDate(now.getUTCDate() + 1);
-  tomorrow.setUTCHours(0, 0, 0, 0);
-
-  const diff = tomorrow.getTime() - now.getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-  return `${hours}h ${minutes}m`;
-};
-
-const navItems = [
-  { icon: Home, label: "Home", href: "/dashboard" },
-  { icon: Newspaper, label: "My Feed", href: "/dashboard/feed" },
-  { icon: MessageSquareDashed, label: "Saved Chats", href: "/dashboard/saved" },
-  { icon: History, label: "Billing History", href: "/dashboard/billing" },
-  { icon: SettingsIcon, label: "Settings", href: "/dashboard/settings" },
-];
-
-import { RefreshCw } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-
-const FeedSummary = () => {
-  const { user, refreshProfile } = useAuth();
-  const [summary, setSummary] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  // Cache key based on date to invalidate daily? Or just use same key and let user refresh.
-  // User said "store it on user site... give refresh button once created".
-  const CACHE_KEY = "daily_briefing_summary";
-
-  useEffect(() => {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      setSummary(cached);
-    } else {
-      generateSummary(false);
-    }
-  }, []);
-
-  const generateSummary = (forceRefresh: boolean = false) => {
-    setLoading(true);
-    api.ai.summarizeFeed(forceRefresh)
-      .then(data => {
-        setSummary(data.summary);
-        localStorage.setItem(CACHE_KEY, data.summary);
-        refreshProfile();
-      })
-      .catch((err) => {
-        if (err.status === 403 || err.message?.includes("limit")) {
-          toast.info("Daily limit reached. Showing existing summary.");
-          // Do not clear summary if it exists
-        } else {
-          setSummary(null);
-          toast.error("Failed to generate summary");
-        }
-      })
-      .finally(() => setLoading(false));
-  };
-
-  if (loading && !summary) return <div className="text-sm text-muted-foreground animate-pulse">Generating your daily briefing...</div>;
-  if (!summary && !loading) return null; // Or show "Generate" button? But effect tries to generate automatically.
-
-  return (
-    <div className="p-4 rounded-xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20 relative group">
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="flex items-center gap-2 font-semibold">
-          <Sparkles className="h-4 w-4 text-accent" />
-          Daily Briefing
-        </h3>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span tabIndex={0}> {/* Span needed for disabled button tooltip trigger */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-                  onClick={() => generateSummary(true)}
-                  disabled={loading || (user && !user.is_premium && isSameDay(user.last_summary_refresh_date))}
-                >
-                  <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {user?.is_premium
-                  ? "Unlimited Refresh (Premium)"
-                  : user && !user.is_premium && isSameDay(user.last_summary_refresh_date)
-                    ? "Upgrade to Pro to refresh multiple times."
-                    : "Refresh Briefing"}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <div className="text-sm leading-relaxed text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
-        {loading ? "Refreshing..." : (
-          <ReactMarkdown>{summary || ""}</ReactMarkdown>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Extracted Sidebar Component
-const SidebarContent = ({ collapsed, mobile = false }: { collapsed?: boolean, mobile?: boolean }) => {
-  const { user, logout } = useAuth();
-  const location = useLocation();
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-sidebar-border shrink-0">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent shrink-0">
-            <Sparkles className="h-5 w-5 text-accent-foreground" />
-          </div>
-          {!collapsed && <span className="text-xl font-bold">NewsAI</span>}
-        </Link>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto no-scrollbar">
-        {navItems.map((item) => (
-          <Link
-            key={item.label}
-            to={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors ${location.pathname === item.href ? "bg-sidebar-accent" : ""
-              }`}
-          >
-            <item.icon className="h-5 w-5 shrink-0" />
-            {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
-          </Link>
-        ))}
-      </nav>
-
-      {!collapsed && (
-        <div className="mt-4 px-4 shrink-0">
-          <UsageStats />
-        </div>
-      )}
-
-      <div className="p-4 border-t border-sidebar-border mt-auto shrink-0">
-        {user ? (
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-              <User className="h-5 w-5 text-accent" />
-            </div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user.full_name || user.email}</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground truncate">{user.is_premium ? "Pro Plan" : "Free Plan"}</p>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" onClick={logout} title="Logout">
-                    <User className="h-3 w-3 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/login">Login</Link>
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const isSettingsPage = location.pathname.includes("/settings");
 
-  // Onboarding check is now handled by AuthContext
-
-  // Filter State
+  // Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [sentiment, setSentiment] = useState("all-sentiment");
 
-  // AI State
+  // AI Panel state
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [isSavingChat, setIsSavingChat] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [chatMessages]);
-
-  const [aiProcessStatus, setAiProcessStatus] = useState<{ status: string, agent?: string, message: string } | null>(null);
-
-  // Refresh State
+  // Feed refresh
   const [feedRefreshKey, setFeedRefreshKey] = useState(0);
-
   const handleRefreshFeed = () => {
-    setFeedRefreshKey(prev => prev + 1);
+    setFeedRefreshKey((prev) => prev + 1);
     toast.success("Feed refreshed");
   };
 
-  const handleAskAi = async () => {
-    if (!chatInput.trim()) return;
-    if (!user?.is_premium) {
-      toast.error("Ask AI is a Premium feature. Upgrade to Pro!");
-      return;
-    }
+  // Determine which sub-page to show
+  const renderContent = () => {
+    if (isSettingsPage) return <Settings />;
+    if (location.pathname.includes("/billing")) return <BillingHistoryPage />;
+    if (location.pathname.includes("/saved"))
+      return (
+        <div className="max-w-4xl mx-auto">
+          <SavedChatsList />
+        </div>
+      );
 
-    const question = chatInput;
-    setChatMessages(prev => [...prev, { role: 'user', content: question }]);
-    setChatInput("");
-    setIsAiLoading(true);
+    return (
+      <>
+        {/* Email verification banner */}
+        {user &&
+          !user.is_verified &&
+          import.meta.env.VITE_ENABLE_EMAIL_VERIFICATION !== "false" && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-4 py-3 rounded-md mb-6 flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                <span>Verify your email to upgrade to Pro.</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  api.auth
+                    .resendVerification()
+                    .then(() => toast.success("Verification email sent!"))
+                }
+                className="h-7 text-xs"
+              >
+                Resend
+              </Button>
+            </div>
+          )}
 
-    try {
-      const context = selectedArticle
-        ? `Title: ${selectedArticle.title}\nDescription: ${selectedArticle.description || ""}\nContent: ${selectedArticle.content || ""}`
-        : "";
+        {/* Daily briefing */}
+        {user && (
+          <div className="mb-6">
+            <FeedSummary />
+          </div>
+        )}
 
-      const res = await api.ai.ask({
-        question,
-        article_id: selectedArticle?.id, // Optional now
-        context: context
-      });
-      setChatMessages(prev => [...prev, { role: 'ai', content: res.answer }]);
-    } catch (e) {
-      toast.error("Failed to get answer from AI");
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
+        {/* Filters */}
+        <FeedFilters
+          category={category}
+          onCategoryChange={setCategory}
+          sentiment={sentiment}
+          onSentimentChange={setSentiment}
+        />
 
-  const handleProcessArticle = async (articleId: string) => {
-    if (!user?.is_premium) return;
-    setIsAiLoading(true);
-    setAiProcessStatus({ status: 'starting', message: 'Running deep analysis...' });
-
-    try {
-      // Use fetch directly to handle streaming
-      const token = localStorage.getItem("token");
-      const { API_URL } = await import("@/lib/api");
-
-      // Stateless: Send article data in body
-      const response = await fetch(`${API_URL}/ai/process`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id: selectedArticle.id,
-          title: selectedArticle.title,
-          description: selectedArticle.description,
-          content: selectedArticle.content || selectedArticle.description, // Fallback
-          url: selectedArticle.url,
-          published_at: selectedArticle.published_at,
-          author: selectedArticle.author
-        })
-      });
-
-      if (!response.ok || !response.body) throw new Error("Processing failed");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        // Keep the last part in buffer if it's not empty (incomplete message)
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith("data: ")) {
-            try {
-              const jsonStr = trimmed.substring(6);
-              const data = JSON.parse(jsonStr);
-              if (data.status === 'progress') {
-                setAiProcessStatus(data);
-              } else if (data.status === 'complete') {
-                setAiProcessStatus(null);
-                toast.success("Analysis Complete!");
-
-                setSelectedArticle(prev => ({
-                  ...prev,
-                  ...data.article,
-                  summary_short: data.article.summary_short || prev.summary_short,
-                  sentiment: data.article.sentiment || "Neutral"
-                }));
-
-                const analysisMessage = `**Deep Analysis Report**
-
-**Summary**: ${data.article.summary_short || "N/A"}
-
-**Sentiment**: ${data.article.sentiment || "Neutral"}
-**Bias Analysis**: ${data.article.bias_explanation || "N/A"} (Score: ${data.article.bias_score || 0})
-
-**Detailed Summary**:
-${data.article.summary_detail || "N/A"}
-
-**Tags**: ${data.article.tags ? data.article.tags.join(", ") : "None"}`;
-
-                setChatMessages(prev => [...prev, { role: 'ai', content: analysisMessage }]);
-
-              } else if (data.status === 'error') {
-                toast.error(data.message);
-                setAiProcessStatus(null);
-              }
-            } catch (e) {
-              console.error("JSON Parse error", e);
-            }
-          }
-        }
-      }
-
-    } catch (error) {
-      console.error(error);
-      toast.error("AI Processing failed");
-      setAiProcessStatus(null);
-    } finally {
-      setIsAiLoading(false);
-      setAiProcessStatus(null);
-    }
+        {/* News feed */}
+        <NewsFeed
+          refreshTrigger={feedRefreshKey}
+          onSelectArticle={(article) => {
+            setSelectedArticle(article);
+            setAiPanelOpen(true);
+          }}
+          filters={{
+            category: category === "all" ? undefined : category,
+            sentiment: sentiment === "all-sentiment" ? undefined : sentiment,
+            search: searchQuery,
+          }}
+        />
+      </>
+    );
   };
 
   return (
     <div className="min-h-screen bg-background flex w-full">
-      <aside className={`hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 h-screen sticky top-0 ${sidebarCollapsed ? "w-16" : "w-64"}`}>
+      {/* Desktop sidebar */}
+      <aside
+        className={`hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 h-screen sticky top-0 ${
+          sidebarCollapsed ? "w-14" : "w-60"
+        }`}
+      >
         <div className="flex flex-col h-full overflow-y-auto no-scrollbar">
-          <SidebarContent collapsed={sidebarCollapsed} />
+          <DashboardSidebar collapsed={sidebarCollapsed} />
         </div>
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="absolute top-20 -right-3 h-6 w-6 rounded-full border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-foreground z-10"
-          style={{ left: sidebarCollapsed ? "52px" : "248px" }}
         >
-          {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {sidebarCollapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronLeft className="h-3 w-3" />
+          )}
         </button>
       </aside>
 
+      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-border bg-background flex items-center justify-between px-4 md:px-6 shrink-0">
-          <div className="flex items-center gap-4">
-            <Sheet>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <div className="flex flex-col h-full"><SidebarContent mobile /></div>
-              </SheetContent>
-            </Sheet>
-
-            {!isSettingsPage && (
-              <div className="relative w-64 hidden sm:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search news..."
-                  className="pl-10 bg-secondary border-0"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            {!user?.is_premium && (
-              <Badge variant="outline" className="hidden md:flex text-xs border-accent/20 text-muted-foreground">
-                Free plan: 1x per day
-              </Badge>
-            )}
-            <ThemeToggle />
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span tabIndex={0}>
-                    <Button
-                      variant="outline" size="sm" onClick={handleRefreshFeed} className="gap-2 disabled:opacity-50"
-                      disabled={(user && !user.is_premium && isSameDay(user.last_news_refresh_date))}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      <span className="hidden sm:inline">Refresh</span>
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {user?.is_premium
-                      ? "Unlimited Refresh (Premium)"
-                      : user && !user.is_premium && isSameDay(user.last_news_refresh_date)
-                        ? `Daily limit reached. Next available in ${getTimeUntilNextReset()}. Upgrade for unlimited.`
-                        : "Refresh Feed"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <Button
-              variant="outline" size="sm" onClick={() => setAiPanelOpen(true)} className="gap-2"
-            >
-              <Sparkles className="h-4 w-4 text-accent" />
-              <span className="hidden sm:inline">Ask AI</span>
-            </Button>
-          </div>
-        </header>
+        <DashboardHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onRefreshFeed={handleRefreshFeed}
+          onOpenAiPanel={() => setAiPanelOpen(true)}
+          showSearch={!isSettingsPage}
+        />
 
         <main className="flex-1 overflow-auto p-4 md:p-6">
-          {isSettingsPage ? (
-            <Settings />
-          ) : location.pathname.includes("/billing") ? (
-            <BillingHistoryPage />
-          ) : location.pathname.includes("/saved") ? (
-            <div className="max-w-4xl mx-auto">
-              <SavedChatsList />
-            </div>
-          ) : (
-            <>
-              {user && !user.is_verified && import.meta.env.VITE_ENABLE_EMAIL_VERIFICATION !== 'false' && (
-                <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="text-sm font-medium">Please verify your email address to upgrade to Pro.</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => api.auth.resendVerification().then(() => toast.success("Verification email sent!"))} className="h-8 border-yellow-500/20 hover:bg-yellow-500/10 text-yellow-700">
-                    Resend Email
-                  </Button>
-                </div>
-              )}
-
-              {user && (
-                <div className="mb-8">
-                  <FeedSummary />
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="technology">Technology</SelectItem>
-                    <SelectItem value="finance">Finance</SelectItem>
-                    <SelectItem value="environment">Environment</SelectItem>
-                    <SelectItem value="politics">Politics</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={sentiment} onValueChange={setSentiment}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Sentiment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-sentiment">All Sentiment</SelectItem>
-                    <SelectItem value="positive">Positive</SelectItem>
-                    <SelectItem value="neutral">Neutral</SelectItem>
-                    <SelectItem value="negative">Negative</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {user && !user.is_premium && (
-                  <Button className="ml-auto bg-gradient-to-r from-accent to-purple-600 border-0 hover:opacity-90 transition-opacity" asChild>
-                    <Link to="/pricing" className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      <span>Upgrade to Pro</span>
-                    </Link>
-                  </Button>
-                )}
-              </div>
-
-              <NewsFeed
-                refreshTrigger={feedRefreshKey}
-                onSelectArticle={(article) => {
-                  setSelectedArticle(article);
-                  setAiPanelOpen(true);
-                }}
-                filters={{
-                  category: category === "all" ? undefined : category,
-                  sentiment: sentiment === "all-sentiment" ? undefined : sentiment,
-                  search: searchQuery
-                }}
-              />
-            </>
-          )}
+          {renderContent()}
         </main>
       </div>
 
-      <Sheet open={aiPanelOpen} onOpenChange={setAiPanelOpen}>
-        <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col">
-          <SheetTitle className="sr-only">AI Assistant</SheetTitle>
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">AI Assistant</h3>
-                  <p className="text-xs text-muted-foreground">Ask anything regarding news</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                disabled={chatMessages.length === 0 || isSavingChat}
-                title={user?.is_premium ? "Save chat" : "Pro feature — Upgrade to save chats"}
-                onClick={async () => {
-                  if (!user?.is_premium) {
-                    toast.error("Upgrade to Pro to save chats", {
-                      action: { label: "Upgrade", onClick: () => navigate("/pricing") }
-                    });
-                    return;
-                  }
-                  if (chatMessages.length === 0 || isSavingChat) return;
-                  setIsSavingChat(true);
-                  try {
-                    const firstUserMsg = chatMessages.find(m => m.role === 'user');
-                    const title = firstUserMsg
-                      ? firstUserMsg.content.slice(0, 60) + (firstUserMsg.content.length > 60 ? "..." : "")
-                      : "AI Chat";
-                    await api.chat.create(title, chatMessages);
-                    toast.success("Chat saved successfully!");
-                  } catch (error: any) {
-                    toast.error(error.message || "Failed to save chat");
-                  } finally {
-                    setIsSavingChat(false);
-                  }
-                }}
-              >
-                {isSavingChat ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : user?.is_premium ? (
-                  <Bookmark className="h-4 w-4" />
-                ) : (
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* ... Rest of sheet context ... */}
-          {selectedArticle && (
-            <div className="p-4 border-b border-border bg-secondary/50 flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <div className="overflow-hidden">
-                  <p className="text-xs text-muted-foreground mb-1">Discussing:</p>
-                  <p className="text-sm font-medium line-clamp-1">{selectedArticle.title}</p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedArticle(null)}>Clear</Button>
-              </div>
-
-              {/* AI Process Trigger */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full gap-2 border-accent/20 hover:bg-accent/10"
-                onClick={() => handleProcessArticle(selectedArticle.id)}
-                disabled={isAiLoading || !user?.is_premium}
-              >
-                <Sparkles className="h-3 w-3 text-accent" />
-                {user?.is_premium ? "Run Deep Analysis" : "Deep Analysis (Premium)"}
-              </Button>
-            </div>
-          )}
-
-          {/* ... AI Progress and Chat ... */}
-
-          {/* AI Progress Display */}
-          {aiProcessStatus && (
-            <div className="px-4 py-2 bg-accent/5 border-b border-accent/10">
-              <div className="flex items-center gap-2 text-xs font-medium text-accent">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
-                </span>
-                {aiProcessStatus.message}
-              </div>
-              <div className="mt-1 h-1 w-full bg-secondary rounded-full overflow-hidden">
-                <div className="h-full bg-accent animate-pulse w-full origin-left" style={{
-                  transform: `scaleX(${aiProcessStatus.agent === 'collector' ? 0.2 :
-                    aiProcessStatus.agent === 'classifier' ? 0.4 :
-                      aiProcessStatus.agent === 'summarizer' ? 0.7 :
-                        aiProcessStatus.agent === 'bias' ? 0.9 : 1
-                    })`,
-                  transition: 'transform 0.5s ease'
-                }} />
-              </div>
-            </div>
-          )}
-
-          <ScrollArea className="flex-1 p-4" >
-            {/* ... Chat Messages ... */}
-            <div className="space-y-4" ref={scrollRef}>
-              {chatMessages.length === 0 ? (
-                <div className="text-center text-muted-foreground mt-10">
-                  <p>Ask a question about your feed or a specific article.</p>
-                  {!user?.is_premium && <p className="text-xs mt-2 text-accent">Upgrade to Premium to chat!</p>}
-                </div>
-              ) : (
-                chatMessages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-lg px-4 py-2 text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      }`}>
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-              {isAiLoading && <div className="text-sm text-muted-foreground animate-pulse">AI is thinking...</div>}
-            </div>
-          </ScrollArea>
-
-          <div className="p-4 border-t border-border mt-auto">
-            <div className="flex gap-2">
-              <Input
-                placeholder={user?.is_premium ? "Ask a question..." : "Premium only feature"}
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAskAi()}
-                disabled={!user?.is_premium || isAiLoading}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleAskAi}
-                disabled={!user?.is_premium || isAiLoading}
-                className="bg-accent hover:bg-accent/90 text-accent-foreground"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* AI Chat Panel */}
+      <AiChatPanel
+        open={aiPanelOpen}
+        onOpenChange={setAiPanelOpen}
+        selectedArticle={selectedArticle}
+        onArticleChange={setSelectedArticle}
+      />
     </div>
   );
 }

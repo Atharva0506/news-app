@@ -109,8 +109,8 @@ async def process_article(
                 "bias_explanation": accumulated_state.get("bias_explanation")
             }
 
-            # Cache the result for 1 hour
-            await cache.set(cache_key, final_data, ttl=3600)
+            # Cache the result for 24 hours (analyses don't go stale)
+            await cache.set(cache_key, final_data, ttl=86400)
             logger.info("Cached analysis for article %s", article.id)
 
             yield f"data: {json.dumps({'status': 'complete', 'article': final_data})}\n\n"

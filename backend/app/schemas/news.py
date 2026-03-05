@@ -25,6 +25,7 @@ class News(NewsBase):
     bias_explanation: Optional[str] = None # Premium only
     created_at: Optional[datetime] = None
     category: List[str] = Field(default=[], validation_alias="tags") # Map to tags from DB model
+    source_name: Optional[str] = None  # e.g. "BBC News", "NPR", "TechCrunch"
 
     model_config = ConfigDict(from_attributes=True)
 

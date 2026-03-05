@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.core.logging_config import setup_logging
 from app.core.cache import cache
-from app.api import auth, news, payments, ai, preferences, chat, support, onboarding
+from app.api import auth, news, payments, ai, preferences, chat, support, onboarding, explore, share
 
 import logging
 import traceback
@@ -70,6 +70,8 @@ app.include_router(preferences.router, prefix=f"{settings.API_V1_STR}/preference
 app.include_router(onboarding.router, prefix=f"{settings.API_V1_STR}/onboarding", tags=["onboarding"])
 app.include_router(chat.router, prefix=f"{settings.API_V1_STR}/chat", tags=["chat"])
 app.include_router(support.router, prefix=f"{settings.API_V1_STR}/support", tags=["support"])
+app.include_router(explore.router, prefix=f"{settings.API_V1_STR}/explore", tags=["explore"])
+app.include_router(share.router, prefix=f"{settings.API_V1_STR}/share", tags=["share"])
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():

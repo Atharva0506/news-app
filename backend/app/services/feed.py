@@ -12,6 +12,7 @@ from app.models.news import UserPreference
 from app.models.daily_cache import UserDailyCache
 from app.schemas.news import News as NewsSchema
 from app.services.currents import currents_service
+from app.services.providers.aggregator import news_aggregator
 
 async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_refresh: bool = False, is_initial_setup: bool = False) -> List[NewsSchema]:
     """
@@ -87,62 +88,78 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
     max_cats = 5 if user.is_premium else 1
     preferred_categories = preferred_categories[:max_cats]
 
-    # Fetch Logic
-    # (Simplified from original api/news.py)
+    # Fetch Logic — use multi-source aggregator (RSS + GDELT), fallback to Currents
     try:
-        raw_news = []
+        import asyncio
+
+        aggregated = []
         if not preferred_categories:
-            raw_news = await currents_service.fetch_latest_news(language=lang, country=country, type_=type_int)
+            aggregated = await news_aggregator.fetch_feed(
+                language=lang, country=country, limit=25, use_cache=False
+            )
         else:
-             if len(preferred_categories) == 1:
-                  raw_news = await currents_service.fetch_latest_news(category=preferred_categories[0], language=lang, country=country, type_=type_int)
-             else:
-                import asyncio
-                tasks = [currents_service.fetch_latest_news(category=cat, language=lang, country=country, type_=type_int) for cat in preferred_categories]
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-                for res in results:
-                    if isinstance(res, list):
-                        raw_news.extend(res)
+            tasks = [
+                news_aggregator.fetch_feed(category=cat, language=lang, country=country, limit=10, use_cache=False)
+                for cat in preferred_categories
+            ]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for res in results:
+                if isinstance(res, list):
+                    aggregated.extend(res)
+
+        # Fallback to Currents if aggregator returned nothing
+        if not aggregated:
+            logger.info("Aggregator returned 0 articles, falling back to Currents API")
+            raw_news = await currents_service.fetch_latest_news(language=lang, country=country, type_=type_int)
+            for item in raw_news:
+                pub_date = datetime.now(timezone.utc)
+                if item.get("published"):
+                    try:
+                        pub_date = datetime.strptime(item.get("published"), "%Y-%m-%d %H:%M:%S %z")
+                    except Exception:
+                        pass
+                aggregated.append(
+                    __import__("app.services.providers", fromlist=["ArticleResult"]).ArticleResult(
+                        title=item.get("title", "No Title"),
+                        url=item.get("url", "#"),
+                        description=item.get("description", ""),
+                        image=item.get("image"),
+                        published_at=pub_date,
+                        author=item.get("author", "Unknown"),
+                        source_name="Currents",
+                        category=", ".join(item.get("category", [])),
+                        tags=item.get("category", []),
+                    )
+                )
     except Exception as e:
         logger.error("Feed generation error", exc_info=e)
         return []
 
-    # Deduplicate and Sort
-    unique_news = []
-    seen = set()
-    for item in raw_news:
-        uid = item.get("id") or item.get("url")
-        if uid and uid not in seen:
-            seen.add(uid)
-            unique_news.append(item)
+    # Deduplicate by URL
+    seen: set = set()
+    unique_articles = []
+    for a in aggregated:
+        if a.url not in seen:
+            seen.add(a.url)
+            unique_articles.append(a)
 
-    def parse_date(x):
-        try:
-             return datetime.strptime(x.get("published"), "%Y-%m-%d %H:%M:%S %z")
-        except:
-             return datetime.min.replace(tzinfo=timezone.utc)
+    unique_articles.sort(key=lambda a: a.published_at, reverse=True)
 
-    unique_news.sort(key=parse_date, reverse=True)
-
-    # 5. Transform
+    # 5. Transform to schema
     articles = []
-    for item in unique_news:
-        pub_date = datetime.now(timezone.utc)
-        if item.get("published"):
-             try:
-                pub_date = datetime.strptime(item.get("published"), "%Y-%m-%d %H:%M:%S %z")
-             except: pass
-
+    for item in unique_articles:
         articles.append(NewsSchema(
-            id=item.get("id") or str(uuid.uuid4()),
-            title=item.get("title", "No Title"),
-            description=item.get("description", ""),
-            url=item.get("url", "#"),
-            image=item.get("image", None),
-            published_at=pub_date,
-            author=item.get("author", "Unknown"),
-            category=item.get("category", []),
-            sentiment=None, tags=[], summary_short=None, summary_detail=None, bias_score=None
+            id=str(uuid.uuid4()),
+            title=item.title,
+            description=item.description,
+            url=item.url,
+            image=item.image,
+            published_at=item.published_at,
+            author=item.author or "Unknown",
+            category=item.tags if item.tags else [item.category] if item.category else [],
+            sentiment=None, tags=item.tags if item.tags else [item.category] if item.category else [],
+            summary_short=None, summary_detail=None, bias_score=None,
+            source_name=item.source_name,
         ))
 
     # 6. Apply Limit & Cache

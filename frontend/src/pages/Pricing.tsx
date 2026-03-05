@@ -276,9 +276,9 @@ export default function Pricing() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                className={`relative p-8 rounded-3xl border ${plan.popular
-                  ? 'border-accent bg-gradient-card shadow-glow'
-                  : 'border-border bg-card shadow-soft'
+                className={`relative p-8 rounded-lg border ${plan.popular
+                  ? 'border-accent bg-card shadow-md'
+                  : 'border-border bg-card shadow-sm'
                   }`}
               >
                 {plan.popular && (

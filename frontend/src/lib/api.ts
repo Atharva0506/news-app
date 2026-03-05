@@ -216,5 +216,30 @@ export const api = {
       body: JSON.stringify({ title, messages })
     }),
     delete: (id: string) => fetchWithAuth(`/chat/${id}`, { method: "DELETE" })
-  }
+  },
+  explore: {
+    feed: (category?: string, limit: number = 30) => {
+      const params = new URLSearchParams();
+      if (category) params.append("category", category);
+      params.append("limit", String(limit));
+      return fetch(`${API_URL}/explore/feed?${params.toString()}`).then(async res => {
+        if (!res.ok) throw new ApiError(res.status, "Failed to load explore feed");
+        return res.json();
+      });
+    },
+    categories: () =>
+      fetch(`${API_URL}/explore/categories`).then(async res => {
+        if (!res.ok) throw new ApiError(res.status, "Failed to load categories");
+        return res.json();
+      }),
+  },
+  share: {
+    create: (data: { article_title: string; article_url: string; analysis_json: any }) =>
+      fetchWithAuth("/share/", { method: "POST", body: JSON.stringify(data) }),
+    get: (id: string) =>
+      fetch(`${API_URL}/share/${id}`).then(async res => {
+        if (!res.ok) throw new ApiError(res.status, "Analysis not found");
+        return res.json();
+      }),
+  },
 };

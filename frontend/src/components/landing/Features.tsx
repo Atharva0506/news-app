@@ -95,7 +95,7 @@ export function Features() {
             <motion.div
               key={index}
               variants={itemVariants}
-              className="group relative p-6 rounded-2xl bg-gradient-card border border-border hover:border-accent/30 transition-all duration-300 shadow-soft hover:shadow-glow"
+              className="group relative p-6 rounded-lg bg-card border border-border hover:border-accent/20 transition-all duration-300"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 mb-4 group-hover:bg-accent/20 transition-colors">
                 <feature.icon className="h-6 w-6 text-accent" />

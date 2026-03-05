@@ -24,6 +24,8 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const SolanaGuide = lazy(() => import("./pages/SolanaGuide"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Explore = lazy(() => import("./pages/Explore"));
+const SharedAnalysis = lazy(() => import("./pages/SharedAnalysis"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -153,6 +155,8 @@ const App = () => (
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/solana-guide" element={<SolanaGuide />} />
+                  <Route path="/explore" element={<Explore />} />
+                  <Route path="/share/:id" element={<SharedAnalysis />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

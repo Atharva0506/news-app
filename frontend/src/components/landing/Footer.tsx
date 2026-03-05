@@ -4,6 +4,7 @@ import { Sparkles, Twitter, Github, Linkedin } from "lucide-react";
 const footerLinks = {
   Product: [
     { label: "Features", href: "/" },
+    { label: "Explore", href: "/explore" },
     { label: "Pricing", href: "/pricing" },
     { label: "Dashboard", href: "/dashboard" },
   ],

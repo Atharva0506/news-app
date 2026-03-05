@@ -54,7 +54,7 @@ export function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="p-6 rounded-2xl bg-card border border-border shadow-soft"
+              className="p-6 rounded-lg bg-card border border-border shadow-sm"
             >
               {/* Stars */}
               <div className="flex gap-1 mb-4">
