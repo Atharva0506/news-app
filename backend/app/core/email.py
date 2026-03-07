@@ -17,16 +17,16 @@ class EmailService:
         Sends an email using Resend API.
         """
         try:
-            # Dev Mode Redirect
+            # Dev Mode Redirect (Now disabled to allow sending to any real email)
             if settings.APP_ENV != "production":
                 html_content = f"""
                 <div style="background: #fff3cd; color: #856404; padding: 10px; margin-bottom: 20px; border: 1px solid #ffeeba;">
-                    <strong>🚧 DEV MODE REDIRECT</strong><br/>
+                    <strong>🚧 DEV MODE TESTING</strong><br/>
                     Original Recipient: {to_email}
                 </div>
                 {html_content}
                 """
-                to_email = settings.TEST_EMAIL_RECIPIENT
+                # to_email = settings.TEST_EMAIL_RECIPIENT
 
             r = resend.Emails.send({
                 "from": f"{settings.MAIL_FROM_NAME} <{settings.MAIL_FROM_EMAIL}>",
