@@ -32,9 +32,6 @@ class Settings(BaseSettings):
     # --- AI Services ---
     GOOGLE_API_KEY: str
     GEMINI_MODEL: str = "gemini-2.5-flash"
-    CURRENTS_API_KEY: str = ""
-    NEWS_MODE: str = "TEST"
-    NEWS_SOURCES: str = "rss,gdelt"  # comma-separated: rss,gdelt,currents
 
     # --- Blockchain / Payments (Solana) ---
     SOLANA_MODE: str = "TEST"  # TEST or REAL
@@ -99,10 +96,7 @@ class Settings(BaseSettings):
         """Returns a list of Google API keys from a comma-separated string."""
         return [key.strip() for key in self.GOOGLE_API_KEY.split(",") if key.strip()]
 
-    @property
-    def CURRENTS_API_KEYS(self) -> List[str]:
-        """Returns a list of Currents API keys from a comma-separated string."""
-        return [key.strip() for key in self.CURRENTS_API_KEY.split(",") if key.strip()]
+
 
     @property
     def CORS_ORIGINS(self) -> List[str]:

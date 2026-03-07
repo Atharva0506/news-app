@@ -72,7 +72,7 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
     # Check trial expiration first
     user = await check_trial_expiration(user, db)
 
-    # 4. Fetch News from Currents
+    # 4. Fetch News from Provider
     # Fetch Preferences
     prefs_result = await db.execute(select(UserPreference).where(UserPreference.user_id == user.id))
     prefs = prefs_result.scalars().first()
@@ -87,7 +87,7 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
     max_cats = 5 if user.is_premium else 1
     preferred_categories = preferred_categories[:max_cats]
 
-    # Fetch Logic — use multi-source aggregator (RSS + GDELT)
+    # Fetch Logic — use RSS aggregator
     try:
         import asyncio
 

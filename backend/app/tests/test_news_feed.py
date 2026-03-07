@@ -2,8 +2,6 @@ import pytest
 import os
 from httpx import AsyncClient
 
-# Force Test Mode for this test if not picked up
-os.environ["NEWS_MODE"] = "TEST"
 
 @pytest.mark.asyncio
 async def test_get_news_feed(client: AsyncClient):
@@ -16,11 +14,8 @@ async def test_get_news_feed(client: AsyncClient):
     headers = {"Authorization": f"Bearer {token}"}
 
     # Trigger Refresh (to ensure data is loaded from mock)
-    # Note: mocking ingestion might be tricky if DB is empty.
-    # But usually currents_service.fetch_latest_news() is called.
-    # Check if we need to manually trigger ingest first.
-    # Router has /refresh endpoint, let's try calling valid endpoint.
-
+    # The test will hit the endpoint, which now uses RSS exclusively.
+    # It might return empty if RSS fails or no categories match for new user.
     # We will try to fetch feed directly. If empty, we might need to verify ingestion first.
     response = await client.get("/api/v1/news/feed", headers=headers)
     assert response.status_code == 200

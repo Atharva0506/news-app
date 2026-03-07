@@ -17,7 +17,6 @@ from urllib.parse import urlparse
 
 from app.services.providers import ArticleResult
 from app.services.providers.rss_provider import rss_provider
-from app.services.providers.gdelt_provider import gdelt_provider
 
 logger = logging.getLogger("app.services.providers.aggregator")
 
@@ -67,18 +66,12 @@ class NewsAggregator:
                 logger.debug("Cache HIT for %s", key)
                 return articles[:limit]
 
-        # Fetch from all providers concurrently
-        rss_task = rss_provider.fetch_articles(category=category, language=language, country=country, limit=25)
-        gdelt_task = gdelt_provider.fetch_articles(category=category, language=language, country=country, limit=15)
-
-        results = await asyncio.gather(rss_task, gdelt_task, return_exceptions=True)
-
-        all_articles: List[ArticleResult] = []
-        for res in results:
-            if isinstance(res, list):
-                all_articles.extend(res)
-            elif isinstance(res, Exception):
-                logger.warning("Provider error: %s", res)
+        # Fetch from RSS provider
+        try:
+            all_articles = await rss_provider.fetch_articles(category=category, language=language, country=country, limit=limit)
+        except Exception as res:
+            logger.warning("Provider error: %s", res)
+            all_articles = []
 
         # Deduplicate & sort by recency
         unique = _deduplicate(all_articles)
@@ -97,15 +90,11 @@ class NewsAggregator:
         language: str = "en",
         limit: int = 20,
     ) -> List[ArticleResult]:
-        rss_task = rss_provider.search_articles(query=query, language=language, limit=15)
-        gdelt_task = gdelt_provider.search_articles(query=query, language=language, limit=10)
-
-        results = await asyncio.gather(rss_task, gdelt_task, return_exceptions=True)
-
-        all_articles: List[ArticleResult] = []
-        for res in results:
-            if isinstance(res, list):
-                all_articles.extend(res)
+        try:
+            all_articles = await rss_provider.search_articles(query=query, language=language, limit=limit)
+        except Exception as res:
+            logger.warning("Provider error: %s", res)
+            all_articles = []
 
         unique = _deduplicate(all_articles)
         unique.sort(key=lambda a: a.published_at, reverse=True)
