@@ -66,6 +66,17 @@ export function AiChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const isAutoScrollEnabled = useRef(true);
 
+  const [usageStats, setUsageStats] = useState<{ deep_analysis_count: number; deep_analysis_limit: number } | null>(null);
+
+  useEffect(() => {
+    if (open && user) {
+      api.auth.usage().then(stats => setUsageStats({
+        deep_analysis_count: stats.deep_analysis_count,
+        deep_analysis_limit: stats.deep_analysis_limit
+      })).catch(console.error);
+    }
+  }, [open, user]);
+
   // Reset savedChatId when article changes (new conversation context)
   useEffect(() => {
     setSavedChatId(null);
@@ -166,7 +177,15 @@ export function AiChatPanel({
   };
 
   const handleProcessArticle = async () => {
-    if (!user?.is_premium || !selectedArticle) return;
+    if (!selectedArticle) return;
+
+    const isLimitReached = usageStats && usageStats.deep_analysis_limit > 0 && usageStats.deep_analysis_count >= usageStats.deep_analysis_limit;
+    const isLocked = usageStats && usageStats.deep_analysis_limit === 0;
+
+    if (isLimitReached || isLocked) {
+      toast.error(isLocked ? "Deep Analysis is a Premium feature. Upgrade to Pro!" : "Daily Deep Analysis limit reached. Upgrade to Pro for unlimited access!");
+      return;
+    }
     setIsAiLoading(true);
     setAiProcessStatus({ status: "starting", message: "Running deep analysis..." });
 
@@ -253,6 +272,11 @@ export function AiChatPanel({
     } finally {
       setIsAiLoading(false);
       setAiProcessStatus(null);
+      // Fetch usage stats to immediately reflect the new count after analysis is finished
+      api.auth.usage().then(stats => setUsageStats({
+        deep_analysis_count: stats.deep_analysis_count,
+        deep_analysis_limit: stats.deep_analysis_limit
+      })).catch(console.error);
     }
   };
 
@@ -404,10 +428,14 @@ export function AiChatPanel({
               size="sm"
               className="w-full gap-1.5 text-xs h-7 mt-2"
               onClick={handleProcessArticle}
-              disabled={isAiLoading || !user?.is_premium}
+              disabled={isAiLoading || (usageStats ? (usageStats.deep_analysis_limit === 0 || (usageStats.deep_analysis_limit > 0 && usageStats.deep_analysis_count >= usageStats.deep_analysis_limit)) : false)}
             >
               <Sparkles className="h-3 w-3 text-accent" />
-              {user?.is_premium ? "Deep Analysis" : "Deep Analysis (Premium)"}
+              {usageStats?.deep_analysis_limit === 0
+                ? "Deep Analysis (Premium)"
+                : usageStats && usageStats.deep_analysis_limit > 0 && usageStats.deep_analysis_count >= usageStats.deep_analysis_limit
+                  ? "Daily Limit Reached"
+                  : "Deep Analysis"}
             </Button>
           </div>
         )}
