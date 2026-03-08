@@ -1,5 +1,5 @@
 """
-News Aggregator — combines RSS + GDELT + Currents into a single feed.
+News Aggregator — combines RSS + GDELT into a single feed.
 
 Features:
 - Deduplication by URL

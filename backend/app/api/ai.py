@@ -57,6 +57,20 @@ async def process_article(
 
         async def cached_stream():
             yield f"data: {json.dumps({'status': 'starting', 'message': 'Loading cached analysis...'})}\n\n"
+            await asyncio.sleep(0.5)
+            
+            yield f"data: {json.dumps({'text': '**Deep Analysis Report**\\n\\n'})}\n\n"
+            report_body = (
+                f"**Summary**: {cached_result.get('summary_short', 'N/A')}\\n\\n"
+                f"**Sentiment**: {cached_result.get('sentiment', 'Neutral')}\\n"
+                f"**Bias Analysis**: {cached_result.get('bias_explanation', 'N/A')} (Score: {cached_result.get('bias_score', 0)})\\n\\n"
+                f"**Detailed Summary**:\\n{cached_result.get('summary_detail', 'N/A')}\\n\\n"
+                f"**Tags**: {', '.join(cached_result.get('tags', [])) if cached_result.get('tags') else 'None'}"
+            )
+            for word in report_body.split(" "):
+                yield f"data: {json.dumps({'text': word + ' '})}\n\n"
+                await asyncio.sleep(0.01)
+                
             yield f"data: {json.dumps({'status': 'complete', 'article': cached_result})}\n\n"
         return StreamingResponse(cached_stream(), media_type="text/event-stream")
 
@@ -112,6 +126,24 @@ async def process_article(
             # Cache the result for 24 hours (analyses don't go stale)
             await cache.set(cache_key, final_data, ttl=86400)
             logger.info("Cached analysis for article %s", article.id)
+
+            yield f"data: {json.dumps({'status': 'progress', 'agent': 'reporter', 'message': 'Formatting report...'})}\n\n"
+            
+            # Optional UX: Stream the report text itself so frontend can show words appearing
+            yield f"data: {json.dumps({'text': '**Deep Analysis Report**\\n\\n'})}\n\n"
+            await asyncio.sleep(0.1)
+            
+            report_body = (
+                f"**Summary**: {final_data.get('summary_short', 'N/A')}\\n\\n"
+                f"**Sentiment**: {final_data.get('sentiment', 'Neutral')}\\n"
+                f"**Bias Analysis**: {final_data.get('bias_explanation', 'N/A')} (Score: {final_data.get('bias_score', 0)})\\n\\n"
+                f"**Detailed Summary**:\\n{final_data.get('summary_detail', 'N/A')}\\n\\n"
+                f"**Tags**: {', '.join(final_data.get('tags', [])) if final_data.get('tags') else 'None'}"
+            )
+            
+            for word in report_body.split(" "):
+                yield f"data: {json.dumps({'text': word + ' '})}\n\n"
+                await asyncio.sleep(0.01)
 
             yield f"data: {json.dumps({'status': 'complete', 'article': final_data})}\n\n"
 
@@ -204,18 +236,25 @@ Context:
 
 Question: {question}"""
     )
+    
+    async def ask_generator():
+        try:
+            from app.services.ai_agents.nodes import get_current_llm
+            current_llm = get_current_llm()
+            chain = prompt | current_llm | StrOutputParser()
+            
+            async for chunk in chain.astream({"context": context_text, "question": request.question}):
+                # Stream the content in the same format the frontend expects for text streams
+                yield f"data: {json.dumps({'text': chunk})}\n\n"
+            
+            # Final event to indicate end of stream
+            yield f"data: {json.dumps({'status': 'done'})}\n\n"
 
-    try:
-        answer = await call_llm_with_rotation(
-            prompt,
-            StrOutputParser(),
-            {"context": context_text, "question": request.question}
-        )
-    except Exception as e:
-        status_code, detail = handle_ai_error(e)
-        raise HTTPException(status_code=status_code, detail=detail)
+        except Exception as e:
+            status_code, detail = handle_ai_error(e)
+            yield f"data: {json.dumps({'status': 'error', 'error_code': detail.get('error_code'), 'message': detail.get('message')})}\n\n"
 
-    return {"answer": answer}
+    return StreamingResponse(ask_generator(), media_type="text/event-stream")
 
 
 @router.post("/compare")
@@ -284,15 +323,27 @@ async def summarize_feed(
         cache_entry = existing_cache.scalars().first()
 
         if cache_entry and cache_entry.summary:
-            return cache_entry.summary
+            async def cached_summary_generator():
+                # Provide cached summary immediately over SSE
+                yield f"data: {json.dumps({'text': cache_entry.summary.get('summary', '')})}\n\n"
+                yield f"data: {json.dumps({'status': 'done'})}\n\n"
+            return StreamingResponse(cached_summary_generator(), media_type="text/event-stream")
 
     if settings.NEWS_MODE == "TEST":
-        await asyncio.sleep(2)
-        response_data = {
-            "summary": "This is a mock daily briefing summary generated in TEST mode. The AI agents have analyzed the latest test headlines and identified key trends in technology and finance. The market is showing positive momentum, and new AI tools are being released rapidly. (Mock Data)"
-        }
-        await _update_daily_cache(db, current_user, response_data)
-        return response_data
+        async def mock_generator():
+            await asyncio.sleep(1)
+            mock_text = "This is a mock daily briefing summary generated in TEST mode. The AI agents have analyzed the latest test headlines and identified key trends in technology and finance. The market is showing positive momentum, and new AI tools are being released rapidly. (Mock Data)"
+            
+            for word in mock_text.split(" "):
+                yield f"data: {json.dumps({'text': word + ' '})}\n\n"
+                await asyncio.sleep(0.05)
+            
+            response_data = {"summary": mock_text}
+            await _update_daily_cache(db, current_user, response_data)
+
+            yield f"data: {json.dumps({'status': 'done'})}\n\n"
+        
+        return StreamingResponse(mock_generator(), media_type="text/event-stream")
 
     from app.services.providers.aggregator import news_aggregator
 
@@ -315,17 +366,28 @@ async def summarize_feed(
             "Summarize the following latest news highlights into a single cohesive daily briefing paragraph (3-5 sentences).\n\nNews:\n{news}"
         )
 
-        summary_text = await call_llm_with_rotation(
-            prompt,
-            StrOutputParser(),
-            {"news": combined_content}
-        )
-
-        response_data = {"summary": summary_text}
-
-        await _update_daily_cache(db, current_user, response_data)
-
-        return response_data
+        async def summary_generator():
+            try:
+                from app.services.ai_agents.nodes import get_current_llm
+                current_llm = get_current_llm()
+                chain = prompt | current_llm | StrOutputParser()
+                
+                full_summary = ""
+                async for chunk in chain.astream({"news": combined_content}):
+                    full_summary += chunk
+                    yield f"data: {json.dumps({'text': chunk})}\n\n"
+                
+                # Cache the completed summary into the DB at the end
+                response_data = {"summary": full_summary}
+                await _update_daily_cache(db, current_user, response_data)
+                
+                yield f"data: {json.dumps({'status': 'done'})}\n\n"
+            
+            except Exception as e:
+                status_code, detail = handle_ai_error(e)
+                yield f"data: {json.dumps({'status': 'error', 'error_code': detail.get('error_code'), 'message': detail.get('message')})}\n\n"
+        
+        return StreamingResponse(summary_generator(), media_type="text/event-stream")
 
     except Exception as e:
         status_code, detail = handle_ai_error(e)

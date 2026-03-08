@@ -37,7 +37,7 @@ export default function Onboarding() {
     const [summaryStyle, setSummaryStyle] = useState("short");
 
     // Limits
-    const MAX_CATEGORIES = user?.is_premium ? 5 : 3;
+    const MAX_CATEGORIES = 5;
 
     const toggleCategory = (catId: string) => {
         setSelectedCategories((prev) => {
@@ -45,7 +45,7 @@ export default function Onboarding() {
                 return prev.filter((c) => c !== catId);
             }
             if (prev.length >= MAX_CATEGORIES) {
-                toast.error(`You can select up to ${MAX_CATEGORIES} categories. ${!user?.is_premium ? "Upgrade to Pro for more." : ""}`);
+                toast.error(`You can select up to ${MAX_CATEGORIES} categories.`);
                 return prev;
             }
             return [...prev, catId];
@@ -165,6 +165,7 @@ export default function Onboarding() {
                                             <SelectValue placeholder="Select region" />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="global">🌍 Global</SelectItem>
                                             <SelectItem value="us">🇺🇸 United States</SelectItem>
                                             <SelectItem value="uk">🇬🇧 United Kingdom</SelectItem>
                                             <SelectItem value="in">🇮🇳 India</SelectItem>

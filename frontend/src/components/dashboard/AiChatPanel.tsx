@@ -93,12 +93,63 @@ export function AiChatPanel({
         ? `Title: ${selectedArticle.title}\nDescription: ${selectedArticle.description || ""}\nContent: ${selectedArticle.content || ""}`
         : "";
 
-      const res = await api.ai.ask({
-        question,
-        article_id: selectedArticle?.id,
-        context,
+      // Add temporary empty message for streaming
+      setChatMessages((prev) => [...prev, { role: "ai", content: "" }]);
+
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/ai/ask`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: question,
+          article_id: selectedArticle?.id,
+          context: context,
+        }),
       });
-      setChatMessages((prev) => [...prev, { role: "ai", content: res.answer }]);
+
+      if (!response.ok || !response.body) throw new Error("Processing failed");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullMessage = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(trimmed.substring(6));
+
+              if (data.status === "done") {
+                // Complete
+                break;
+              } else if (data.status === "error") {
+                toast.error(data.message);
+              } else if (data.text) {
+                fullMessage += data.text;
+                setChatMessages((prev) => {
+                  const newMsgs = [...prev];
+                  newMsgs[newMsgs.length - 1].content = fullMessage;
+                  return newMsgs;
+                });
+              }
+            } catch (e) {
+              // Ignore parse errors on partial chunks
+            }
+          }
+        }
+      }
     } catch {
       toast.error("Failed to get answer from AI");
     } finally {
@@ -135,6 +186,8 @@ export function AiChatPanel({
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let fullMessage = "";
+      let isStreamingText = false;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -165,25 +218,20 @@ export function AiChatPanel({
                 onArticleChange(updatedArticle);
                 onArticleUpdated?.(updatedArticle);
 
-                const analysisMessage = `**Deep Analysis Report**
-
-**Summary**: ${data.article.summary_short || "N/A"}
-
-**Sentiment**: ${data.article.sentiment || "Neutral"}
-**Bias Analysis**: ${data.article.bias_explanation || "N/A"} (Score: ${data.article.bias_score || 0})
-
-**Detailed Summary**:
-${data.article.summary_detail || "N/A"}
-
-**Tags**: ${data.article.tags ? data.article.tags.join(", ") : "None"}`;
-
-                setChatMessages((prev) => [
-                  ...prev,
-                  { role: "ai", content: analysisMessage },
-                ]);
               } else if (data.status === "error") {
                 toast.error(data.message);
                 setAiProcessStatus(null);
+              } else if (data.text) {
+                if (!isStreamingText) {
+                  isStreamingText = true;
+                  setChatMessages((prev) => [...prev, { role: "ai", content: "" }]);
+                }
+                fullMessage += data.text;
+                setChatMessages((prev) => {
+                  const newMsgs = [...prev];
+                  newMsgs[newMsgs.length - 1].content = fullMessage;
+                  return newMsgs;
+                });
               }
             } catch {
               // JSON parse error — skip
@@ -213,7 +261,7 @@ ${data.article.summary_detail || "N/A"}
       const firstUserMsg = chatMessages.find((m) => m.role === "user");
       const title = firstUserMsg
         ? firstUserMsg.content.slice(0, 60) +
-          (firstUserMsg.content.length > 60 ? "..." : "")
+        (firstUserMsg.content.length > 60 ? "..." : "")
         : "AI Chat";
 
       if (savedChatId) {
@@ -370,17 +418,16 @@ ${data.article.summary_detail || "N/A"}
               <div
                 className="h-full bg-accent transition-transform duration-500 ease-out"
                 style={{
-                  transform: `scaleX(${
-                    aiProcessStatus.agent === "collector"
-                      ? 0.2
-                      : aiProcessStatus.agent === "classifier"
+                  transform: `scaleX(${aiProcessStatus.agent === "collector"
+                    ? 0.2
+                    : aiProcessStatus.agent === "classifier"
                       ? 0.4
                       : aiProcessStatus.agent === "summarizer"
-                      ? 0.7
-                      : aiProcessStatus.agent === "bias"
-                      ? 0.9
-                      : 1
-                  })`,
+                        ? 0.7
+                        : aiProcessStatus.agent === "bias"
+                          ? 0.9
+                          : 1
+                    })`,
                   transformOrigin: "left",
                 }}
               />
@@ -412,16 +459,14 @@ ${data.article.summary_detail || "N/A"}
               chatMessages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"
+                    }`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-lg px-3 py-2 text-[13px] leading-relaxed ${
-                      msg.role === "user"
-                        ? "bg-accent text-accent-foreground"
-                        : "bg-secondary/80"
-                    }`}
+                    className={`max-w-[85%] rounded-lg px-3 py-2 text-[13px] leading-relaxed ${msg.role === "user"
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-secondary/80"
+                      }`}
                   >
                     <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>

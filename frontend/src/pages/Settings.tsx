@@ -69,14 +69,10 @@ export default function Settings() {
     const toggleCategory = (cat: string) => {
         const current = preferences.favorite_categories;
         const isSelected = current.includes(cat);
-        const maxCategories = user?.is_premium ? 5 : 1;
+        const maxCategories = 5;
 
         if (!isSelected && current.length >= maxCategories) {
-            toast.error(
-                user?.is_premium
-                    ? "Pro users can select up to 5 categories."
-                    : "Free users can select only 1 category. Upgrade to Pro for more!"
-            );
+            toast.error("You can select up to 5 categories.");
             return;
         }
 
@@ -90,9 +86,9 @@ export default function Settings() {
         if (!newKeyword.trim()) return;
         if (preferences.favorite_keywords.includes(newKeyword.trim())) return;
 
-        const maxKeywords = user?.is_premium ? 5 : 3;
+        const maxKeywords = 5;
         if (preferences.favorite_keywords.length >= maxKeywords) {
-            toast.error(user?.is_premium ? "Max 5 keywords allowed." : "Free plan limited to 3 keywords.");
+            toast.error("Max 5 keywords allowed.");
             return;
         }
 
@@ -259,7 +255,7 @@ export default function Settings() {
                                 <div className="flex justify-between items-center">
                                     <label className="text-sm font-medium">Favorite Categories</label>
                                     <span className="text-xs text-muted-foreground">
-                                        {preferences.favorite_categories.length} / {user?.is_premium ? 5 : 1} selected
+                                        {preferences.favorite_categories.length} / 5 selected
                                     </span>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -307,6 +303,7 @@ export default function Settings() {
                                             <SelectValue placeholder="Select region" />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="global">Global</SelectItem>
                                             <SelectItem value="us">United States</SelectItem>
                                             <SelectItem value="uk">United Kingdom</SelectItem>
                                             <SelectItem value="in">India</SelectItem>
@@ -322,7 +319,7 @@ export default function Settings() {
                                 <div className="flex justify-between items-center">
                                     <label className="text-sm font-medium">Topic Keywords</label>
                                     <span className="text-xs text-muted-foreground">
-                                        {preferences.favorite_keywords.length} / {user?.is_premium ? 5 : 3} used
+                                        {preferences.favorite_keywords.length} / 5 used
                                     </span>
                                 </div>
                                 <div className="flex gap-2">
@@ -332,12 +329,12 @@ export default function Settings() {
                                         onChange={(e) => setNewKeyword(e.target.value)}
                                         onKeyDown={(e) => e.key === "Enter" && addKeyword()}
                                         className="max-w-xs"
-                                        disabled={preferences.favorite_keywords.length >= (user?.is_premium ? 5 : 3)}
+                                        disabled={preferences.favorite_keywords.length >= 5}
                                     />
                                     <Button
                                         variant="outline"
                                         onClick={addKeyword}
-                                        disabled={preferences.favorite_keywords.length >= (user?.is_premium ? 5 : 3)}
+                                        disabled={preferences.favorite_keywords.length >= 5}
                                     >
                                         Add
                                     </Button>

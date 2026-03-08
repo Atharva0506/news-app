@@ -4,7 +4,6 @@ Multi-source news provider abstraction.
 Supports:
 - RSS feeds (BBC, NPR, TechCrunch, Ars Technica, The Verge, etc.)
 - GDELT Project API (global news coverage)
-- Currents API (legacy fallback)
 """
 
 from dataclasses import dataclass, field

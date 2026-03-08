@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Loader2, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
@@ -47,11 +47,67 @@ export function SupportChat() {
                 content: m.content
             }));
 
-            const res = await api.support.chat(userMsg, history);
-            setMessages(prev => [...prev, { role: "ai", content: res.response }]);
+            // Add temporary empty message to stream into
+            setMessages(prev => [...prev, { role: "ai", content: "" }]);
+
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${api.support.chat.toString().includes('undefined') ? 'http://localhost:8000/api/v1' : 'http://localhost:8000/api/v1'}/support/chat`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message: userMsg, history }),
+            });
+
+            if (!response.ok || !response.body) throw new Error("Processing failed");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+            let fullResponse = "";
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n\n");
+                buffer = lines.pop() || "";
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith("data: ")) {
+                        try {
+                            const data = JSON.parse(trimmed.substring(6));
+                            if (data.status === "done") {
+                                break;
+                            } else if (data.status === "error") {
+                                toast.error(data.message);
+                            } else if (data.text) {
+                                fullResponse += data.text;
+                                setMessages(prev => {
+                                    const newMsgs = [...prev];
+                                    newMsgs[newMsgs.length - 1].content = fullResponse;
+                                    return newMsgs;
+                                });
+                            }
+                        } catch (e) {
+                            // ignore parse errors
+                        }
+                    }
+                }
+            }
         } catch (error) {
             console.error(error);
-            setMessages(prev => [...prev, { role: "ai", content: "Sorry, I'm having trouble connecting right now. Please try again later." }]);
+            setMessages(prev => {
+                const newMsgs = [...prev];
+                // If we failed and the last message is still the empty one, replace it
+                if (newMsgs[newMsgs.length - 1].role === "ai" && newMsgs[newMsgs.length - 1].content === "") {
+                    newMsgs[newMsgs.length - 1].content = "Sorry, I'm having trouble connecting right now. Please try again later.";
+                }
+                return newMsgs;
+            });
         } finally {
             setIsLoading(false);
         }

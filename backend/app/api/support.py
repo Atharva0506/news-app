@@ -21,7 +21,10 @@ class SupportResponse(BaseModel):
 
 
 
-@router.post("/chat", response_model=SupportResponse)
+from fastapi.responses import StreamingResponse
+import json
+
+@router.post("/chat")
 async def support_chat(
     request: SupportRequest,
     current_user: Optional[User] = Depends(deps.get_current_active_user_optional),
@@ -103,10 +106,18 @@ async def support_chat(
 
         messages.append(("user", request.message))
 
-        response = llm.invoke(messages)
+        async def chat_generator():
+            try:
+                async for chunk in llm.astream(messages):
+                    yield f"data: {json.dumps({'text': chunk.content})}\n\n"
+                
+                yield f"data: {json.dumps({'status': 'done'})}\n\n"
+            except Exception as e:
+                logger.error("Support chat streaming failed", exc_info=e)
+                yield f"data: {json.dumps({'status': 'error', 'message': 'Support chat failed'})}\n\n"
 
-        return {"response": response.content}
+        return StreamingResponse(chat_generator(), media_type="text/event-stream")
 
     except Exception as e:
         logger.error("Support chat failed", exc_info=e)
-        raise HTTPException(status_code=500, detail="Failed to get support response")
+        raise HTTPException(status_code=500, detail="Failed to initialize support chat")

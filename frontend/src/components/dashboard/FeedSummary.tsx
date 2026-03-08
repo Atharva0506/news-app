@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuth } from "@/context/AuthContext";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -39,24 +39,68 @@ export function FeedSummary() {
     }
   }, []);
 
-  const generateSummary = (forceRefresh: boolean = false) => {
+  const generateSummary = async (forceRefresh: boolean = false) => {
     setLoading(true);
-    api.ai
-      .summarizeFeed(forceRefresh)
-      .then((data) => {
-        setSummary(data.summary);
-        localStorage.setItem(CACHE_KEY, data.summary);
-        refreshProfile();
-      })
-      .catch((err) => {
-        if (err.status === 403 || err.message?.includes("limit")) {
-          toast.info("Daily limit reached. Showing existing summary.");
-        } else {
-          setSummary(null);
-          toast.error("Failed to generate summary");
+    setSummary(""); // Clear summary while streaming
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/ai/feed/summary`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh: forceRefresh }),
+      });
+
+      if (!response.ok || !response.body) throw new Error("Processing failed");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullSummary = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(trimmed.substring(6));
+
+              if (data.status === "done") {
+                localStorage.setItem(CACHE_KEY, fullSummary);
+                refreshProfile();
+                break;
+              } else if (data.status === "error") {
+                if (data.error_code === "PLAN_LIMIT_REACHED") {
+                  toast.info("Daily limit reached. Showing existing summary.");
+                } else {
+                  toast.error(data.message);
+                }
+              } else if (data.text) {
+                fullSummary += data.text;
+                setSummary(fullSummary);
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
         }
-      })
-      .finally(() => setLoading(false));
+      }
+    } catch (err: any) {
+      setSummary(null);
+      toast.error("Failed to generate summary");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading && !summary)
@@ -107,8 +151,8 @@ export function FeedSummary() {
                 : user &&
                   !user.is_premium &&
                   isSameDay(user.last_summary_refresh_date)
-                ? "Upgrade to Pro for unlimited refreshes"
-                : "Refresh briefing"}
+                  ? "Upgrade to Pro for unlimited refreshes"
+                  : "Refresh briefing"}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

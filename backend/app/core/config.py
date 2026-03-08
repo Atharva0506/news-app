@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     # --- AI Services ---
     GOOGLE_API_KEY: str
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-2.5-flash-lite"
 
     # --- Blockchain / Payments (Solana) ---
     SOLANA_MODE: str = "TEST"  # TEST or REAL

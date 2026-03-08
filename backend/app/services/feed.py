@@ -44,28 +44,8 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
         if cache_entry.news_feed:
             return [NewsSchema(**item) for item in cache_entry.news_feed]
 
-    # 3. Check Limits (Strict for Free Users) — skip during initial setup
-    if not user.is_premium and not is_initial_setup:
-        # If cache is valid, we already returned it.
-        # If cache is invalid or missing, check last refresh date.
-        if user.last_news_refresh_date and user.last_news_refresh_date.date() == today:
-             # Already refreshed today.
-             # If cache exists (even if technically "expired" or just old logic), return it to avoid API hit?
-             # BUT if we are here, is_cache_valid is False or force_refresh is True.
-             # If force_refresh is True and user is free -> Block if already refreshed today.
-             if force_refresh:
-                 raise Exception("Daily refresh limit reached for Free plan.")
-
-             # If not force_refresh but cache is missing/expired, we might be in a weird state.
-             # Let's allow one "repair" fetch if cache is excessively old, but generally block.
-             # For now, block strict.
-             if cache_entry and cache_entry.news_feed:
-                  # Fallback to existing cache even if expired?
-                  return [NewsSchema(**item) for item in cache_entry.news_feed]
-
-             # If no cache and limit reached, maybe return empty list or error?
-             # Let's allow generation if NO cache exists (emergency fix).
-             pass
+    # 3. Skip Limits (We want unlimited refresh)
+    # Allows generation if cache exists or user forces refresh
 
     from app.core.plan_checker import check_trial_expiration
 
@@ -83,8 +63,8 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
     type_int = type_map.get(prefs.content_type, 1) if prefs else 1
 
     preferred_categories = prefs.favorite_categories if (prefs and prefs.favorite_categories) else []
-    # Limit categories based on plan
-    max_cats = 5 if user.is_premium else 1
+    # Limit categories for all users
+    max_cats = 5
     preferred_categories = preferred_categories[:max_cats]
 
     # Fetch Logic — use RSS aggregator
@@ -98,7 +78,7 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
             )
         else:
             tasks = [
-                news_aggregator.fetch_feed(category=cat, language=lang, country=country, limit=10, use_cache=False)
+                news_aggregator.fetch_feed(category=cat, language=lang, country=country, limit=5, use_cache=False)
                 for cat in preferred_categories
             ]
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -140,11 +120,8 @@ async def generate_daily_for_user(user_id: uuid.UUID, db: AsyncSession, force_re
         ))
 
     # 6. Apply Limit & Cache
-    # User Request: Free and Trial users get 5 news per day. Pro unlimited (or high limit).
-    if user.plan_type in ["free", "trial"]:
-         articles = articles[:5]
-    else:
-         articles = articles[:50]
+    # Unlimited refresh for news feed, returning up to 50 items.
+    articles = articles[:50]
 
     feed_data = [a.model_dump(mode='json') for a in articles]
 

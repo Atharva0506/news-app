@@ -190,7 +190,7 @@ export function NewsFeed({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 text-xs px-2 text-muted-foreground hover:text-accent"
+                                    className="h-7 text-xs px-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onSelectArticle(article);
@@ -202,7 +202,7 @@ export function NewsFeed({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                                    className="h-7 text-xs px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         window.open(article.url, '_blank', 'noopener,noreferrer');
