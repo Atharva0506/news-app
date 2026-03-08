@@ -118,6 +118,7 @@ export function SupportChat() {
             });
         } finally {
             setIsLoading(false);
+            window.dispatchEvent(new Event('usage-updated'));
         }
     };
 

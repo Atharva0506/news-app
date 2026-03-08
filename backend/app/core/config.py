@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     APP_ENV: str = "development"  # Options: development, production
     DEBUG: bool = True
+    NEWS_MODE: str = "LIVE"
 
     # --- Authentication ---
     SECRET_KEY: str

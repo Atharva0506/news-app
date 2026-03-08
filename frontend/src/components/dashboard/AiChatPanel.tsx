@@ -173,6 +173,7 @@ export function AiChatPanel({
       toast.error("Failed to get answer from AI");
     } finally {
       setIsAiLoading(false);
+      window.dispatchEvent(new Event('usage-updated'));
     }
   };
 
@@ -273,10 +274,13 @@ export function AiChatPanel({
       setIsAiLoading(false);
       setAiProcessStatus(null);
       // Fetch usage stats to immediately reflect the new count after analysis is finished
-      api.auth.usage().then(stats => setUsageStats({
-        deep_analysis_count: stats.deep_analysis_count,
-        deep_analysis_limit: stats.deep_analysis_limit
-      })).catch(console.error);
+      api.auth.usage().then(stats => {
+        setUsageStats({
+          deep_analysis_count: stats.deep_analysis_count,
+          deep_analysis_limit: stats.deep_analysis_limit
+        });
+        window.dispatchEvent(new Event('usage-updated'));
+      }).catch(console.error);
     }
   };
 

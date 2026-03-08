@@ -23,8 +23,16 @@ export function UsageStats() {
     useEffect(() => {
         const fetchUsage = () => api.auth.usage().then(setStats).catch(console.error);
         fetchUsage();
+
         const interval = setInterval(fetchUsage, 60000);
-        return () => clearInterval(interval);
+
+        const handleUsageUpdated = () => fetchUsage();
+        window.addEventListener('usage-updated', handleUsageUpdated);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('usage-updated', handleUsageUpdated);
+        };
     }, []);
 
     if (!stats) return null;
