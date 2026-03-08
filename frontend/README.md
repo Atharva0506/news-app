@@ -1,6 +1,6 @@
 # Frontend — AI News Aggregator
 
-The frontend client for NewsAI, built with **React 18, Vite 5, Tailwind CSS 3.4, Shadcn/ui, and Framer Motion**.
+The frontend client for NewsAI, built with **React 18, Vite 5, Tailwind CSS 3.4, Shadcn/ui, and Framer Motion**. Features real-time SSE streaming and token usage tracking.
 
 For full project documentation, architecture, and features, see the [Root README](../README.md).
 

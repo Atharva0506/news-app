@@ -27,9 +27,9 @@ export default function Privacy() {
                         <ul className="list-disc pl-6 space-y-1.5 mt-2">
                             <li>Provide and personalize the news feed based on your preferred categories and language.</li>
                             <li>Process subscription payments via the Solana blockchain.</li>
-                            <li>Generate AI-powered news analysis and chat responses.</li>
+                            <li>Generate AI-powered news analysis and chat responses (using Gemini and Groq).</li>
                             <li>Send transactional emails (verification, password reset) via Resend.</li>
-                            <li>Track usage against your plan's limits.</li>
+                            <li>Track real-time token usage against your plan's limits to ensure fair access.</li>
                         </ul>
                     </section>
 
@@ -44,7 +44,7 @@ export default function Privacy() {
                         <h2 className="text-xl font-semibold text-foreground mb-3">4. Third-Party Services</h2>
                         <p>Our service integrates with the following third-party providers:</p>
                         <ul className="list-disc pl-6 space-y-1.5 mt-2">
-                            <li><strong>Google Gemini</strong> — AI model for news analysis, chat, and support.</li>
+                            <li><strong>Google Gemini & Groq</strong> — AI models for news analysis, chat, and support.</li>
                             <li><strong>RSS Feeds & GDELT</strong> — Public news data sources for article aggregation.</li>
                             <li><strong>Solana Blockchain</strong> — Payment processing (wallet addresses are public on-chain).</li>
                             <li><strong>Resend</strong> — Transactional email delivery.</li>

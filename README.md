@@ -50,6 +50,7 @@ graph TB
 
     subgraph External["External Services"]
         Gemini[Google Gemini 2.5 Flash]
+        Groq[Groq — Llama 3.1 8B Fallback]
         RSS[RSS Feeds + GDELT<br/>News Data]
         Solana[Solana Devnet<br/>Payments]
         Resend[Resend<br/>Email]
@@ -63,6 +64,7 @@ graph TB
     Routes --> PG
     Routes --> Redis
     AI --> Gemini
+    AI -.->|Fallback| Groq
     Routes --> RSS
     Routes --> Solana
     Routes --> Resend
@@ -73,9 +75,10 @@ graph TB
 
 ### News & AI
 - **Smart News Feed** — Aggregates news from RSS feeds and GDELT with category, sentiment, and keyword filtering.
-- **Deep Analysis Agent** — Multi-agent LangGraph pipeline (Collector → Classifier → Summarizer → Bias Analyzer) streams insights via SSE.
-- **Daily Briefing** — Auto-generated, cached daily summary of your personalized feed.
-- **AI Chat Assistant** — Ask questions about articles or your feed using context-aware conversations.
+- **Deep Analysis Agent** — Multi-agent LangGraph pipeline (Collector → Classifier → Summarizer → Bias Analyzer) with **SSE streaming** for instant feedback.
+- **Daily Briefing** — Auto-generated, cached daily summary of your personalized feed with **real-time usage tracking**.
+- **AI Chat Assistant** — Context-aware conversations with smooth scroll-locking and token-by-token streaming.
+- **AI Reliability** — Automatic **Gemini-to-Groq fallback** mechanism to handle rate limits and service interruptions seamlessly.
 
 ### User Experience
 - **Production-Grade UI** — Clean, minimal design inspired by Stripe, Linear, and Vercel. Dark/light mode, custom scrollbars, micro-animations.
@@ -92,8 +95,8 @@ graph TB
 - **Account Management** — Edit profile, change password, soft-delete with 7-day recovery.
 
 ### Developer
-- **AI Support Bot** — Floating chat widget powered by Gemini for user support.
-- **Usage Tracking** — Real-time token and request usage with plan-based limits.
+- **AI Support Bot** — Floating chat widget with streaming responses for instant assistance.
+- **Real-time Usage Tracking** — Live-updating token and request meters with plan-based limits (no page refresh required).
 - **Billing History** — Full payment transaction log with Solana explorer links.
 
 ## 🛠️ Tech Stack
@@ -114,7 +117,7 @@ graph TB
 |---|---|
 | FastAPI (Python 3.11) | Async API framework |
 | LangChain + LangGraph | Multi-agent AI pipeline |
-| Google Gemini 2.5 Flash | LLM for analysis & chat |
+| Gemini 2.5 + Groq | Primary + Fallback LLM setup |
 | PostgreSQL (Neon) | Primary database |
 | SQLAlchemy (Async) | ORM with Alembic migrations |
 | Redis | Optional caching layer |

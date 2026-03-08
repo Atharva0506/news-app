@@ -1,6 +1,6 @@
 # Backend — AI News Aggregator
 
-The backend service for NewsAI, built with **FastAPI, LangGraph, and Google Gemini 2.5 Flash**.
+The backend service for NewsAI, built with **FastAPI, LangGraph, Google Gemini 2.5 Flash, and Groq (Llama 3.1)**.
 
 For full project documentation, architecture, and features, see the [Root README](../README.md).
 

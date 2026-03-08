@@ -35,7 +35,7 @@ export default function Cookies() {
                     <section>
                         <h2 className="text-xl font-semibold text-foreground mb-3">3. Third-Party Cookies</h2>
                         <p>
-                            We do not use third-party advertising cookies. Some external services we integrate with (such as Google Gemini and Solana wallet providers) may set their own cookies. Please refer to their privacy policies for details.
+                            We do not use third-party advertising cookies. Some external services we integrate with (such as Google Gemini, Groq, and Solana wallet providers) may set their own cookies. Please refer to their privacy policies for details.
                         </p>
                     </section>
 

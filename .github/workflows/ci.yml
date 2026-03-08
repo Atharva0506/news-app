@@ -44,6 +44,7 @@ jobs:
       POSTGRES_PORT: 5432
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/news_db_test
       GOOGLE_API_KEY: fake-key-for-ci
+      GROQ_API_KEY: fake-key-for-ci
       CURRENTS_API_KEY: fake-key-for-ci
       NEWS_MODE: TEST
       SOLANA_MODE: TEST

@@ -23,7 +23,7 @@ const faqs = [
     },
     {
         question: "What happens after my limits are reached?",
-        answer: "If you hit your AI chat token limit, you'll need to wait until the next day for it to reset. For Pro users, deep analysis usage (3/day) also resets daily. Free users are limited to 1 news summary and 1 feed refresh per day. You won't lose any saved data or preferences — the limits simply pause AI-powered features until the next cycle.",
+        answer: "If you hit your AI chat token limit, the system will pause AI-powered features until the next day. However, we've implemented a <strong>Reliability Fallback</strong>: if our primary AI provider (Google Gemini) is busy or hits a rate limit, we automatically switch your request to our secondary provider (Groq/Llama) so your experience remains uninterrupted. Your usage dashboard updates in <strong>real-time</strong> as you use tokens.",
     },
     {
         question: "How do payments and billing work?",
