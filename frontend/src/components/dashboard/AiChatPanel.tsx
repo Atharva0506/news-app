@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Send, Bookmark, Lock, Loader2, Share2, X } from "lucide-react";
+import { Sparkles, Send, Bookmark, Lock, Loader2, Share2, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -315,6 +315,11 @@ export function AiChatPanel({
     }
   };
 
+  const handleClearChat = () => {
+    setChatMessages([]);
+    setSavedChatId(null);
+  };
+
   const handleShareAnalysis = async () => {
     if (chatMessages.length === 0) return;
     try {
@@ -359,15 +364,26 @@ export function AiChatPanel({
             </div>
             <div className="flex items-center gap-0.5">
               {chatMessages.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={handleShareAnalysis}
-                  title="Share analysis"
-                >
-                  <Share2 className="h-3.5 w-3.5" />
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    onClick={handleClearChat}
+                    title="Clear chat"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={handleShareAnalysis}
+                    title="Share analysis"
+                  >
+                    <Share2 className="h-3.5 w-3.5" />
+                  </Button>
+                </>
               )}
               <Button
                 variant="ghost"
