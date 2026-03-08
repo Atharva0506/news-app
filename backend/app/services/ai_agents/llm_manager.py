@@ -55,7 +55,7 @@ class LLMProviderManager:
             try:
                 # Typically llama-3.3-70b-versatile or mixtral-8x7b-32768
                 groq_llm = ChatGroq(
-                    model="llama3-8b-8192", 
+                    model="llama-3.1-8b-instant", 
                     api_key=self.groq_key,
                     temperature=0.3
                 )

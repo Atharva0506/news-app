@@ -28,6 +28,7 @@ import json
 async def support_chat(
     request: SupportRequest,
     current_user: Optional[User] = Depends(deps.get_current_active_user_optional),
+    db: AsyncSession = Depends(deps.get_db)
 ):
     """
     Chat with the AI Support Agent.
@@ -87,12 +88,29 @@ async def support_chat(
 
         async def chat_generator():
             try:
+                full_response = ""
                 async for chunk in llm.astream(messages):
+                    full_response += chunk.content
                     yield f"data: {json.dumps({'text': chunk.content})}\n\n"
                 
                 # Log usage completion
                 llm_manager.increment_usage()
                 logger.info(f"Support chat fulfilled with {provider_name}")
+                
+                if current_user:
+                    try:
+                        from app.models.payment import AIUsageLog
+                        from app.db.session import AsyncSessionLocal
+                        async with AsyncSessionLocal() as session:
+                            log = AIUsageLog(
+                                user_id=current_user.id,
+                                action="support_chat",
+                                tokens_used=max(len(full_response) // 4, 10)
+                            )
+                            session.add(log)
+                            await session.commit()
+                    except Exception as db_e:
+                        logger.error("Failed to log support chat usage", exc_info=db_e)
                 
                 yield f"data: {json.dumps({'status': 'done'})}\n\n"
             except Exception as e:

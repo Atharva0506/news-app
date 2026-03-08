@@ -242,13 +242,29 @@ Question: {question}"""
             current_llm, provider_name = llm_manager.get_llm()
             chain = prompt | current_llm | StrOutputParser()
             
+            full_content = ""
             async for chunk in chain.astream({"context": context_text, "question": request.question}):
+                full_content += chunk
                 # Stream the content in the same format the frontend expects for text streams
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
             
             # Final event to indicate end of stream
             llm_manager.increment_usage()
             logger.info(f"AI Ask fulfilled with {provider_name}")
+            
+            try:
+                from app.models.payment import AIUsageLog
+                from app.db.session import AsyncSessionLocal
+                async with AsyncSessionLocal() as session:
+                    log = AIUsageLog(
+                        user_id=current_user.id,
+                        action="ask_ai",
+                        tokens_used=max(len(full_content) // 4, 10)
+                    )
+                    session.add(log)
+                    await session.commit()
+            except Exception as db_e:
+                logger.error("Failed to log ask_ai usage", exc_info=db_e)
             
             yield f"data: {json.dumps({'status': 'done'})}\n\n"
 
@@ -382,9 +398,23 @@ async def summarize_feed(
                 llm_manager.increment_usage()
                 logger.info(f"Feed summary fulfilled with {provider_name}")
                 
-                # Cache the completed summary into the DB at the end
-                response_data = {"summary": full_summary}
-                await _update_daily_cache(db, current_user, response_data)
+                try:
+                    from app.models.payment import AIUsageLog
+                    from app.db.session import AsyncSessionLocal
+                    async with AsyncSessionLocal() as session:
+                        log = AIUsageLog(
+                            user_id=current_user.id,
+                            action="feed_summary",
+                            tokens_used=max(len(full_summary) // 4, 10)
+                        )
+                        session.add(log)
+                        
+                        # Cache the completed summary into the DB at the end
+                        response_data = {"summary": full_summary}
+                        await _update_daily_cache(session, current_user, response_data)
+                        await session.commit()
+                except Exception as db_e:
+                    logger.error("Failed to log feed summary usage", exc_info=db_e)
                 
                 yield f"data: {json.dumps({'status': 'done'})}\n\n"
             
