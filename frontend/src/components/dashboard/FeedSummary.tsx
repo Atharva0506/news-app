@@ -100,6 +100,7 @@ export function FeedSummary() {
       toast.error("Failed to generate summary");
     } finally {
       setLoading(false);
+      window.dispatchEvent(new Event('usage-updated'));
     }
   };
 
