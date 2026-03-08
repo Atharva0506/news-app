@@ -36,9 +36,6 @@ async def support_chat(
     from app.services.ai_agents.llm_manager import llm_manager
 
     try:
-        llm, provider_name = llm_manager.get_llm()
-
-
         # System Prompt
         system_prompt = """You are the official AI Support Agent for NewsAI, a next-generation AI-powered news aggregator platform.
         
@@ -88,13 +85,31 @@ async def support_chat(
 
         async def chat_generator():
             try:
+                from langchain_core.prompts import ChatPromptTemplate
+                from langchain_core.output_parsers import BaseOutputParser
+                
+                class PassThroughParser(BaseOutputParser):
+                    def parse(self, text: str) -> str:
+                        return text
+                
+                # We format messages directly for the LLM
+                prompt = ChatPromptTemplate.from_messages(messages)
+                
                 full_response = ""
-                async for chunk in llm.astream(messages):
-                    full_response += chunk.content
-                    yield f"data: {json.dumps({'text': chunk.content})}\n\n"
+                provider_name = "Unknown"
+                
+                async for chunk_type, chunk_data in llm_manager.stream_with_fallback(
+                    prompt=prompt,
+                    parser=PassThroughParser(),
+                    input_data={}
+                ):
+                    if chunk_type == "provider":
+                        provider_name = chunk_data
+                    elif chunk_type == "chunk":
+                        full_response += chunk_data
+                        yield f"data: {json.dumps({'text': chunk_data})}\n\n"
                 
                 # Log usage completion
-                llm_manager.increment_usage()
                 logger.info(f"Support chat fulfilled with {provider_name}")
                 
                 if current_user:

@@ -239,17 +239,22 @@ Question: {question}"""
     async def ask_generator():
         try:
             from app.services.ai_agents.llm_manager import llm_manager
-            current_llm, provider_name = llm_manager.get_llm()
-            chain = prompt | current_llm | StrOutputParser()
             
             full_content = ""
-            async for chunk in chain.astream({"context": context_text, "question": request.question}):
-                full_content += chunk
-                # Stream the content in the same format the frontend expects for text streams
-                yield f"data: {json.dumps({'text': chunk})}\n\n"
+            provider_name = "Unknown"
+            
+            async for chunk_type, chunk_data in llm_manager.stream_with_fallback(
+                prompt=prompt,
+                parser=StrOutputParser(),
+                input_data={"context": context_text, "question": request.question}
+            ):
+                if chunk_type == "provider":
+                    provider_name = chunk_data
+                elif chunk_type == "chunk":
+                    full_content += chunk_data
+                    yield f"data: {json.dumps({'text': chunk_data})}\n\n"
             
             # Final event to indicate end of stream
-            llm_manager.increment_usage()
             logger.info(f"AI Ask fulfilled with {provider_name}")
             
             try:
@@ -387,15 +392,21 @@ async def summarize_feed(
         async def summary_generator():
             try:
                 from app.services.ai_agents.llm_manager import llm_manager
-                current_llm, provider_name = llm_manager.get_llm()
-                chain = prompt | current_llm | StrOutputParser()
                 
                 full_summary = ""
-                async for chunk in chain.astream({"news": combined_content}):
-                    full_summary += chunk
-                    yield f"data: {json.dumps({'text': chunk})}\n\n"
+                provider_name = "Unknown"
                 
-                llm_manager.increment_usage()
+                async for chunk_type, chunk_data in llm_manager.stream_with_fallback(
+                    prompt=prompt,
+                    parser=StrOutputParser(),
+                    input_data={"news": combined_content}
+                ):
+                    if chunk_type == "provider":
+                        provider_name = chunk_data
+                    elif chunk_type == "chunk":
+                        full_summary += chunk_data
+                        yield f"data: {json.dumps({'text': chunk_data})}\n\n"
+                
                 logger.info(f"Feed summary fulfilled with {provider_name}")
                 
                 try:

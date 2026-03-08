@@ -146,6 +146,46 @@ class LLMProviderManager:
                 
         raise last_error or RuntimeError("LLM invocation failed after retries.")
 
+    async def stream_with_fallback(self, prompt, parser, input_data: Dict[str, Any], config=None):
+        """
+        Safely streams LLM output. If the primary provider throws a 429 quota error,
+        it automatically falls back to Groq and restarts the stream.
+        """
+        max_attempts = 2
+        last_error = None
+
+        for attempt in range(max_attempts):
+            llm, provider_name = self.get_llm()
+            chain = prompt | llm | parser
+
+            try:
+                # We yield the provider name first as a tuple so the caller can log it.
+                # E.g. (yield "provider", provider_name)
+                yield "provider", provider_name
+
+                async for chunk in chain.astream(input_data, config=config):
+                    yield "chunk", chunk
+                
+                self.increment_usage()
+                logger.info(f"Successfully streamed LLM request using {provider_name}.")
+                return
+
+            except Exception as e:
+                msg = str(e).lower()
+                last_error = e
+                logger.error(f"Error streaming with {provider_name}: {e}")
+
+                if provider_name == "Gemini" and ("429" in msg or "resourceexhausted" in msg or "quota" in msg):
+                    logger.warning(f"Gemini 429/Quota error encountered during stream. Switching to fallback.")
+                    self.daily_requests = self.SWITCH_THRESHOLD
+                    self.rotate_primary_key()
+                    await asyncio.sleep(0.5)
+                    continue
+                
+                raise e
+        
+        raise last_error or RuntimeError("LLM streaming failed after retries.")
+
 # Global instance
 llm_manager = LLMProviderManager()
 
