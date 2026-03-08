@@ -21,6 +21,7 @@ bcrypt==4.0.1
 # AI & LLM
 langgraph>=0.0.50
 langchain-google-genai>=1.0.3
+langchain-groq>=0.1.0
 langchain-core>=0.1.52
 # google-generativeai is transitive via langchain-google-genai
 

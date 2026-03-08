@@ -32,31 +32,10 @@ async def support_chat(
     """
     Chat with the AI Support Agent.
     """
-    from langchain_google_genai import ChatGoogleGenerativeAI
-    from app.core.config import settings
-    import random
+    from app.services.ai_agents.llm_manager import llm_manager
 
     try:
-        if not settings.GOOGLE_API_KEYS:
-             raise HTTPException(status_code=500, detail="AI Service not configured")
-
-        # Basic rotation: Randomly select a key
-        api_key = random.choice(settings.GOOGLE_API_KEYS)
-
-        try:
-            llm = ChatGoogleGenerativeAI(
-                model=settings.GEMINI_MODEL,
-                google_api_key=api_key,
-                temperature=0.3
-            )
-        except Exception as e:
-            # Fallback if 2.5 is rejected by validation
-            logger.warning("Failed to instantiate %s, falling back to gemini-1.5-flash", settings.GEMINI_MODEL, exc_info=e)
-            llm = ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash",
-                google_api_key=api_key,
-                temperature=0.3
-            )
+        llm, provider_name = llm_manager.get_llm()
 
 
         # System Prompt
@@ -110,6 +89,10 @@ async def support_chat(
             try:
                 async for chunk in llm.astream(messages):
                     yield f"data: {json.dumps({'text': chunk.content})}\n\n"
+                
+                # Log usage completion
+                llm_manager.increment_usage()
+                logger.info(f"Support chat fulfilled with {provider_name}")
                 
                 yield f"data: {json.dumps({'status': 'done'})}\n\n"
             except Exception as e:

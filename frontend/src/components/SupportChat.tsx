@@ -22,9 +22,17 @@ export function SupportChat() {
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const isAutoScrollEnabled = useRef(true);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.currentTarget;
+        const { scrollTop, scrollHeight, clientHeight } = target;
+        const isNearBottom = scrollHeight - scrollTop <= clientHeight + 50;
+        isAutoScrollEnabled.current = isNearBottom;
+    };
 
     useEffect(() => {
-        if (scrollRef.current) {
+        if (scrollRef.current && isAutoScrollEnabled.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages, isOpen]);
@@ -135,7 +143,7 @@ export function SupportChat() {
                             </Button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50" ref={scrollRef}>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50" ref={scrollRef} onScroll={handleScroll}>
                             {messages.map((msg, i) => (
                                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                                     <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm ${msg.role === "user"

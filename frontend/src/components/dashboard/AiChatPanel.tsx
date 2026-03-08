@@ -64,14 +64,22 @@ export function AiChatPanel({
     message: string;
   } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isAutoScrollEnabled = useRef(true);
 
   // Reset savedChatId when article changes (new conversation context)
   useEffect(() => {
     setSavedChatId(null);
   }, [selectedArticle?.id]);
 
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const isNearBottom = scrollHeight - scrollTop <= clientHeight + 100;
+    isAutoScrollEnabled.current = isNearBottom;
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && isAutoScrollEnabled.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatMessages]);
@@ -436,8 +444,8 @@ export function AiChatPanel({
         )}
 
         {/* Messages */}
-        <ScrollArea className="flex-1 px-4 py-3">
-          <div className="space-y-3" ref={scrollRef}>
+        <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef} onScroll={handleScroll}>
+          <div className="space-y-3">
             {chatMessages.length === 0 ? (
               <div className="text-center text-muted-foreground mt-12">
                 <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-3">

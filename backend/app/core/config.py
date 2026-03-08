@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     # --- AI Services ---
     GOOGLE_API_KEY: str
     GEMINI_MODEL: str = "gemini-2.5-flash-lite"
+    GROQ_API_KEY: Optional[str] = None
 
     # --- Blockchain / Payments (Solana) ---
     SOLANA_MODE: str = "TEST"  # TEST or REAL

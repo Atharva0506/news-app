@@ -17,7 +17,6 @@ from app.models.news import UserPreference
 from app.models.daily_cache import UserDailyCache
 from app.models.payment import AIUsageLog
 from app.services.ai_agents.graph import news_graph
-from app.services.ai_agents.nodes import call_llm_with_rotation
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from app.core.plan_checker import assert_deep_analysis_access, increment_deep_analysis_usage
@@ -239,8 +238,8 @@ Question: {question}"""
     
     async def ask_generator():
         try:
-            from app.services.ai_agents.nodes import get_current_llm
-            current_llm = get_current_llm()
+            from app.services.ai_agents.llm_manager import llm_manager
+            current_llm, provider_name = llm_manager.get_llm()
             chain = prompt | current_llm | StrOutputParser()
             
             async for chunk in chain.astream({"context": context_text, "question": request.question}):
@@ -248,6 +247,9 @@ Question: {question}"""
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
             
             # Final event to indicate end of stream
+            llm_manager.increment_usage()
+            logger.info(f"AI Ask fulfilled with {provider_name}")
+            
             yield f"data: {json.dumps({'status': 'done'})}\n\n"
 
         except Exception as e:
@@ -368,14 +370,17 @@ async def summarize_feed(
 
         async def summary_generator():
             try:
-                from app.services.ai_agents.nodes import get_current_llm
-                current_llm = get_current_llm()
+                from app.services.ai_agents.llm_manager import llm_manager
+                current_llm, provider_name = llm_manager.get_llm()
                 chain = prompt | current_llm | StrOutputParser()
                 
                 full_summary = ""
                 async for chunk in chain.astream({"news": combined_content}):
                     full_summary += chunk
                     yield f"data: {json.dumps({'text': chunk})}\n\n"
+                
+                llm_manager.increment_usage()
+                logger.info(f"Feed summary fulfilled with {provider_name}")
                 
                 # Cache the completed summary into the DB at the end
                 response_data = {"summary": full_summary}

@@ -9,6 +9,18 @@ export class ApiError extends Error {
   }
 }
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+const subscribeTokenRefresh = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb);
+};
+
+const onTokenRefreshed = (token: string) => {
+  refreshSubscribers.forEach(cb => cb(token));
+  refreshSubscribers = [];
+};
+
 async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem("token");
   const headers = {
@@ -62,14 +74,28 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   } catch (error) {
     if (error instanceof ApiError) {
       if (error.status === 401) {
-        // Try to refresh token
+        // Avoid multi-refresh loops by checking if we're hitting the refresh endpoint itself
+        if (endpoint.includes("/refresh")) throw error;
+
         const refreshToken = localStorage.getItem("refresh_token");
         if (refreshToken) {
+          if (isRefreshing) {
+            // Queue this request, wait until refresh is done, then retry
+            return new Promise((resolve) => {
+              subscribeTokenRefresh(async (newToken) => {
+                const newHeaders = {
+                  ...headers,
+                  Authorization: `Bearer ${newToken}`,
+                };
+                const retryResponse = await fetch(`${API_URL}${endpoint}`, { ...options, headers: newHeaders });
+                resolve(retryResponse.status === 204 ? {} : await retryResponse.json());
+              });
+            });
+          }
+
+          isRefreshing = true;
+
           try {
-            if (endpoint.includes("/refresh")) throw error;
-
-
-
             const refreshRes = await fetch(`${API_URL}/auth/refresh?refresh_token=${refreshToken}`, { method: "POST" });
 
             if (refreshRes.ok) {
@@ -77,26 +103,35 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
               localStorage.setItem("token", data.access_token);
               if (data.refresh_token) localStorage.setItem("refresh_token", data.refresh_token);
 
+              // Notify any intercepted requests
+              onTokenRefreshed(data.access_token);
+
+              // Retry the original request
               const newHeaders = {
                 ...headers,
                 Authorization: `Bearer ${data.access_token}`
               };
               const retryResponse = await fetch(`${API_URL}${endpoint}`, { ...options, headers: newHeaders });
+
               if (!retryResponse.ok) {
                 const errData = await retryResponse.json().catch(() => ({}));
                 throw new ApiError(retryResponse.status, errData.detail || "Error after refresh");
               }
-              return retryResponse.json();
+              return retryResponse.status === 204 ? {} : await retryResponse.json();
             } else {
+              // Only fail logout if the refresh token itself is actually rejected
               localStorage.removeItem("token");
               localStorage.removeItem("refresh_token");
               localStorage.removeItem("has_onboarded");
+              throw error;
             }
           } catch (refreshErr) {
             localStorage.removeItem("token");
             localStorage.removeItem("refresh_token");
             localStorage.removeItem("has_onboarded");
-            throw error;
+            throw refreshErr;
+          } finally {
+            isRefreshing = false;
           }
         } else {
           localStorage.removeItem("token");
