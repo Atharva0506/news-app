@@ -18,6 +18,8 @@ A next-generation AI-powered news platform that aggregates, classifies, and summ
 
 ## 🏗️ Architecture
 
+### Application Architecture
+
 ```mermaid
 graph TB
     subgraph Client["Frontend — React + Vite"]
@@ -51,7 +53,7 @@ graph TB
     subgraph External["External Services"]
         Gemini[Google Gemini 2.5 Flash]
         Groq[Groq — Llama 3.1 8B Fallback]
-        RSS[RSS Feeds + GDELT<br/>News Data]
+        RSS[RSS Feeds<br/>News Data]
         Solana[Solana Devnet<br/>Payments]
         Resend[Resend<br/>Email]
     end
@@ -69,6 +71,127 @@ graph TB
     Routes --> Solana
     Routes --> Resend
     Alembic --> PG
+```
+
+### Current Deployment
+
+> Deployed on free-tier infrastructure to minimize costs while maintaining production-grade reliability.
+
+```mermaid
+graph LR
+    subgraph User["End User"]
+        Browser[Browser / PWA]
+    end
+
+    subgraph Vercel["Vercel — Frontend"]
+        CDN[Edge CDN]
+        SPA["React SPA<br/>Static Assets"]
+    end
+
+    subgraph Render["Render — Backend"]
+        Docker["Docker Container<br/>Gunicorn + Uvicorn"]
+        Health["/health Endpoint<br/>Keep-Alive Ping"]
+    end
+
+    subgraph Neon["Neon — Database"]
+        PG_Cloud[("PostgreSQL<br/>Serverless")]
+    end
+
+    subgraph Services["External Services"]
+        GeminiAPI[Google Gemini API]
+        GroqAPI[Groq API]
+        SolanaRPC[Solana RPC]
+        ResendAPI[Resend Email]
+    end
+
+    Browser -->|HTTPS| CDN
+    CDN --> SPA
+    SPA -->|API Calls| Docker
+    Docker --> PG_Cloud
+    Docker --> GeminiAPI
+    Docker -.->|Fallback| GroqAPI
+    Docker --> SolanaRPC
+    Docker --> ResendAPI
+
+    style Vercel fill:#000,stroke:#fff,color:#fff
+    style Render fill:#46E3B7,stroke:#333,color:#000
+    style Neon fill:#0A0A0A,stroke:#00E599,color:#00E599
+```
+
+### Production-Scale Cloud Architecture (AWS)
+
+> [!NOTE]
+> The architecture below represents the **designed production-scale deployment** using AWS managed services. Due to cost constraints, the application currently runs on Render + Vercel free tiers (shown above). This design documents how the system would be deployed at scale with proper infrastructure.
+
+```mermaid
+graph TB
+    subgraph Users["Users"]
+        Client[Browser / PWA]
+    end
+
+    subgraph AWS["AWS Cloud"]
+        subgraph Edge["Edge Layer"]
+            R53[Route 53<br/>DNS]
+            CF[CloudFront<br/>CDN + WAF]
+        end
+
+        subgraph Frontend_Infra["Frontend"]
+            S3["S3 Bucket<br/>React Static Assets"]
+        end
+
+        subgraph Compute["Compute Layer"]
+            ALB["Application Load Balancer<br/>HTTPS Termination"]
+            subgraph ECS["ECS Fargate Cluster"]
+                Task1["FastAPI Container<br/>Task 1"]
+                Task2["FastAPI Container<br/>Task 2"]
+            end
+        end
+
+        subgraph Data_Layer["Data Layer"]
+            RDS[("RDS PostgreSQL<br/>Multi-AZ")]
+            ElastiCache[("ElastiCache Redis<br/>Cluster Mode")]
+        end
+
+        subgraph Monitoring["Observability"]
+            CW[CloudWatch<br/>Logs + Metrics]
+            XRay[X-Ray<br/>Tracing]
+        end
+
+        subgraph CI["CI/CD"]
+            ECR[ECR<br/>Container Registry]
+            GHA[GitHub Actions<br/>Build + Test]
+        end
+    end
+
+    subgraph ExtSvc["External Services"]
+        Gemini_AWS[Google Gemini API]
+        Groq_AWS[Groq API - Fallback]
+        Solana_AWS[Solana RPC]
+        Resend_AWS[Resend Email API]
+    end
+
+    Client -->|HTTPS| R53
+    R53 --> CF
+    CF -->|Static| S3
+    CF -->|/api/*| ALB
+    ALB --> Task1
+    ALB --> Task2
+    Task1 --> RDS
+    Task1 --> ElastiCache
+    Task2 --> RDS
+    Task2 --> ElastiCache
+    Task1 --> Gemini_AWS
+    Task1 -.->|Fallback| Groq_AWS
+    Task1 --> Solana_AWS
+    Task1 --> Resend_AWS
+    ECS --> CW
+    GHA -->|Push Image| ECR
+    ECR -->|Deploy| ECS
+
+    style AWS fill:#232F3E,stroke:#FF9900,color:#fff
+    style Edge fill:#1A73E8,stroke:#fff,color:#fff
+    style Compute fill:#FF9900,stroke:#232F3E,color:#000
+    style Data_Layer fill:#3B48CC,stroke:#fff,color:#fff
 ```
 
 ## 🚀 Key Features
