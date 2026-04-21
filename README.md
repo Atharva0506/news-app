@@ -287,6 +287,71 @@ graph TB
     style Output fill:#00b894,stroke:#fff,color:#fff
 ```
 
+### Authentication Flow (JWT + Refresh Token Rotation)
+
+```mermaid
+sequenceDiagram
+    participant Client as React Frontend
+    participant API as FastAPI Backend
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Note over Client,Email: Registration
+    Client->>API: POST /auth/register {email, password, name}
+    API->>DB: Create user (hashed password, trial plan)
+    API->>Email: Send verification email (background)
+    API-->>Client: User object + 3-day Pro trial activated
+
+    Note over Client,Email: Login
+    Client->>API: POST /auth/login {email, password}
+    API->>DB: Verify credentials
+    API-->>Client: {access_token, refresh_token}
+
+    Note over Client,API: Authenticated Request
+    Client->>API: GET /api/v1/news (Bearer token)
+    API->>API: Decode JWT, check expiry
+    API->>DB: Fetch user, check plan limits
+    API-->>Client: News data
+
+    Note over Client,API: Token Refresh (Rotation)
+    Client->>API: POST /auth/refresh {refresh_token}
+    API->>API: Validate refresh token
+    API-->>Client: {new_access_token, new_refresh_token}
+    Note right of Client: Old refresh token is<br/>invalidated (rotation)
+```
+
+### Solana Payment Flow
+
+```mermaid
+sequenceDiagram
+    participant User as User Browser
+    participant Wallet as Phantom / Solflare
+    participant API as FastAPI Backend
+    participant Solana as Solana Network
+    participant DB as PostgreSQL
+
+    User->>API: POST /payments/create {amount, plan}
+    API->>DB: Create PENDING transaction
+    API-->>User: {payment_id, merchant_address, reference}
+
+    User->>Wallet: Prompt: Send SOL to merchant
+    Wallet->>Solana: Submit transaction
+    Solana-->>Wallet: Transaction signature
+    Wallet-->>User: Signature confirmed
+
+    User->>API: POST /payments/verify {payment_id, signature}
+    API->>Solana: Verify transaction on-chain
+    Solana-->>API: Transaction confirmed ✓
+    API->>DB: Update tx → COMPLETED
+    API->>DB: Create Subscription (30 days)
+    API->>DB: Upgrade user → Pro plan
+    API-->>User: Payment verified, Pro activated ✓
+
+    Note over User,DB: If user rejects wallet prompt
+    User->>API: POST /payments/cancel {payment_id}
+    API->>DB: Update tx → CANCELLED
+```
+
 ## 🚀 Key Features
 
 ### News & AI
