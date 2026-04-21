@@ -1,6 +1,7 @@
 # AI News Aggregator (NewsAI)
 
 [![CI](https://github.com/Atharva0506/news-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharva0506/news-app/actions/workflows/ci.yml)
+[![Health Check](https://github.com/Atharva0506/news-app/actions/workflows/health-check.yml/badge.svg)](https://github.com/Atharva0506/news-app/actions/workflows/health-check.yml)
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)

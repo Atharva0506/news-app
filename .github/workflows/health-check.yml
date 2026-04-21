@@ -1,0 +1,41 @@
+name: Health Check
+
+on:
+  schedule:
+    # Run every 14 minutes to keep Render free-tier warm
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Production Health Check & Keep-Alive
+  # ──────────────────────────────────────────────
+  health-check:
+    name: Production Health Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping backend health endpoint
+        run: |
+          echo "🔄 Pinging production backend..."
+          RESPONSE=$(curl -sf --max-time 30 \
+            https://news-app-1-reaf.onrender.com/health \
+            2>&1) || {
+            echo "❌ Health check failed — backend may be cold starting"
+            echo "Response: $RESPONSE"
+            exit 1
+          }
+          echo "✅ Backend is healthy"
+          echo "$RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE"
+
+      - name: Ping frontend
+        run: |
+          echo "🔄 Pinging production frontend..."
+          HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 15 \
+            https://newsai.atharvanaik.me/ \
+            2>&1) || true
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✅ Frontend is healthy (HTTP $HTTP_STATUS)"
+          else
+            echo "⚠️ Frontend returned HTTP $HTTP_STATUS"
+          fi
