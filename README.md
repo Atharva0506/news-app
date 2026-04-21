@@ -194,6 +194,99 @@ graph TB
     style Data_Layer fill:#3B48CC,stroke:#fff,color:#fff
 ```
 
+### CI/CD Pipeline
+
+```mermaid
+graph LR
+    subgraph Trigger["Trigger"]
+        Push[Push to main/develop]
+        PR[Pull Request to main]
+    end
+
+    subgraph Backend_CI["Backend CI"]
+        direction TB
+        Py[Setup Python 3.11]
+        Deps_B[Install Dependencies]
+        Lint_B[Ruff Lint]
+        PG_Test[("PostgreSQL Service<br/>Test DB")]
+        Migrate[Alembic Migrations]
+        Test[Pytest + Coverage]
+        Py --> Deps_B --> Lint_B --> Migrate --> Test
+        PG_Test -.-> Migrate
+    end
+
+    subgraph Frontend_CI["Frontend CI"]
+        direction TB
+        Node[Setup Node.js 20]
+        Deps_F[npm install]
+        Lint_F[ESLint]
+        TSC[TypeScript Check]
+        Build[Vite Build]
+        Node --> Deps_F --> Lint_F --> TSC --> Build
+    end
+
+    subgraph Docker_CI["Docker Smoke Test"]
+        direction TB
+        Build_BE[Build Backend Image]
+        Build_FE[Build Frontend Image]
+        Build_BE --> Build_FE
+    end
+
+    subgraph Deploy["Deployment"]
+        Render_Deploy[Render Auto-Deploy<br/>main branch]
+        Vercel_Deploy[Vercel Auto-Deploy<br/>main branch]
+    end
+
+    Push --> Backend_CI
+    Push --> Frontend_CI
+    PR --> Backend_CI
+    PR --> Frontend_CI
+    Backend_CI -->|main only| Docker_CI
+    Frontend_CI -->|main only| Docker_CI
+    Docker_CI -->|Pass| Render_Deploy
+    Docker_CI -->|Pass| Vercel_Deploy
+
+    style Backend_CI fill:#3776AB,stroke:#fff,color:#fff
+    style Frontend_CI fill:#F7DF1E,stroke:#333,color:#000
+    style Docker_CI fill:#2496ED,stroke:#fff,color:#fff
+    style Deploy fill:#46E3B7,stroke:#333,color:#000
+```
+
+### AI Agent Pipeline (LangGraph)
+
+```mermaid
+graph TB
+    Start([Article Input<br/>Title + Content]) --> Collector
+
+    subgraph Pipeline["LangGraph StateGraph"]
+        Collector["🔍 Collector Node<br/>Quality Filter"]
+        Classifier["🏷️ Classifier Node<br/>Category + Sentiment + Tags"]
+        Summarizer["📝 Summarizer Node<br/>Short + Detailed Summary"]
+        BiasAnalyzer["⚖️ Bias Analyzer<br/>Premium Only"]
+
+        Collector -->|"quality ≥ 0.3"| Classifier
+        Collector -->|"quality < 0.3"| Rejected([❌ Rejected<br/>Low Quality])
+        Classifier --> Summarizer
+        Summarizer --> BiasAnalyzer
+    end
+
+    subgraph LLM["LLM Layer — Auto Fallback"]
+        direction LR
+        Gemini["Google Gemini 2.5 Flash<br/>Primary"]
+        Groq["Groq Llama 3.1 8B<br/>Fallback"]
+        Gemini -->|"Rate Limited / Error"| Groq
+    end
+
+    BiasAnalyzer --> Output([✅ Processed Article<br/>Category · Sentiment · Summary · Bias])
+
+    Pipeline -.->|"Each node uses"| LLM
+
+    style Pipeline fill:#1a1a2e,stroke:#e94560,color:#fff
+    style LLM fill:#0f3460,stroke:#16213e,color:#fff
+    style Rejected fill:#e94560,stroke:#fff,color:#fff
+    style Output fill:#00b894,stroke:#fff,color:#fff
+```
+
 ## 🚀 Key Features
 
 ### News & AI
