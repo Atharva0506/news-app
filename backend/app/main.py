@@ -10,7 +10,9 @@ from app.core.cache import cache
 from app.api import auth, news, payments, ai, preferences, chat, support, onboarding, explore, share
 
 import logging
+import time
 import traceback
+from datetime import datetime, timezone
 from starlette.responses import JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 
@@ -19,6 +21,9 @@ setup_logging()
 logger = logging.getLogger("app.main")
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+
+# Track server start time for uptime reporting in /health
+_START_TIME = time.time()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -79,9 +84,47 @@ async def root():
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
+    """
+    Production health check endpoint.
+
+    Used by:
+    - External keep-alive services (e.g., cron-job.org) to prevent Render cold starts
+    - Monitoring dashboards to track service availability
+    - Load balancers for backend readiness checks
+
+    Returns service status, uptime, and dependency health (cache, database).
+    """
+    from app.db.session import AsyncSessionLocal
+    from sqlalchemy import text
+
+    # Check cache health
     cache_ok = await cache.health_check()
+
+    # Check database connectivity
+    db_ok = False
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+            db_ok = True
+    except Exception:
+        db_ok = False
+
+    # Calculate uptime
+    uptime_seconds = int(time.time() - _START_TIME)
+    hours, remainder = divmod(uptime_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    all_healthy = cache_ok and db_ok
+
     return {
-        "status": "ok",
-        "cache": "connected" if cache_ok else "unavailable",
+        "status": "healthy" if all_healthy else "degraded",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "uptime": f"{hours}h {minutes}m {seconds}s",
+        "uptime_seconds": uptime_seconds,
+        "services": {
+            "database": "connected" if db_ok else "unavailable",
+            "cache": "connected" if cache_ok else "unavailable",
+        },
+        "environment": settings.APP_ENV,
     }
 

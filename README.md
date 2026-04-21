@@ -289,6 +289,36 @@ docker compose up --build
 - **Backend API**: `http://localhost:8000`
 - **Database**: `localhost:5432`
 
+## 🔄 Keep-Alive & Monitoring
+
+The backend is deployed on **Render's free tier**, which spins down after 15 minutes of inactivity. To eliminate cold-start delays for users, set up an external keep-alive ping:
+
+### Setup (Free)
+
+1. Go to [cron-job.org](https://cron-job.org) (free, no credit card)
+2. Create a new cron job:
+   - **URL**: `https://your-backend.onrender.com/health`
+   - **Schedule**: Every 14 minutes
+   - **Method**: `GET`
+3. The `/health` endpoint returns service status, uptime, and dependency health:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-04-21T10:00:00+00:00",
+  "uptime": "2h 30m 15s",
+  "uptime_seconds": 9015,
+  "services": {
+    "database": "connected",
+    "cache": "connected"
+  },
+  "environment": "production"
+}
+```
+
+> [!TIP]
+> The health endpoint checks both **database** and **cache** connectivity. A `"degraded"` status means the API is running but a dependency is down — useful for debugging production issues without SSH access.
+
 ## 🤝 Support & Issues
 
 - **Report an Issue**: [GitHub Issues](https://github.com/Atharva0506/news-app/issues)
