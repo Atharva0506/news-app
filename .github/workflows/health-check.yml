@@ -2,8 +2,8 @@ name: Health Check
 
 on:
   schedule:
-    # Run every 14 minutes to keep Render free-tier warm
-    - cron: '*/14 * * * *'
+    # Run every 20 minutes to check if Render is sleeping and wake it up
+    - cron: '*/20 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -18,15 +18,27 @@ jobs:
       - name: Ping backend health endpoint
         run: |
           echo "🔄 Pinging production backend..."
-          RESPONSE=$(curl -sf --max-time 30 \
-            https://news-app-1-reaf.onrender.com/health \
-            2>&1) || {
-            echo "❌ Health check failed — backend may be cold starting"
-            echo "Response: $RESPONSE"
-            exit 1
-          }
-          echo "✅ Backend is healthy"
-          echo "$RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE"
+          MAX_RETRIES=15
+          WAIT_TIME=30
+          
+          for i in $(seq 1 $MAX_RETRIES); do
+            # Use curl with built-in quick retries for temporary network blips
+            RESPONSE=$(curl -sf --retry 2 --retry-delay 2 --max-time 15 \
+              https://news-app-1-reaf.onrender.com/health \
+              2>&1)
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ Backend is healthy on attempt $i!"
+              echo "$RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE"
+              exit 0
+            fi
+            
+            echo "⚠️ Attempt $i/$MAX_RETRIES failed (Backend may be cold starting). Waiting ${WAIT_TIME}s..."
+            if [ $i -lt $MAX_RETRIES ]; then sleep $WAIT_TIME; fi
+          done
+          
+          echo "❌ Final health check failed after $((MAX_RETRIES * WAIT_TIME / 60)) minutes."
+          exit 1
 
       - name: Ping frontend
         run: |
