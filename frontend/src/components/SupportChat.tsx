@@ -51,7 +51,7 @@ export function SupportChat() {
 
         try {
             const history = cleanHistory.map(m => ({
-                role: m.role === 'user' ? 'user' : 'model',
+                role: m.role === 'user' ? 'user' : 'assistant',
                 content: m.content
             }));
 
@@ -59,7 +59,7 @@ export function SupportChat() {
             setMessages(prev => [...prev, { role: "ai", content: "" }]);
 
             const token = localStorage.getItem("token");
-            const response = await fetch(`${api.support.chat.toString().includes('undefined') ? 'http://localhost:8000/api/v1' : 'http://localhost:8000/api/v1'}/support/chat`, {
+            const response = await fetch(`${API_URL}/support/chat`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
