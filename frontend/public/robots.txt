@@ -12,3 +12,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /verify-email
+Disallow: /reset-password
+
+Sitemap: https://newsai.atharvanaik.me/sitemap.xml
+

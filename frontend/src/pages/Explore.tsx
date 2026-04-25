@@ -15,6 +15,7 @@ import { OptimizedImage } from "@/components/ui/optimized-image";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { SEOHead } from "@/components/SEOHead";
 
 interface ExploreArticle {
   id: string;
@@ -66,6 +67,12 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Explore News — Latest Headlines by Category"
+        description="Browse the latest news headlines across technology, business, science, health, politics, and more. Sign up to unlock AI-powered analysis and personalized feeds."
+        canonical="/explore"
+        keywords="latest news, news headlines, technology news, business news, science news, health news, AI news reader"
+      />
       {/* Sticky header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">

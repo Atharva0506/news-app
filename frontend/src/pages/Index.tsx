@@ -8,18 +8,35 @@ import { Footer } from "@/components/landing/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import { WelcomeModal } from "@/components/landing/WelcomeModal";
+import { SEOHead } from "@/components/SEOHead";
+
+const JSON_LD_WEBSITE = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "NewsAI",
+  "url": "https://newsai.atharvanaik.me/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://newsai.atharvanaik.me/explore?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+};
 
 const Index = () => {
   const { user, isLoading } = useAuth();
 
-  // Optional: Auto-redirect to dashboard if logged in?
-  // User requirement: "Show Dashboard access".
-  // Usually means changing buttons.
-  // If I simply redirect, it satisfies "access".
-  // "If user IS logged in... Show Dashboard access".
-  // Let's modify Navbar to be smart.
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="NewsAI — AI-Powered News Aggregator & Intelligent Briefings"
+        description="NewsAI is an AI-powered news aggregator with deep article analysis, bias detection, personalized feeds, and daily AI briefings. Start free today."
+        canonical="/"
+        keywords="AI news aggregator, news AI, AI news reader, news analysis, bias detection, personalized news feed, AI briefings, news intelligence"
+        jsonLd={JSON_LD_WEBSITE}
+      />
       <Navbar />
       <Hero />
       <Features />

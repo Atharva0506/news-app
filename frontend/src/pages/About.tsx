@@ -3,6 +3,7 @@ import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { Github, Linkedin, Twitter, Mail, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function About() {
     const socialLinks = [
@@ -40,6 +41,11 @@ export default function About() {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            <SEOHead
+                title="About the Developer"
+                description="Learn about Atharva Naik, the developer behind NewsAI — an AI-powered news aggregator built with React, FastAPI, and cutting-edge AI models."
+                canonical="/about"
+            />
             <Navbar />
 
             <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center">

@@ -1,9 +1,15 @@
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function Cookies() {
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            <SEOHead
+                title="Cookie Policy"
+                description="Find out how NewsAI uses cookies and similar technologies to improve your experience and keep the platform secure."
+                canonical="/cookies"
+            />
             <Navbar />
             <main className="flex-grow pt-28 pb-20 px-4 container mx-auto max-w-3xl">
                 <h1 className="text-3xl font-bold mb-2 text-foreground">Cookie Policy</h1>

@@ -1,9 +1,15 @@
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function Privacy() {
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            <SEOHead
+                title="Privacy Policy"
+                description="Learn how NewsAI collects, uses, and protects your personal data. We are committed to your privacy and transparency."
+                canonical="/privacy"
+            />
             <Navbar />
             <main className="flex-grow pt-28 pb-20 px-4 container mx-auto max-w-3xl">
                 <h1 className="text-3xl font-bold mb-2 text-foreground">Privacy Policy</h1>

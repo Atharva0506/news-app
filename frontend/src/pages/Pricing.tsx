@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { SEOHead } from "@/components/SEOHead";
 
 
 
@@ -220,6 +221,12 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Pricing — Free & Pro Plans"
+        description="Start free with NewsAI or upgrade to Pro for 10,000 AI chat tokens/day, deep article analysis, unlimited feeds, and saved chat history. Pay securely with Solana."
+        canonical="/pricing"
+        keywords="NewsAI pricing, news AI plans, free news AI, pro news aggregator, Solana payment"
+      />
       <Navbar />
 
       <section className="pt-28 pb-20">
