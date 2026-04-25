@@ -44,7 +44,7 @@ const FAQ_JSON_LD = {
     "name": faq.question,
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": faq.answer.replace(/<[^>]+>/g, ""),
+      "text": faq.answer.replace(/<[^>]*>?/g, ""),
     },
   })),
 };

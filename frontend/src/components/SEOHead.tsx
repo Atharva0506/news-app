@@ -55,7 +55,9 @@ export function SEOHead({
 
       {/* JSON-LD */}
       {jsonLd && (
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd).replace(/<\//g, "<\\/")}
+        </script>
       )}
     </Helmet>
   );
