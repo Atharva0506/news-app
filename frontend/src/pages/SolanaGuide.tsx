@@ -5,12 +5,19 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function SolanaGuide() {
     const navigate = useNavigate();
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            <SEOHead
+                title="How to Pay with Solana — Payment Guide"
+                description="Step-by-step guide to setting up a Solana wallet and paying for NewsAI Pro with Phantom or Solflare. Fast, secure, and low-fee crypto payments."
+                canonical="/solana-guide"
+                keywords="Solana payment guide, Phantom wallet, Solflare, crypto payment, how to pay with Solana"
+            />
             <Navbar />
 
             <div className="flex-grow pt-32 pb-20 container mx-auto px-4 max-w-4xl space-y-12">

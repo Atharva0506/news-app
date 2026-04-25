@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 const faqs = [
     {
@@ -35,11 +36,30 @@ const faqs = [
     },
 ];
 
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map((faq) => ({
+    "@type": "Question",
+    "name": faq.question,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": faq.answer.replace(/<[^>]*>?/g, ""),
+    },
+  })),
+};
+
 export default function FAQ() {
     const [openIndex, setOpenIndex] = useState<number | null>(0);
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col">
+            <SEOHead
+                title="FAQ — Frequently Asked Questions"
+                description="Get answers to common questions about NewsAI — pricing, token limits, deep analysis, free trial, Solana payments, and how to upgrade to Pro."
+                canonical="/faq"
+                jsonLd={FAQ_JSON_LD}
+            />
             <Navbar />
 
             <main className="flex-grow pt-32 pb-20 px-4 sm:px-6 lg:px-8">

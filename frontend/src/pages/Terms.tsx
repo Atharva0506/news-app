@@ -1,9 +1,16 @@
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function Terms() {
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            <SEOHead
+                title="Terms of Service"
+                description="Read the NewsAI Terms of Service to understand the rules, obligations, and guidelines for using our AI-powered news platform."
+                canonical="/terms"
+                keywords="NewsAI terms of service, terms and conditions, user agreement"
+            />
             <Navbar />
             <main className="flex-grow pt-28 pb-20 px-4 container mx-auto max-w-3xl">
                 <h1 className="text-3xl font-bold mb-2 text-foreground">Terms of Service</h1>
