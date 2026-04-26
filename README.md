@@ -17,14 +17,6 @@ A next-generation AI-powered news platform that aggregates, classifies, and summ
 > [!NOTE]
 > This app uses **Free Tier APIs** for the LLM (Google Gemini) and news data (RSS + GDELT). You may encounter rate limits or slow responses during peak usage. Thanks for understanding!
 
-## 🎬 Demo
-
-https://github.com/user-attachments/assets/placeholder-upload-your-demo-video
-
-> **💡 Tip:** To embed your demo, drag `frontend/public/News AI Demo.webm` into the GitHub README editor — GitHub will auto-generate a video URL.
->
-> **[Watch the Live Demo →](https://newsai.atharvanaik.me/)**
-
 ## 🏗️ Architecture
 
 ### Application Architecture
