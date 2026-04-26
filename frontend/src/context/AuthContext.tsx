@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -115,9 +115,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         navigate("/login");
     };
 
-    const refreshProfile = async () => {
-        await fetchUser();
-    };
+    const refreshProfile = useCallback(async () => {
+        try {
+            if (!localStorage.getItem("token")) return;
+            const userData = await api.auth.me();
+            setUser(userData);
+        } catch (error) {
+            // Silently fail — don't clear token on profile refresh failure
+            console.error("Failed to refresh profile:", error);
+        }
+    }, []);
 
     return (
         <AuthContext.Provider value={{ user, isLoading, isLoggingIn, login, register, logout, refreshProfile }}>
