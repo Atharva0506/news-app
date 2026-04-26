@@ -73,7 +73,6 @@ jobs:
 
       - name: Lint with Ruff
         run: ruff check app/ --output-format=github
-        continue-on-error: true  # Don't block CI on lint warnings
 
       - name: Run database migrations
         run: alembic upgrade head
@@ -84,7 +83,6 @@ jobs:
             --cov=app \
             --cov-report=term-missing \
             -v
-        continue-on-error: true  # Tests may need live API keys — don't block
 
   # ──────────────────────────────────────────────
   # Frontend: Lint + Type Check + Build (React / Vite)
@@ -111,11 +109,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        continue-on-error: true  # Don't block on lint warnings
 
       - name: Type check
         run: npx tsc --noEmit
-        continue-on-error: true  # Existing type issues shouldn't block
 
       - name: Build
         run: npm run build

@@ -49,8 +49,9 @@ export default function ResetPassword() {
             await api.auth.resetPassword(token, password);
             toast.success("Password reset successfully! Please login.");
             navigate("/login");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to reset password");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Failed to reset password";
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }

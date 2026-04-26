@@ -67,8 +67,9 @@ export default function Onboarding() {
             await refreshProfile();
             toast.success("Onboarding complete! Generating your first feed...");
             navigate("/dashboard");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to save preferences");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Failed to save preferences";
+            toast.error(message);
         } finally {
             setLoading(false);
         }

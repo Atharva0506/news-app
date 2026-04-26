@@ -21,8 +21,9 @@ export default function ForgotPassword() {
             await api.auth.forgotPassword(email);
             setIsSubmitted(true);
             toast.success("Reset link sent if account exists.");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to send reset link");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Failed to send reset link";
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }

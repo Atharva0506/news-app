@@ -38,11 +38,12 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     if (!response.ok) {
       if (response.status === 429) {
 
-        let retryMsg = "";
+        const retryMsg = "";
         try {
-          const errJson = await response.clone().json();
-
-        } catch (e) { }
+          await response.clone().json();
+        } catch (_e) {
+          // Rate limit response may not be JSON — ignore parse error
+        }
 
         toast.error("You’ve hit today’s free AI usage limit. Please try again later or upgrade to Pro.", {
           description: "AI Limit Reached"
@@ -146,7 +147,7 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 
 export const api = {
   auth: {
-    login: (data: any) =>
+    login: (data: { username: string; password: string }) =>
       fetch(`${API_URL}/auth/login`, {
         method: "POST",
         body: new URLSearchParams(data), // OAuthFormRequest expects form data
@@ -155,7 +156,7 @@ export const api = {
         if (!res.ok) throw new ApiError(res.status, (await res.json()).detail);
         return res.json();
       }),
-    signup: (data: any) => fetchWithAuth("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+    signup: (data: { email: string; password: string; full_name: string }) => fetchWithAuth("/auth/register", { method: "POST", body: JSON.stringify(data) }),
     me: () => fetchWithAuth("/auth/me"),
     updateProfile: (data: { full_name?: string; password?: string }) => fetchWithAuth("/auth/me", { method: "PUT", body: JSON.stringify(data) }),
     usage: () => fetchWithAuth("/auth/me/usage"),
@@ -210,10 +211,10 @@ export const api = {
   },
   preferences: {
     get: () => fetchWithAuth("/preferences/me"),
-    update: (data: any) => fetchWithAuth("/preferences/me", { method: "PUT", body: JSON.stringify(data) }),
+    update: (data: Record<string, unknown>) => fetchWithAuth("/preferences/me", { method: "PUT", body: JSON.stringify(data) }),
   },
   onboarding: {
-    submit: (data: any) => fetchWithAuth("/onboarding/submit", { method: "POST", body: JSON.stringify(data) }),
+    submit: (data: Record<string, unknown>) => fetchWithAuth("/onboarding/submit", { method: "POST", body: JSON.stringify(data) }),
   },
   payments: {
     createIntent: (amount: number, plan: string = "pro") => fetchWithAuth("/payments/create", {
@@ -232,7 +233,7 @@ export const api = {
     getConfig: () => fetch(`${API_URL}/payments/config`).then(res => res.json()),
   },
   support: {
-    chat: (message: string, history: any[]) => fetchWithAuth("/support/chat", {
+    chat: (message: string, history: { role: string; content: string }[]) => fetchWithAuth("/support/chat", {
       method: "POST",
       body: JSON.stringify({ message, history })
     }),
@@ -246,11 +247,11 @@ export const api = {
   chat: {
     list: () => fetchWithAuth("/chat/"),
     get: (id: string) => fetchWithAuth(`/chat/${id}`),
-    create: (title: string, messages: any[]) => fetchWithAuth("/chat/", {
+    create: (title: string, messages: { role: string; content: string }[]) => fetchWithAuth("/chat/", {
       method: "POST",
       body: JSON.stringify({ title, messages })
     }),
-    update: (id: string, title: string, messages: any[]) => fetchWithAuth(`/chat/${id}`, {
+    update: (id: string, title: string, messages: { role: string; content: string }[]) => fetchWithAuth(`/chat/${id}`, {
       method: "PUT",
       body: JSON.stringify({ title, messages })
     }),
@@ -273,7 +274,7 @@ export const api = {
       }),
   },
   share: {
-    create: (data: { article_title: string; article_url: string; analysis_json: any }) =>
+    create: (data: { article_title: string; article_url: string; analysis_json: Record<string, unknown> }) =>
       fetchWithAuth("/share/", { method: "POST", body: JSON.stringify(data) }),
     get: (id: string) =>
       fetch(`${API_URL}/share/${id}`).then(async res => {

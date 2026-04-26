@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -47,11 +47,7 @@ export default function Explore() {
   const [activeCategory, setActiveCategory] = useState("all");
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchArticles();
-  }, [activeCategory]);
-
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     setLoading(true);
     try {
       const category = activeCategory === "all" ? undefined : activeCategory;
@@ -63,7 +59,11 @@ export default function Explore() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeCategory]);
+
+  useEffect(() => {
+    fetchArticles();
+  }, [fetchArticles]);
 
   return (
     <div className="min-h-screen bg-background">

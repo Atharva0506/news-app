@@ -115,8 +115,9 @@ export default function Settings() {
             localStorage.removeItem("token");
             localStorage.removeItem("refresh_token");
             window.location.href = "/";
-        } catch (e: any) {
-            toast.error(e.message || "Failed to delete account");
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : "Failed to delete account";
+            toast.error(message);
             setIsLoading(false);
         }
     };
@@ -440,7 +441,7 @@ export default function Settings() {
     );
 }
 
-function EditProfileDialog({ user }: { user: any }) {
+function EditProfileDialog({ user }: { user: { full_name?: string; email?: string } | null }) {
     const { refreshProfile } = useAuth();
     const [name, setName] = useState(user?.full_name || "");
     const [open, setOpen] = useState(false);
@@ -453,7 +454,7 @@ function EditProfileDialog({ user }: { user: any }) {
             await refreshProfile();
             toast.success("Profile updated!");
             setOpen(false);
-        } catch (e: any) {
+        } catch (_e: unknown) {
             toast.error("Failed to update profile");
         } finally {
             setLoading(false);
@@ -519,7 +520,7 @@ function ChangePasswordDialog() {
             toast.success("Password updated successfully!");
             setOpen(false);
             setPassword("");
-        } catch (e: any) {
+        } catch (_e: unknown) {
             toast.error("Failed to update password");
         } finally {
             setLoading(false);

@@ -156,14 +156,15 @@ export default function Pricing() {
           let signature;
           try {
             signature = await sendTransaction(transaction, connection);
-          } catch (walletErr: any) {
-            console.log("Wallet Error Details:", walletErr);
+          } catch (walletErr: unknown) {
+            const walletError = walletErr as { message?: string; name?: string };
+            console.log("Wallet Error Details:", walletError);
             // Handle User Rejection or Plugin Closure (which is effectively a rejection)
             if (
-              walletErr.message?.includes("User rejected") ||
-              walletErr.name === "WalletSignTransactionError" ||
-              walletErr.name === "WalletSendTransactionError" ||
-              walletErr.message?.includes("Plugin Closed")
+              walletError.message?.includes("User rejected") ||
+              walletError.name === "WalletSignTransactionError" ||
+              walletError.name === "WalletSendTransactionError" ||
+              walletError.message?.includes("Plugin Closed")
             ) {
               console.log("User rejected signature or closed wallet");
               toast.warning("Transaction cancelled by user");
@@ -195,16 +196,18 @@ export default function Pricing() {
           toast.success(`Subscribed to ${plan.name}!`);
           navigate("/dashboard");
 
-        } catch (err: any) {
-          console.error("Solana Error:", err);
-          toast.error("Transaction failed: " + (err.message || "Unknown error"));
+        } catch (err: unknown) {
+          const error = err instanceof Error ? err : new Error("Unknown error");
+          console.error("Solana Error:", error);
+          toast.error("Transaction failed: " + error.message);
           // Try to record failure if we have a payment_id? (Maybe not needed if we didn't get a signature)
         }
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       console.error("Payment Flow Error:", error);
-      if (error.message && error.message.includes("verify your email") && import.meta.env.VITE_ENABLE_EMAIL_VERIFICATION !== 'false') {
+      if (err.message && err.message.includes("verify your email") && import.meta.env.VITE_ENABLE_EMAIL_VERIFICATION !== 'false') {
         toast.error("Email verification required", {
           action: {
             label: "Resend Email",
@@ -212,7 +215,7 @@ export default function Pricing() {
           }
         });
       } else {
-        toast.error(error.message || "Payment initialization failed");
+        toast.error(err.message || "Payment initialization failed");
       }
     } finally {
       setIsProcessing(null);
@@ -344,8 +347,8 @@ export default function Pricing() {
                       <span className="text-[13px]">{feature}</span>
                     </li>
                   ))}
-                  {/* @ts-ignore */}
-                  {plan.missing_features?.map((feature, i) => (
+                  {/* @ts-expect-error -- missing_features only exists on the Free plan */}
+                  {plan.missing_features?.map((feature: string, i: number) => (
                     <li key={`missing-${i}`} className="flex items-start gap-2 text-muted-foreground/50">
                       <div className="h-4 w-4 flex items-center justify-center shrink-0 mt-0.5">
                         <span className="block w-3 h-px bg-current rotate-45 absolute"></span>

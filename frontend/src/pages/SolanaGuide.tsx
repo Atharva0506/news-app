@@ -137,7 +137,7 @@ export default function SolanaGuide() {
     );
 }
 
-function StepCard({ icon, title, description, action }: any) {
+function StepCard({ icon, title, description, action }: { icon: React.ReactNode; title: string; description: string; action?: React.ReactNode }) {
     return (
         <Card className="hover:shadow-lg transition-shadow">
             <CardContent className="pt-6 text-center space-y-4">

@@ -29,9 +29,10 @@ export default function VerifyEmail() {
                 await api.auth.verifyEmail(token);
                 setStatus("success");
                 setMessage("Email verified successfully! You can now access all features.");
-            } catch (error: any) {
+            } catch (error: unknown) {
                 setStatus("error");
-                setMessage(error.message || "Verification failed. The link may be invalid or expired.");
+                const message = error instanceof Error ? error.message : "Verification failed. The link may be invalid or expired.";
+                setMessage(message);
             }
         };
 
@@ -48,8 +49,9 @@ export default function VerifyEmail() {
         try {
             await api.auth.resendVerification();
             toast.success("Verification email sent! Check your inbox.");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to resend verification email.");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Failed to resend verification email.";
+            toast.error(message);
         } finally {
             setResending(false);
         }

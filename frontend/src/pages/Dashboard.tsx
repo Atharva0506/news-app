@@ -28,7 +28,7 @@ export default function Dashboard() {
 
   // AI Panel state
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
+  const [selectedArticle, setSelectedArticle] = useState<Record<string, unknown> | null>(null);
 
   // Feed refresh
   const [feedRefreshKey, setFeedRefreshKey] = useState(0);

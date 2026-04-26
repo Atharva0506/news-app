@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,16 +30,7 @@ export function FeedSummary() {
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      setSummary(cached);
-    } else {
-      generateSummary(false);
-    }
-  }, []);
-
-  const generateSummary = async (forceRefresh: boolean = false) => {
+  const generateSummary = useCallback(async (forceRefresh: boolean = false) => {
     setLoading(true);
     setSummary(""); // Clear summary while streaming
 
@@ -89,20 +80,29 @@ export function FeedSummary() {
                 fullSummary += data.text;
                 setSummary(fullSummary);
               }
-            } catch (e) {
+            } catch (_e) {
               // Ignore parse errors
             }
           }
         }
       }
-    } catch (err: any) {
+    } catch (_err: unknown) {
       setSummary(null);
       toast.error("Failed to generate summary");
     } finally {
       setLoading(false);
       window.dispatchEvent(new Event('usage-updated'));
     }
-  };
+  }, [refreshProfile]);
+
+  useEffect(() => {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      setSummary(cached);
+    } else {
+      generateSummary(false);
+    }
+  }, [generateSummary]);
 
   if (loading && !summary)
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -42,40 +42,41 @@ export function NewsFeed({
     const [isLoading, setIsLoading] = useState(true);
     const { refreshProfile } = useAuth();
 
-    useEffect(() => {
-        fetchNews(false);
-    }, [filters.category, filters.sentiment, filters.search]);
-
-    useEffect(() => {
-        if (refreshTrigger > 0) {
-            fetchNews(true);
-        }
-    }, [refreshTrigger]);
-
-    const fetchNews = async (forceRefresh: boolean = false) => {
+    const fetchNews = useCallback(async (forceRefresh: boolean = false) => {
         setIsLoading(true);
         try {
             const data = await api.news.getFeed({ ...filters, refresh: forceRefresh });
             setArticles(data);
             localStorage.setItem("cached_feed", JSON.stringify(data));
             await refreshProfile();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             const cached = localStorage.getItem("cached_feed");
+            const apiError = error as { status?: number; message?: string };
             if (cached) {
                 setArticles(JSON.parse(cached));
-                if (error.status === 403 || error.message.includes("limit")) {
+                if (apiError.status === 403 || apiError.message?.includes("limit")) {
                     toast.info("Daily limit reached. Showing cached feed.");
                 } else {
                     if (forceRefresh) toast.warning("Could not refresh. Showing cached feed.");
                 }
             } else {
-                toast.error(error.message || "Failed to load news feed");
+                toast.error(apiError.message || "Failed to load news feed");
             }
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [filters, refreshProfile]);
+
+    useEffect(() => {
+        fetchNews(false);
+    }, [fetchNews]);
+
+    useEffect(() => {
+        if (refreshTrigger > 0) {
+            fetchNews(true);
+        }
+    }, [refreshTrigger, fetchNews]);
 
     const getBiasLabel = (score?: number) => {
         if (score === undefined) return "neutral";

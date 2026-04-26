@@ -14,7 +14,7 @@ interface User {
     last_summary_refresh_date?: string;
     onboarding_completed: boolean;
     is_verified?: boolean;
-    preferences?: any;
+    preferences?: Record<string, unknown>;
 
     // Plan & Trial
     plan_type?: string;
@@ -76,8 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(userData);
             toast.success("Welcome back!");
             navigate(userData.onboarding_completed ? "/dashboard" : "/onboarding");
-        } catch (error: any) {
-            toast.error(error.message || "Login failed");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Login failed";
+            toast.error(message);
             throw error;
         } finally {
             setIsLoggingIn(false);
@@ -93,9 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Auto login after signup
             await login(email, password);
             console.log("Login successful after registration");
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Registration flow failed:", error);
-            toast.error(error.message || "Registration failed");
+            const message = error instanceof Error ? error.message : "Registration failed";
+            toast.error(message);
             throw error;
         } finally {
             setIsLoggingIn(false);

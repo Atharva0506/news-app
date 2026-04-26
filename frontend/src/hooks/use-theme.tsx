@@ -29,7 +29,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const toggleTheme = (e?: React.MouseEvent) => {
     const newTheme = theme === "light" ? "dark" : "light";
 
-    // @ts-ignore
+    // @ts-expect-error -- startViewTransition is not yet in all TS DOM libs
     if (!document.startViewTransition || !e) {
       setTheme(newTheme);
       return;
@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       Math.max(y, window.innerHeight - y)
     );
 
-    // @ts-ignore
+    // @ts-expect-error -- startViewTransition is not yet in all TS DOM libs
     const transition = document.startViewTransition(() => {
       setTheme(newTheme);
     });
