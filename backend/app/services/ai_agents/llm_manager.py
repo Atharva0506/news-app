@@ -135,7 +135,7 @@ class LLMProviderManager:
                 logger.error(f"Error invoking {provider_name}: {e}")
                 
                 if provider_name == "Gemini" and ("429" in msg or "resourceexhausted" in msg or "quota" in msg):
-                    logger.warning(f"Gemini 429/Quota error encountered. Forcing switch to fallback.")
+                    logger.warning("Gemini 429/Quota error encountered. Forcing switch to fallback.")
                     # Force threshold trip
                     self.daily_requests = self.SWITCH_THRESHOLD
                     self.rotate_primary_key()
@@ -176,7 +176,7 @@ class LLMProviderManager:
                 logger.error(f"Error streaming with {provider_name}: {e}")
 
                 if provider_name == "Gemini" and ("429" in msg or "resourceexhausted" in msg or "quota" in msg):
-                    logger.warning(f"Gemini 429/Quota error encountered during stream. Switching to fallback.")
+                    logger.warning("Gemini 429/Quota error encountered during stream. Switching to fallback.")
                     self.daily_requests = self.SWITCH_THRESHOLD
                     self.rotate_primary_key()
                     await asyncio.sleep(0.5)

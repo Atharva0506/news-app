@@ -296,7 +296,8 @@ async def compare_articles(
     )
 
     try:
-        comparison = await call_llm_with_rotation(
+        from app.services.ai_agents.llm_manager import llm_manager
+        comparison = await llm_manager.invoke_with_fallback(
             prompt,
             StrOutputParser(),
             {"text": combined_text}
