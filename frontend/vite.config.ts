@@ -39,10 +39,23 @@ export default defineConfig(({ mode }) => ({
         scope: "/",
         start_url: "/",
         icons: [
-          { src: "/pwa-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
-          { src: "/pwa-512x512.svg", sizes: "512x512", type: "image/svg+xml" },
-          { src: "/pwa-512x512.svg", sizes: "512x512", type: "image/svg+xml", purpose: "maskable" },
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
+        screenshots: [
+          {
+            src: "/screenshot-desktop.png",
+            sizes: "1280x720",
+            type: "image/png",
+            form_factor: "wide"
+          },
+          {
+            src: "/screenshot-mobile.png",
+            sizes: "720x1280",
+            type: "image/png"
+          }
+        ]
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
