@@ -42,10 +42,12 @@ export function NewsFeed({
     const [isLoading, setIsLoading] = useState(true);
     const { refreshProfile } = useAuth();
 
+    const { category, sentiment, search } = filters || {};
+
     const fetchNews = useCallback(async (forceRefresh: boolean = false) => {
         setIsLoading(true);
         try {
-            const data = await api.news.getFeed({ ...filters, refresh: forceRefresh });
+            const data = await api.news.getFeed({ category, sentiment, search, refresh: forceRefresh });
             setArticles(data);
             localStorage.setItem("cached_feed", JSON.stringify(data));
             await refreshProfile();
@@ -66,7 +68,7 @@ export function NewsFeed({
         } finally {
             setIsLoading(false);
         }
-    }, [filters, refreshProfile]);
+    }, [category, sentiment, search, refreshProfile]);
 
     useEffect(() => {
         fetchNews(false);
