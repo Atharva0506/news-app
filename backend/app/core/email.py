@@ -2,6 +2,7 @@ import resend
 import logging
 from app.core.config import settings
 from ratelimit import limits, sleep_and_retry
+from typing import Optional, Any
 
 # Configure Resend
 resend.api_key = settings.RESEND_API_KEY
@@ -12,7 +13,7 @@ class EmailService:
     @staticmethod
     @sleep_and_retry
     @limits(calls=10, period=1)  # Rate limit: 10 calls per second
-    def send_email(to_email: str, subject: str, html_content: str):
+    def send_email(to_email: str, subject: str, html_content: str) -> Optional[Any]:
         """
         Sends an email using Resend API.
         """
@@ -95,7 +96,7 @@ class EmailService:
 """
 
     @staticmethod
-    def send_verification_email(to_email: str, token: str):
+    def send_verification_email(to_email: str, token: str) -> Optional[Any]:
         """
         Sends a verification email with a link.
         """
@@ -135,7 +136,7 @@ class EmailService:
         return EmailService.send_email(to_email, subject, EmailService._email_wrapper(inner))
 
     @staticmethod
-    def send_password_reset_email(to_email: str, token: str):
+    def send_password_reset_email(to_email: str, token: str) -> Optional[Any]:
         """
         Sends a password reset email.
         """
