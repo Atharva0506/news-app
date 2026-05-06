@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Cpu, Zap, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,7 +93,7 @@ export function UsageStats() {
                     {/* Pro plan expiry */}
                     {stats.plan_type === 'pro' && stats.subscription_expiry && (
                         <p className="text-xs text-muted-foreground text-center">
-                            Expires {new Date(stats.subscription_expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            Expires {formatDate(stats.subscription_expiry)}
                         </p>
                     )}
                     {/* General AI Token Usage */}
