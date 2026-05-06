@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, truncateText } from "@/lib/utils";
 
 describe("cn — className merge utility", () => {
   it("should merge multiple class names", () => {
@@ -35,5 +35,33 @@ describe("cn — className merge utility", () => {
     const result = cn(["px-4", "py-2"]);
     expect(result).toContain("px-4");
     expect(result).toContain("py-2");
+  });
+});
+
+describe("formatDate", () => {
+  it("should format date with default options", () => {
+    const date = new Date("2026-05-06T12:00:00Z");
+    const result = formatDate(date);
+    expect(result).toBe("May 6, 2026");
+  });
+
+  it("should allow overriding options", () => {
+    const date = new Date("2026-05-06T12:00:00Z");
+    const result = formatDate(date, { month: "long", year: "numeric" });
+    expect(result).toBe("May 2026");
+  });
+});
+
+describe("truncateText", () => {
+  it("should truncate text exceeding max length and append ellipsis", () => {
+    const text = "This is a very long sentence that needs to be shortened.";
+    const result = truncateText(text, 10);
+    expect(result).toBe("This is a ...");
+  });
+
+  it("should return the original text if length is within limit", () => {
+    const text = "Short";
+    const result = truncateText(text, 10);
+    expect(result).toBe("Short");
   });
 });
