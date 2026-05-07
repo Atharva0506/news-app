@@ -38,7 +38,9 @@ export function UsageStats() {
 
     if (!stats) return null;
 
-    const percentage = Math.min((stats.daily_tokens / stats.limit_daily) * 100, 100);
+    const percentage = stats.limit_daily > 0 
+        ? Math.min((stats.daily_tokens / stats.limit_daily) * 100, 100) 
+        : 100;
 
     // Calculate Days Left if Trial
     let daysLeft = 0;
