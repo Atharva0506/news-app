@@ -68,7 +68,13 @@ class NewsAggregator:
 
         # Fetch from RSS provider
         try:
-            all_articles = await rss_provider.fetch_articles(category=category, language=language, country=country, limit=limit)
+            all_articles = await asyncio.wait_for(
+                rss_provider.fetch_articles(category=category, language=language, country=country, limit=limit),
+                timeout=15.0
+            )
+        except asyncio.TimeoutError:
+            logger.warning("Provider timeout fetching articles for %s", key)
+            all_articles = []
         except Exception as res:
             logger.warning("Provider error: %s", res)
             all_articles = []
@@ -91,7 +97,13 @@ class NewsAggregator:
         limit: int = 20,
     ) -> List[ArticleResult]:
         try:
-            all_articles = await rss_provider.search_articles(query=query, language=language, limit=limit)
+            all_articles = await asyncio.wait_for(
+                rss_provider.search_articles(query=query, language=language, limit=limit),
+                timeout=15.0
+            )
+        except asyncio.TimeoutError:
+            logger.warning("Provider timeout searching articles for query: %s", query)
+            all_articles = []
         except Exception as res:
             logger.warning("Provider error: %s", res)
             all_articles = []
