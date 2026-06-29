@@ -26,7 +26,7 @@ class NewsArticle(Base):
     content: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # Full content if available
     url: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     image: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
     author: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     category_id: Mapped[Optional[int]] = mapped_column(ForeignKey("news_categories.id"), nullable=True)
