@@ -23,6 +23,13 @@ COPY . .
 # Make start script executable
 RUN chmod +x start.sh
 
+# Create a non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /app
+
+# Switch to the non-root user
+USER appuser
+
 # Expose port (Render uses 10000 by default)
 EXPOSE 10000
 
