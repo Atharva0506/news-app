@@ -57,6 +57,16 @@ async def global_error_handler(request: Request, call_next):
             content={"detail": "An internal server error occurred. The team has been notified."}
         )
 
+# 2.5 Security Headers
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
+
 # 3. CORS (outermost - added LAST so it always wraps every response with CORS headers)
 app.add_middleware(
     CORSMiddleware,
