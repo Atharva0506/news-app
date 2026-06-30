@@ -1,0 +1,14 @@
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+.env
+.env.*
+.git
+.pytest_cache
+.ruff_cache
+alembic/versions/*
+.DS_Store
