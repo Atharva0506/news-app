@@ -1,12 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.core.logging_config import setup_logging
 from app.core.cache import cache
+from app.core.rate_limit import limiter
 from app.api import auth, news, payments, ai, preferences, chat, support, onboarding, explore, share
 
 import logging
@@ -20,8 +19,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 setup_logging()
 logger = logging.getLogger("app.main")
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
-
 # Track server start time for uptime reporting in /health
 _START_TIME = time.time()
 
@@ -31,6 +28,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
+from slowapi import _rate_limit_exceeded_handler
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # --- Middleware Stack ---

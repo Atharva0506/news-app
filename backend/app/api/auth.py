@@ -13,6 +13,8 @@ from app.models.user import User
 from app.schemas.user import Token, UserCreate, User as UserSchema
 import secrets
 from datetime import timezone
+from fastapi import Request
+from app.core.rate_limit import limiter
 
 
 router = APIRouter()
@@ -131,7 +133,9 @@ async def reset_password(
     return {"message": "Password reset successfully"}
 
 @router.post("/login", response_model=Token)
+@limiter.limit("5/minute")
 async def login_access_token(
+    request: Request,
     db: AsyncSession = Depends(deps.get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
@@ -196,7 +200,9 @@ async def refresh_token(
     }
 
 @router.post("/register", response_model=UserSchema)
+@limiter.limit("5/minute")
 async def register(
+    request: Request,
     *,
     db: AsyncSession = Depends(deps.get_db),
     user_in: UserCreate,
