@@ -2,6 +2,9 @@ import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Props for the ErrorBoundary component.
+ */
 interface Props {
   children?: ReactNode;
 }
