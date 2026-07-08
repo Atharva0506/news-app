@@ -16,6 +16,9 @@ class NewsCategory(Base):
 
     articles: Mapped[List["NewsArticle"]] = relationship(back_populates="category")
 
+    def __repr__(self) -> str:
+        return f"<NewsCategory(id={self.id}, name='{self.name}')>"
+
 
 class NewsArticle(Base):
     __tablename__ = "news_articles"
